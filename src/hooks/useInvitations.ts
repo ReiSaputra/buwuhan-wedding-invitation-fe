@@ -1,7 +1,10 @@
 import type { InvitationSummary, DashboardStats } from '@/types/dashboard'
 
-// TODO: ganti dengan useQuery(['invitations']) → fetchData<InvitationSummary[]>('/invitations')
-const MOCK: InvitationSummary[] = [
+/**
+ * Data mock daftar undangan untuk simulasi frontend.
+ * Dapat dengan mudah diganti dengan query API backend (`useQuery(['invitations'])`).
+ */
+const MOCK_INVITATIONS: InvitationSummary[] = [
   {
     id: '1',
     slug: 'han-saputra',
@@ -12,6 +15,7 @@ const MOCK: InvitationSummary[] = [
     status: 'PUBLISHED',
     guestCount: 1000,
     checkedInCount: 731,
+    themeName: 'Royal Javanese Elegance',
   },
   {
     id: '2',
@@ -23,11 +27,20 @@ const MOCK: InvitationSummary[] = [
     status: 'DRAFT',
     guestCount: 240,
     checkedInCount: 0,
+    themeName: 'Modern Minimalist Botanical',
   },
 ]
 
+/**
+ * Custom React Hook untuk mengambil daftar undangan digital pengguna dan ringkasan metrik statistik.
+ * 
+ * @returns Objek berisi daftar `invitations`, metrik `stats`, dan status loading `isLoading`
+ * 
+ * @example
+ * const { invitations, stats, isLoading } = useInvitations()
+ */
 export function useInvitations() {
-  const invitations = MOCK
+  const invitations = MOCK_INVITATIONS
 
   const stats: DashboardStats = {
     totalInvitations: invitations.length,

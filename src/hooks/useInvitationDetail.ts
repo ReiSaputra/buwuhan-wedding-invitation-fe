@@ -1,13 +1,22 @@
 import type { InvitationDetail, ActivityLog } from '@/types/dashboard'
 
-// TODO: ganti dengan useQuery(['invitation', id]) → fetchData<InvitationDetail>(`/invitations/${id}`)
+/**
+ * Custom React Hook untuk mengambil data detail sebuah undangan spesifik
+ * beserta daftar linimasa aktivitas tamu terkait berdasarkan ID undangan.
+ * 
+ * @param id - Identifier unik dari undangan yang ingin dimuat
+ * @returns Objek berisi `invitation` detail, daftar `activities`, dan flag `isLoading`
+ * 
+ * @example
+ * const { invitation, activities } = useInvitationDetail('1')
+ */
 export function useInvitationDetail(id: string) {
   const invitation: InvitationDetail = {
     id,
-    slug: 'janpiter-yudi',
+    slug: 'han-saputra',
     panelName: 'Xavier',
-    coupleName: 'Janpiter & Yudi',
-    eventDate: '2026-01-12',
+    coupleName: 'Han & Saputra',
+    eventDate: '2026-01-18',
     guestCount: 1000,
     confirmedCount: 731,
     buwuhTotal: 9000000,
@@ -16,15 +25,24 @@ export function useInvitationDetail(id: string) {
   const activities: ActivityLog[] = [
     {
       id: 'a1',
-      message: 'Siti telah mengkonfirmasi untuk hadir',
+      message: 'Siti Rahmawan telah mengkonfirmasi hadir (2 Pax)',
       createdAt: '10 menit yang lalu',
       detail: 'Siti membawa 2 orang. Catatan: "Selamat ya, semoga bahagia selalu!"',
+      category: 'rsvp',
     },
     {
       id: 'a2',
-      message: 'Budi mengirim ucapan',
+      message: 'Budi Santoso mengirim ucapan doa restu',
       createdAt: '1 jam yang lalu',
       detail: 'Barakallahu lakuma wa baraka alaikuma.',
+      category: 'ucapan',
+    },
+    {
+      id: 'a3',
+      message: 'H. Ahmad mengirim tanda kasih amplop digital Rp 1.500.000',
+      createdAt: '3 jam yang lalu',
+      detail: 'Transfer Bank BCA terverifikasi.',
+      category: 'hadiah',
     },
   ]
 

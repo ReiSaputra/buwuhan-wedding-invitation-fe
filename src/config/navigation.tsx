@@ -6,6 +6,9 @@ import type { ReactNode } from 'react'
 
 const ICON = 18
 
+/**
+ * Tipe entri navigasi daun (Leaf) tunggal yang mengarah ke URL rute tertentu.
+ */
 export type NavLeaf = {
   type: 'item'
   to: string
@@ -14,6 +17,9 @@ export type NavLeaf = {
   end?: boolean
 }
 
+/**
+ * Tipe grup menu navigasi (Accordion) dengan daftar anak menu.
+ */
 export type NavGroupDef = {
   type: 'group'
   label: string
@@ -21,21 +27,34 @@ export type NavGroupDef = {
   children: Array<{ to: string; label: string }>
 }
 
+/**
+ * Gabungan tipe navigasi entri sidebar.
+ */
 export type NavEntry = NavLeaf | NavGroupDef
 
-/** Sidebar dashboard utama (Tahap 2) */
+/**
+ * Daftar menu navigasi utama pada Dashboard Buwuhan.
+ */
 export const dashboardNav: NavEntry[] = [
   { type: 'item', to: '/dashboard', label: 'Beranda', icon: <Grid2x2 size={ICON} />, end: true },
   { type: 'item', to: '/dashboard/undangan', label: 'Undangan', icon: <Mail size={ICON} /> },
   { type: 'item', to: '/dashboard/langganan', label: 'Langganan', icon: <CreditCard size={ICON} /> },
-  { type: 'item', to: '/dashboard/buwuh', label: 'Buwuh', icon: <Gift size={ICON} /> },
+  { type: 'item', to: '/dashboard/buwuh', label: 'Catatan Buwuh', icon: <Gift size={ICON} /> },
 ]
 
+/**
+ * Daftar menu bagian bawah (footer) pada Dashboard Buwuhan.
+ */
 export const dashboardNavFooter: NavEntry[] = [
   { type: 'item', to: '/dashboard/pengaturan', label: 'Pengaturan', icon: <Settings size={ICON} /> },
 ]
 
-/** Sidebar panel per undangan (desain kedua) */
+/**
+ * Membangun daftar entri navigasi kontekstual untuk panel pengelolaan per-undangan spesifik.
+ * 
+ * @param id - ID undangan yang sedang dikelola
+ * @returns Array entri navigasi untuk panel undangan
+ */
 export function buildPanelNav(id: string): NavEntry[] {
   const base = `/dashboard/undangan/${id}`
   return [
@@ -57,9 +76,14 @@ export function buildPanelNav(id: string): NavEntry[] {
   ]
 }
 
+/**
+ * Daftar menu bagian bawah (footer) pada panel per-undangan.
+ */
 export const panelNavFooter: NavEntry[] = [
   { type: 'item', to: '/dashboard/pengaturan', label: 'Pengaturan', icon: <Settings size={ICON} /> },
 ]
 
-// Icon cadangan, dipakai di halaman lain
+/**
+ * Icon cadangan tambahan untuk referensi.
+ */
 export const extraIcons = { BookUser, ClipboardCheck }

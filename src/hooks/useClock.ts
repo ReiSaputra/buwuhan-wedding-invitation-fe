@@ -4,7 +4,17 @@ import 'dayjs/locale/id'
 
 dayjs.locale('id')
 
-export function useClock() {
+/**
+ * Custom React Hook untuk mendapatkan waktu dan tanggal lokal saat ini secara real-time.
+ * Melakukan pembaruan (tick) setiap 1 detik menggunakan `setInterval`.
+ * 
+ * @returns String waktu terformat dalam bahasa Indonesia (misal: "21 Agustus 23:15:00")
+ * 
+ * @example
+ * const clock = useClock()
+ * return <span>{clock}</span>
+ */
+export function useClock(): string {
   const [now, setNow] = useState(() => dayjs())
 
   useEffect(() => {

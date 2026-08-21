@@ -3,6 +3,15 @@ import { useSearchParams } from "react-router-dom";
 import { fetchData } from "@/lib/api";
 import type { Guest } from "@/types";
 
+/**
+ * Custom React Hook untuk membaca parameter URL tamu undangan (`?to=nama-tamu`),
+ * mengambil data tamu terkait dari backend API, dan menyediakan fallback nama tamu default.
+ * 
+ * @returns Objek berisi `slug`, data `guest`, `guestName` (nama tersanitasi), dan flag `isLoading`
+ * 
+ * @example
+ * const { guestName, isLoading } = useGuest()
+ */
 export function useGuest() {
   const [searchParams] = useSearchParams();
   const slug = searchParams.get("to");

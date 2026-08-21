@@ -1,16 +1,23 @@
 import { Outlet } from 'react-router-dom'
 import { BackButton } from '@/components/ui/BackButton'
 
+/**
+ * Layout halaman polos tanpa sidebar (misal untuk alur checkout paket langganan).
+ * Menyediakan tombol kembali dan area tengah yang fokus.
+ */
 export default function PlainLayout() {
   return (
     <div className="min-h-screen bg-surface">
-      <div className="h-1 w-full bg-success" />
+      {/* Aksen Garis Gradasi Atas */}
+      <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400" />
 
-      <header className="px-6 pt-5">
-        <BackButton fallbackTo="/dashboard" />
+      {/* Header Tombol Kembali */}
+      <header className="mx-auto max-w-6xl px-4 sm:px-6 pt-6">
+        <BackButton fallbackTo="/dashboard" label="Kembali ke Dashboard" />
       </header>
 
-      <main className="px-6 pb-16 pt-6">
+      {/* Konten Halaman */}
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 pb-20 pt-4">
         <Outlet />
       </main>
     </div>

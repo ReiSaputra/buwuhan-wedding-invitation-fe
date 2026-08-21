@@ -1,20 +1,49 @@
-import { QrCode } from 'lucide-react'
+import { QrCode, ArrowRight, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-export function ScanQrCta({ to }: { to: string }) {
+export type ScanQrCtaProps = {
+  /** Rute URL tujuan pemindaian QR */
+  to: string
+}
+
+/**
+ * Komponen Banner Call-to-Action pemindaian QR code tamu saat resepsi.
+ * 
+ * @param props - Properti ScanQrCta (to)
+ */
+export function ScanQrCta({ to }: ScanQrCtaProps) {
   return (
     <Link
       to={to}
-      className="relative flex items-center gap-4 overflow-hidden rounded-2xl bg-primary px-6 py-6 text-white transition hover:bg-primary-dark active:scale-[0.99]"
+      className="card-hover-effect group relative flex items-center justify-between overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 p-6 text-white shadow-lg transition-all duration-300"
     >
-      {/* Ornamen dekoratif seperti di desain */}
-      <span className="pointer-events-none absolute -right-6 -bottom-10 h-32 w-32 rounded-full bg-white/10" />
-      <span className="pointer-events-none absolute right-10 -top-12 h-24 w-24 rounded-full bg-white/5" />
+      {/* Ornamen dekoratif blur */}
+      <span className="pointer-events-none absolute -right-6 -bottom-10 h-32 w-32 rounded-full bg-white/15 blur-sm" />
+      <span className="pointer-events-none absolute right-12 -top-12 h-24 w-24 rounded-full bg-pink-400/20 blur-md" />
 
-      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/15">
-        <QrCode size={28} />
-      </span>
-      <span className="relative font-semibold">Scan QR Tamu disini</span>
+      <div className="relative z-10 flex items-center gap-4">
+        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-white shadow-inner backdrop-blur-xs transition-transform duration-300 group-hover:scale-110">
+          <QrCode size={28} />
+          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400" />
+          </span>
+        </div>
+
+        <div>
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 uppercase tracking-wider">
+            <Sparkles size={11} /> Resepsi Live
+          </span>
+          <h3 className="font-display text-base font-bold text-white leading-tight">
+            Scan QR Tamu Disini
+          </h3>
+          <p className="mt-0.5 text-xs text-white/80">Check-in cepat di meja resepsionis</p>
+        </div>
+      </div>
+
+      <div className="relative z-10 hidden sm:flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white backdrop-blur-xs transition-transform duration-200 group-hover:translate-x-1">
+        <ArrowRight size={18} />
+      </div>
     </Link>
   )
 }
