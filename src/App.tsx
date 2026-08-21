@@ -1,122 +1,51 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import DashboardLayout from '@/layouts/DashboardLayout'
+import PanelLayout from '@/layouts/PanelLayout'
+import PlainLayout from '@/layouts/PlainLayout'
+import BerandaPage from '@/pages/dashboard/BerandaPage'
+import UndanganPage from '@/pages/dashboard/UndanganPage'
+import LanggananPage from '@/pages/dashboard/LanggananPage'
+import BuwuhPage from '@/pages/dashboard/BuwuhPage'
+import PengaturanPage from '@/pages/dashboard/PengaturanPage'
+import PanelBerandaPage from '@/pages/panel/PanelBerandaPage'
+import PanelPlaceholderPage from '@/pages/panel/PanelPlaceholderPage'
+import InvitationPage from '@/pages/InvitationPage'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-      <div className="ticks"></div>
+      {/* Halaman penuh tanpa sidebar */}
+      <Route element={<PlainLayout />}>
+        <Route path="/dashboard/langganan" element={<LanggananPage />} />
+      </Route>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {/* Dashboard utama — perhatikan: TIDAK ADA lagi route "langganan" di sini */}
+      <Route path="/dashboard" element={<DashboardLayout />}>
+        <Route index element={<BerandaPage />} />
+        <Route path="undangan" element={<UndanganPage />} />
+        <Route path="buwuh" element={<BuwuhPage />} />
+        <Route path="pengaturan" element={<PengaturanPage />} />
+      </Route>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {/* Panel per undangan — sidebar kontekstual */}
+      <Route path="/dashboard/undangan/:id" element={<PanelLayout />}>
+        <Route index element={<PanelBerandaPage />} />
+        <Route path="edit" element={<PanelPlaceholderPage title="Edit Undangan" />} />
+        <Route path="petugas" element={<PanelPlaceholderPage title="Petugas" />} />
+        <Route path="template" element={<PanelPlaceholderPage title="Template" />} />
+        <Route path="buku-tamu" element={<PanelPlaceholderPage title="Buku Tamu" />} />
+        <Route path="rsvp" element={<PanelPlaceholderPage title="RSVP" />} />
+        <Route path="hadiah" element={<PanelPlaceholderPage title="Hadiah" />} />
+        <Route path="catatan-buwuh" element={<PanelPlaceholderPage title="Catatan Buwuh" />} />
+        <Route path="scan-qr" element={<PanelPlaceholderPage title="Scan QR" />} />
+      </Route>
+
+      {/* Halaman undangan untuk tamu */}
+      <Route path="/undangan/:slug" element={<InvitationPage />} />
+
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
   )
 }
-
-export default App
