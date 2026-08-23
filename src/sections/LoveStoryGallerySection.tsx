@@ -28,7 +28,7 @@ export function LoveStoryGallerySection() {
         {/* Cerita Cinta */}
         <div className="space-y-8">
           <div className="text-center space-y-2">
-            <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#526b5d]">
+            <span className="text-xs font-bold uppercase tracking-[0.25em] text-sage">
               Our Journey
             </span>
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
@@ -44,9 +44,9 @@ export function LoveStoryGallerySection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: i * 0.15 }}
-                className="rounded-3xl border border-border bg-[#faf7f2] p-6 text-center space-y-3 relative shadow-2xs"
+                className="rounded-3xl border border-border bg-cream p-6 text-center space-y-3 relative shadow-2xs"
               >
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#526b5d] text-white font-bold text-xs shadow-xs">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sage text-white font-bold text-xs shadow-xs">
                   {item.year}
                 </span>
                 <h4 className="font-display text-base font-bold text-slate-900">{item.title}</h4>
@@ -59,7 +59,7 @@ export function LoveStoryGallerySection() {
         {/* Galeri Foto */}
         <div className="space-y-8">
           <div className="text-center space-y-2">
-            <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#c59b27]">
+            <span className="text-xs font-bold uppercase tracking-[0.25em] text-gold">
               Galeri Kenangan
             </span>
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">

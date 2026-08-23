@@ -72,7 +72,7 @@ export function WishesSection() {
     <section id="ucapan" className="py-20 px-6 bg-white relative overflow-hidden">
       <div className="mx-auto max-w-3xl space-y-12">
         <div className="text-center space-y-2">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#c59b27]">
+          <span className="text-xs font-bold uppercase tracking-[0.25em] text-gold">
             Buku Ucapan
           </span>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
@@ -84,7 +84,7 @@ export function WishesSection() {
         </div>
 
         {/* Form Kirim Ucapan */}
-        <div className="rounded-3xl border border-border bg-[#faf7f2] p-6 sm:p-8 shadow-xs">
+        <div className="rounded-3xl border border-border bg-cream p-6 sm:p-8 shadow-xs">
           <form onSubmit={handleSendWish} className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
@@ -95,7 +95,7 @@ export function WishesSection() {
                   placeholder="Nama pengirim..."
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-[#526b5d] focus:outline-none transition"
+                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-sage focus:outline-none transition"
                 />
               </div>
 
@@ -104,7 +104,7 @@ export function WishesSection() {
                 <select
                   value={attendance}
                   onChange={(e) => setAttendance(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-[#526b5d] focus:outline-none transition"
+                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-sage focus:outline-none transition"
                 >
                   <option value="Pasti Hadir">Pasti Hadir</option>
                   <option value="Masih Ragu">Masih Ragu</option>
@@ -121,14 +121,14 @@ export function WishesSection() {
                 placeholder="Tuliskan doa restu dan ucapan selamat untuk kedua mempelai..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-[#526b5d] focus:outline-none transition resize-none"
+                className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-sage focus:outline-none transition resize-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={isSending}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#526b5d] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs hover:bg-[#3c5044] transition cursor-pointer active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl bg-sage px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs hover:bg-sage-dark transition cursor-pointer active:scale-95"
             >
               <Send size={14} />
               <span>{isSending ? 'Mengirim...' : 'Kirim Ucapan'}</span>
@@ -154,7 +154,7 @@ export function WishesSection() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-[#526b5d] to-[#c59b27] text-white font-bold text-xs shadow-xs uppercase">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-sage to-gold text-white font-bold text-xs shadow-xs uppercase">
                       {w.name.charAt(0)}
                     </div>
                     <div>

@@ -9,6 +9,9 @@ import BuwuhPage from '@/pages/dashboard/BuwuhPage'
 import PengaturanPage from '@/pages/dashboard/PengaturanPage'
 import PanelBerandaPage from '@/pages/panel/PanelBerandaPage'
 import PanelPlaceholderPage from '@/pages/panel/PanelPlaceholderPage'
+import PanelRsvpPage from '@/pages/panel/PanelRsvpPage'
+import PanelBukuTamuPage from '@/pages/panel/PanelBukuTamuPage'
+import PanelHadiahPage from '@/pages/panel/PanelHadiahPage'
 import InvitationPage from '@/pages/InvitationPage'
 
 export default function App() {
@@ -35,9 +38,9 @@ export default function App() {
         <Route path="edit" element={<PanelPlaceholderPage title="Edit Undangan" />} />
         <Route path="petugas" element={<PanelPlaceholderPage title="Petugas" />} />
         <Route path="template" element={<PanelPlaceholderPage title="Template" />} />
-        <Route path="buku-tamu" element={<PanelPlaceholderPage title="Buku Tamu" />} />
-        <Route path="rsvp" element={<PanelPlaceholderPage title="RSVP" />} />
-        <Route path="hadiah" element={<PanelPlaceholderPage title="Hadiah" />} />
+        <Route path="buku-tamu" element={<PanelBukuTamuPage />} />
+        <Route path="rsvp" element={<PanelRsvpPage />} />
+        <Route path="hadiah" element={<PanelHadiahPage />} />
         <Route path="catatan-buwuh" element={<PanelPlaceholderPage title="Catatan Buwuh" />} />
         <Route path="scan-qr" element={<PanelPlaceholderPage title="Scan QR" />} />
       </Route>

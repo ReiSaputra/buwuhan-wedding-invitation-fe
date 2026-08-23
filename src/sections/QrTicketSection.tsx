@@ -20,7 +20,7 @@ export function QrTicketSection({
     <section id="tiket" className="py-20 px-6 bg-white relative overflow-hidden">
       <div className="mx-auto max-w-md space-y-8">
         <div className="text-center space-y-2">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#526b5d]">
+          <span className="text-xs font-bold uppercase tracking-[0.25em] text-sage">
             Access Pass
           </span>
           <h2 className="font-display text-3xl font-bold text-slate-900">
@@ -36,11 +36,11 @@ export function QrTicketSection({
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="rounded-3xl border-2 border-[#526b5d]/30 bg-gradient-to-b from-white to-[#faf7f2] p-6 sm:p-8 shadow-xl text-center space-y-6 relative overflow-hidden"
+          className="rounded-3xl border-2 border-sage/30 bg-gradient-to-b from-white to-cream p-6 sm:p-8 shadow-xl text-center space-y-6 relative overflow-hidden"
         >
           {/* Header Tiket */}
           <div className="border-b border-dashed border-slate-200 pb-4 space-y-1">
-            <div className="inline-flex items-center gap-1 text-[11px] font-bold text-[#c59b27] uppercase tracking-wider">
+            <div className="inline-flex items-center gap-1 text-[11px] font-bold text-gold uppercase tracking-wider">
               <Sparkles size={12} />
               <span>Wedding Invitation Pass</span>
             </div>
@@ -69,7 +69,7 @@ export function QrTicketSection({
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Alokasi Kursi:</span>
-              <span className="font-bold text-[#526b5d]">Meja VIP 04 (2 Pax)</span>
+              <span className="font-bold text-sage">Meja VIP 04 (2 Pax)</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Status Souvenir:</span>

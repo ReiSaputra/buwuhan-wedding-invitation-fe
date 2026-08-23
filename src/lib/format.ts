@@ -1,3 +1,9 @@
+import dayjs from 'dayjs'
+import 'dayjs/locale/id'
+
+// Mengaktifkan pelokalan Bahasa Indonesia untuk seluruh pemformatan tanggal
+dayjs.locale('id')
+
 /**
  * Memformat angka nominal menjadi string mata uang Rupiah Indonesia (IDR).
  * 
@@ -39,4 +45,40 @@ export function getDaysRemaining(targetDateStr: string): number {
   const today = new Date().setHours(0, 0, 0, 0)
   const diffTime = target - today
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+}
+
+/**
+ * Memformat tanggal ISO menjadi tanggal singkat Bahasa Indonesia.
+ *
+ * @param iso - Tanggal dalam format ISO-8601
+ * @returns String tanggal singkat (misal: "18 Jan 2026")
+ *
+ * @example
+ * formatDateId('2026-01-18T14:30:00+07:00') // -> "18 Jan 2026"
+ */
+export function formatDateId(iso: string): string {
+  return dayjs(iso).format('D MMM YYYY')
+}
+
+/**
+ * Memformat waktu ISO menjadi jam berlabel WIB.
+ *
+ * Catatan: dayjs membaca waktu memakai zona perangkat pengguna. Untuk tamu
+ * yang membuka dari luar WIB, label ini perlu diganti konversi zona eksplisit.
+ *
+ * @param iso - Waktu dalam format ISO-8601
+ * @returns String jam (misal: "14:30 WIB")
+ */
+export function formatTimeWib(iso: string): string {
+  return `${dayjs(iso).format('HH:mm')} WIB`
+}
+
+/**
+ * Mengambil huruf pertama sebuah nama untuk dipakai sebagai avatar inisial.
+ *
+ * @param name - Nama lengkap tamu
+ * @returns Satu huruf kapital, atau "?" bila nama kosong
+ */
+export function getInitial(name: string): string {
+  return name.trim().charAt(0).toUpperCase() || '?'
 }

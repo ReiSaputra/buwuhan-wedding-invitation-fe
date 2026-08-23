@@ -34,7 +34,7 @@ export default function InvitationPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   // Konfigurasi nama pasangan berdasarkan slug atau default
-  const groomName = 'Han'
+  const groomName = 'Hanung'
   const brideName = 'Ratna'
   const eventDateStr = 'Minggu, 18 Januari 2026'
 
@@ -75,10 +75,10 @@ export default function InvitationPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#faf7f2]">
+      <div className="flex min-h-screen items-center justify-center bg-cream">
         <div className="text-center space-y-3">
-          <Heart size={36} className="mx-auto text-[#c59b27] animate-pulse" />
-          <p className="font-display text-lg font-semibold text-[#526b5d]">
+          <Heart size={36} className="mx-auto text-gold animate-pulse" />
+          <p className="font-display text-lg font-semibold text-sage">
             Mempersiapkan Undangan Pernikahan...
           </p>
         </div>
@@ -87,7 +87,7 @@ export default function InvitationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#faf7f2] font-body text-slate-800 selection:bg-[#c59b27]/20 selection:text-[#526b5d]">
+    <div className="min-h-screen bg-cream font-body text-slate-800 selection:bg-gold/20 selection:text-sage">
       {/* Audio Elemen Tersembunyi (Romantic Acoustic / Wedding Theme) */}
       <audio
         ref={audioRef}
@@ -145,17 +145,17 @@ export default function InvitationPage() {
           <QrTicketSection guestName={guestName} />
 
           {/* Footer Penutup */}
-          <footer className="py-16 px-6 text-center bg-[#1f2937] text-white space-y-4">
+          <footer className="py-16 px-6 text-center bg-night text-white space-y-4">
             <p className="text-xs text-white/70 tracking-widest uppercase font-semibold">
               Merupakan suatu kehormatan &amp; kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
             </p>
-            <h3 className="font-display text-3xl font-bold text-[#c59b27]">
+            <h3 className="font-display text-3xl font-bold text-gold">
               Hanung &amp; Ratna
             </h3>
             <div className="pt-6 border-t border-white/10 flex items-center justify-center gap-1.5 text-xs text-white/50">
               <span>Powered by</span>
               <strong className="text-white font-semibold flex items-center gap-1">
-                <Sparkles size={12} className="text-[#c59b27]" /> Buwuhan Wedding Platform
+                <Sparkles size={12} className="text-gold" /> Buwuhan Wedding Platform
               </strong>
             </div>
           </footer>

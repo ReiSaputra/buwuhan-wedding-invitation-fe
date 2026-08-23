@@ -70,7 +70,7 @@ export function FloatingNav({ isMusicPlaying, onToggleMusic }: FloatingNavProps)
         title={isMusicPlaying ? 'Matikan Musik' : 'Putar Musik'}
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all cursor-pointer active:scale-95 ${
           isMusicPlaying
-            ? 'bg-[#c59b27] text-white animate-spin-slow shadow-xs'
+            ? 'bg-gold text-white animate-spin-slow shadow-xs'
             : 'bg-white/10 text-white/60 hover:text-white'
         }`}
       >

@@ -36,6 +36,14 @@
   --color-sage-light: #edf3f0;
   --color-sage-dark: #3c5044;
   --color-rose-gold: #e0a996;
+  --color-rose-gold: #e0a996;
+--color-cream-warm: #f5efe6;
+--color-cream-deep: #ece3d4;
+--color-gold-blush: #e8dcbe;
+--color-sage-mist: #d5e0d8;
+--color-night: #1f2937;
+--color-night-muted: #6b7280;
+--color-danger-strong: #be123c;
 }
 
 /* Base resets & typography */

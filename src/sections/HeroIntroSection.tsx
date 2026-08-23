@@ -16,9 +16,9 @@ export type HeroIntroSectionProps = {
  */
 export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroIntroSectionProps) {
   return (
-    <section id="salam" className="relative py-20 px-6 text-center bg-[#faf7f2] overflow-hidden">
+    <section id="salam" className="relative py-20 px-6 text-center bg-cream overflow-hidden">
       {/* Background patterns */}
-      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full bg-[#c59b27]/10 blur-3xl" />
+      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
 
       <div className="mx-auto max-w-2xl space-y-8">
         <motion.div
@@ -28,7 +28,7 @@ export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroInt
           transition={{ duration: 0.8 }}
           className="space-y-3"
         >
-          <span className="text-xs font-bold uppercase tracking-[0.3em] text-[#526b5d]">
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-sage">
             Assalamu’alaikum Warahmatullahi Wabarakatuh
           </span>
           <p className="font-serif text-sm sm:text-base text-slate-700 italic leading-relaxed pt-2">
@@ -42,7 +42,7 @@ export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroInt
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="relative mx-auto max-w-sm rounded-3xl overflow-hidden p-2 bg-gradient-to-b from-[#c59b27]/40 via-white to-[#526b5d]/30 shadow-xl"
+          className="relative mx-auto max-w-sm rounded-3xl overflow-hidden p-2 bg-gradient-to-b from-gold/40 via-white to-sage/30 shadow-xl"
         >
           <div className="rounded-2xl overflow-hidden bg-slate-100 aspect-[4/3] relative">
             <img
@@ -65,13 +65,13 @@ export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroInt
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="rounded-3xl border border-[#c59b27]/25 bg-white/80 p-6 sm:p-8 shadow-xs backdrop-blur-xs text-center relative"
+          className="rounded-3xl border border-gold/25 bg-white/80 p-6 sm:p-8 shadow-xs backdrop-blur-xs text-center relative"
         >
-          <Quote size={28} className="mx-auto text-[#c59b27]/40 mb-3" />
+          <Quote size={28} className="mx-auto text-gold/40 mb-3" />
           <p className="font-serif text-sm sm:text-base leading-relaxed text-slate-700 italic">
             "Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang."
           </p>
-          <p className="mt-3 text-xs font-bold text-[#526b5d] uppercase tracking-wider">
+          <p className="mt-3 text-xs font-bold text-sage uppercase tracking-wider">
             — QS. Ar-Rum: 21 —
           </p>
         </motion.div>

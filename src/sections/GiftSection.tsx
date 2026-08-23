@@ -50,10 +50,10 @@ export function GiftSection() {
   }
 
   return (
-    <section id="hadiah" className="py-20 px-6 bg-[#faf7f2] relative overflow-hidden">
+    <section id="hadiah" className="py-20 px-6 bg-cream relative overflow-hidden">
       <div className="mx-auto max-w-3xl space-y-12">
         <div className="text-center space-y-2">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#526b5d]">
+          <span className="text-xs font-bold uppercase tracking-[0.25em] text-sage">
             Wedding Gift &amp; Buwuh
           </span>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
@@ -75,14 +75,14 @@ export function GiftSection() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="rounded-3xl border border-[#c59b27]/30 bg-white p-6 shadow-xs flex flex-col justify-between space-y-5 relative overflow-hidden"
+                className="rounded-3xl border border-gold/30 bg-white p-6 shadow-xs flex flex-col justify-between space-y-5 relative overflow-hidden"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CreditCard size={18} className="text-[#c59b27]" />
+                    <CreditCard size={18} className="text-gold" />
                     <span className="font-bold text-xs text-slate-900">{acc.bankName}</span>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#526b5d] bg-[#526b5d]/10 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-sage bg-sage/10 px-2.5 py-0.5 rounded-full">
                     {acc.type}
                   </span>
                 </div>
@@ -101,7 +101,7 @@ export function GiftSection() {
                   className={`w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 ${
                     isCopied
                       ? 'bg-emerald-600 text-white'
-                      : 'bg-[#526b5d] text-white hover:bg-[#3c5044]'
+                      : 'bg-sage text-white hover:bg-sage-dark'
                   }`}
                 >
                   {isCopied ? <Check size={14} /> : <Copy size={14} />}
@@ -114,7 +114,7 @@ export function GiftSection() {
 
         {/* Kirim Kado Fisik Box */}
         <div className="rounded-3xl border border-border bg-white p-6 sm:p-8 shadow-xs text-center space-y-4 max-w-xl mx-auto">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#c59b27]/15 text-[#c59b27]">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/15 text-gold">
             <Gift size={24} />
           </div>
           <div>

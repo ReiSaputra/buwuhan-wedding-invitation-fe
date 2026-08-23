@@ -54,11 +54,11 @@ export function EventDetailsSection({
   }
 
   return (
-    <section id="acara" className="py-20 px-6 bg-[#faf7f2] relative overflow-hidden">
+    <section id="acara" className="py-20 px-6 bg-cream relative overflow-hidden">
       <div className="mx-auto max-w-4xl space-y-12">
         {/* Countdown Timer */}
         <div className="text-center space-y-6">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#526b5d]">
+          <span className="text-xs font-bold uppercase tracking-[0.25em] text-sage">
             Save The Date
           </span>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
@@ -74,9 +74,9 @@ export function EventDetailsSection({
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-2xl border border-[#c59b27]/30 bg-white p-3 sm:p-4 shadow-sm text-center"
+                className="rounded-2xl border border-gold/30 bg-white p-3 sm:p-4 shadow-sm text-center"
               >
-                <span className="font-display text-2xl sm:text-4xl font-bold text-[#526b5d]">
+                <span className="font-display text-2xl sm:text-4xl font-bold text-sage">
                   {item.value}
                 </span>
                 <span className="block text-[10px] sm:text-xs font-semibold uppercase text-slate-500 mt-1">
@@ -89,7 +89,7 @@ export function EventDetailsSection({
           <button
             type="button"
             onClick={handleAddToCalendar}
-            className="inline-flex items-center gap-2 rounded-full border border-[#526b5d] bg-white px-5 py-2.5 text-xs font-bold text-[#526b5d] hover:bg-[#526b5d] hover:text-white transition shadow-xs cursor-pointer active:scale-95"
+            className="inline-flex items-center gap-2 rounded-full border border-sage bg-white px-5 py-2.5 text-xs font-bold text-sage hover:bg-sage hover:text-white transition shadow-xs cursor-pointer active:scale-95"
           >
             <CalendarPlus size={15} />
             <span>Tambahkan ke Google Calendar</span>
@@ -107,7 +107,7 @@ export function EventDetailsSection({
             className="rounded-3xl border border-border bg-white p-6 sm:p-8 shadow-xs flex flex-col justify-between space-y-6"
           >
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#526b5d]/10 px-3.5 py-1 text-xs font-bold text-[#526b5d] uppercase">
+              <div className="inline-flex items-center gap-2 rounded-full bg-sage/10 px-3.5 py-1 text-xs font-bold text-sage uppercase">
                 <Calendar size={13} />
                 <span>Akad Nikah</span>
               </div>
@@ -118,11 +118,11 @@ export function EventDetailsSection({
 
               <div className="space-y-2 text-xs sm:text-sm text-slate-600">
                 <p className="flex items-center gap-2 font-medium">
-                  <Clock size={15} className="text-[#c59b27]" />
+                  <Clock size={15} className="text-gold" />
                   <span>08.00 - 10.00 WIB</span>
                 </p>
                 <p className="flex items-start gap-2">
-                  <MapPin size={16} className="text-[#c59b27] shrink-0 mt-0.5" />
+                  <MapPin size={16} className="text-gold shrink-0 mt-0.5" />
                   <span>Masjid Agung Al-Azhar, Kebayoran Baru, Jakarta Selatan</span>
                 </p>
               </div>
@@ -132,7 +132,7 @@ export function EventDetailsSection({
               href="https://maps.google.com/?q=Masjid+Agung+Al-Azhar+Jakarta"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#526b5d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#3c5044] transition shadow-xs"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-sage px-4 py-2.5 text-xs font-bold text-white hover:bg-sage-dark transition shadow-xs"
             >
               <Navigation size={14} />
               <span>Petunjuk Arah Google Maps</span>
@@ -145,14 +145,14 @@ export function EventDetailsSection({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="rounded-3xl border-2 border-[#c59b27] bg-white p-6 sm:p-8 shadow-md flex flex-col justify-between space-y-6 relative"
+            className="rounded-3xl border-2 border-gold bg-white p-6 sm:p-8 shadow-md flex flex-col justify-between space-y-6 relative"
           >
-            <span className="absolute -top-3 right-6 rounded-full bg-[#c59b27] text-white px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+            <span className="absolute -top-3 right-6 rounded-full bg-gold text-white px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider">
               Acara Utama
             </span>
 
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#c59b27]/15 px-3.5 py-1 text-xs font-bold text-[#c59b27] uppercase">
+              <div className="inline-flex items-center gap-2 rounded-full bg-gold/15 px-3.5 py-1 text-xs font-bold text-gold uppercase">
                 <Calendar size={13} />
                 <span>Resepsi Pernikahan</span>
               </div>
@@ -163,11 +163,11 @@ export function EventDetailsSection({
 
               <div className="space-y-2 text-xs sm:text-sm text-slate-600">
                 <p className="flex items-center gap-2 font-medium">
-                  <Clock size={15} className="text-[#c59b27]" />
+                  <Clock size={15} className="text-gold" />
                   <span>Sesi 1: 11.00 - 13.00 WIB | Sesi 2: 18.30 - 21.00 WIB</span>
                 </p>
                 <p className="flex items-start gap-2">
-                  <MapPin size={16} className="text-[#c59b27] shrink-0 mt-0.5" />
+                  <MapPin size={16} className="text-gold shrink-0 mt-0.5" />
                   <span>Grand Ballroom Hotel Mulia, Senayan, Jakarta Pusat</span>
                 </p>
               </div>
@@ -177,7 +177,7 @@ export function EventDetailsSection({
               href="https://maps.google.com/?q=Hotel+Mulia+Senayan+Jakarta"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#c59b27] to-[#a17c18] px-4 py-2.5 text-xs font-bold text-white hover:opacity-95 transition shadow-xs"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold to-gold-dark px-4 py-2.5 text-xs font-bold text-white hover:opacity-95 transition shadow-xs"
             >
               <Navigation size={14} />
               <span>Petunjuk Arah Google Maps</span>

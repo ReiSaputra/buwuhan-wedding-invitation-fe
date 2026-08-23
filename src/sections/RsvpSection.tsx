@@ -34,10 +34,10 @@ export function RsvpSection({ guestNameDefault = 'Tamu Undangan' }: RsvpSectionP
   }
 
   return (
-    <section id="rsvp" className="py-20 px-6 bg-[#faf7f2] relative overflow-hidden">
+    <section id="rsvp" className="py-20 px-6 bg-cream relative overflow-hidden">
       <div className="mx-auto max-w-xl space-y-8">
         <div className="text-center space-y-2">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#526b5d]">
+          <span className="text-xs font-bold uppercase tracking-[0.25em] text-sage">
             Reservasi Kehadiran
           </span>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
@@ -69,7 +69,7 @@ export function RsvpSection({ guestNameDefault = 'Tamu Undangan' }: RsvpSectionP
               <button
                 type="button"
                 onClick={() => setIsSubmitted(false)}
-                className="mt-2 text-xs font-bold text-[#526b5d] hover:underline cursor-pointer"
+                className="mt-2 text-xs font-bold text-sage hover:underline cursor-pointer"
               >
                 Ubah Konfirmasi Kehadiran
               </button>
@@ -83,7 +83,7 @@ export function RsvpSection({ guestNameDefault = 'Tamu Undangan' }: RsvpSectionP
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-xs text-slate-900 focus:bg-white focus:border-[#526b5d] focus:outline-none transition"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-xs text-slate-900 focus:bg-white focus:border-sage focus:outline-none transition"
                 />
               </div>
 
@@ -101,7 +101,7 @@ export function RsvpSection({ guestNameDefault = 'Tamu Undangan' }: RsvpSectionP
                       onClick={() => setAttendance(opt.key as any)}
                       className={`rounded-xl p-2.5 text-xs font-semibold border transition cursor-pointer ${
                         attendance === opt.key
-                          ? 'border-[#526b5d] bg-[#526b5d] text-white shadow-xs'
+                          ? 'border-sage bg-sage text-white shadow-xs'
                           : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300'
                       }`}
                     >
@@ -118,7 +118,7 @@ export function RsvpSection({ guestNameDefault = 'Tamu Undangan' }: RsvpSectionP
                     <select
                       value={pax}
                       onChange={(e) => setPax(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-xs text-slate-900 focus:bg-white focus:border-[#526b5d] focus:outline-none transition"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-xs text-slate-900 focus:bg-white focus:border-sage focus:outline-none transition"
                     >
                       <option value="1">1 Orang</option>
                       <option value="2">2 Orang</option>
@@ -132,7 +132,7 @@ export function RsvpSection({ guestNameDefault = 'Tamu Undangan' }: RsvpSectionP
                     <select
                       value={session}
                       onChange={(e) => setSession(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-xs text-slate-900 focus:bg-white focus:border-[#526b5d] focus:outline-none transition"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-xs text-slate-900 focus:bg-white focus:border-sage focus:outline-none transition"
                     >
                       <option value="Sesi 1 (Akad & Siang)">Sesi 1 (Akad & Siang)</option>
                       <option value="Sesi 2 (Resepsi Malam)">Sesi 2 (Resepsi Malam)</option>
@@ -144,7 +144,7 @@ export function RsvpSection({ guestNameDefault = 'Tamu Undangan' }: RsvpSectionP
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#526b5d] py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-[#3c5044] transition cursor-pointer active:scale-98"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-sage py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-sage-dark transition cursor-pointer active:scale-98"
               >
                 <Send size={15} />
                 <span>{isSubmitting ? 'Mengirim...' : 'Kirim Konfirmasi RSVP'}</span>
