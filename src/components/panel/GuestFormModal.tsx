@@ -1,17 +1,18 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Save } from 'lucide-react'
+import { Save, User, Phone, Tag, MessageSquare } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { GUEST_CATEGORIES, type NewGuestInput } from '@/types/panel'
+import { cn } from '@/lib/cn'
 
 export type GuestFormModalProps = {
-  /** Menentukan apakah modal sedang terbuka */
+  /** Menentukan apakah modal formulir sedang terbuka */
   isOpen: boolean
-  /** Callback untuk menutup modal */
+  /** Callback untuk menutup modal formulir */
   onClose: () => void
   /** Callback saat data tamu valid dan siap disimpan */
   onSubmit: (input: NewGuestInput) => void
-  /** Data awal untuk mode ubah. Biarkan kosong untuk mode tambah. */
+  /** Data awal untuk mode edit tamu. Berikan null atau undefined untuk mode tambah tamu baru. */
   initialValue?: NewGuestInput | null
 }
 
@@ -23,18 +24,19 @@ type FormErrors = {
 
 const EMPTY_FORM: NewGuestInput = { name: '', category: '', phone: '', note: '' }
 
-const labelClass = 'block text-[11px] font-bold uppercase tracking-wider text-slate-500'
+const labelClass = 'flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600'
 const fieldClass =
-  'mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-ink placeholder:text-slate-400 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15'
+  'mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-ink placeholder:text-slate-400 transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 shadow-2xs'
 
 /**
- * Modal formulir tamu Buku Tamu, dipakai untuk dua keperluan sekaligus:
- * menambah tamu baru dan mengubah data tamu yang sudah ada.
- *
- * Validasi: nama dan kategori wajib diisi, nomor HP hanya boleh angka
- * berawalan 0 bila diisi.
- *
+ * Komponen Modal Formulir Data Tamu (GuestFormModal).
+ * Digunakan secara fleksibel untuk menambah tamu baru maupun mengubah data tamu yang sudah ada.
+ * Dilengkapi dengan pemilihan kategori tamu interaktif (chips), validasi input, dan pesan bantuan.
+ * 
  * @param props - Properti GuestFormModal (isOpen, onClose, onSubmit, initialValue)
+ * 
+ * @example
+ * <GuestFormModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} onSubmit={handleSave} />
  */
 export function GuestFormModal({
   isOpen,
@@ -63,13 +65,22 @@ export function GuestFormModal({
     }
   }, [isOpen, initialValue])
 
-  /** Memperbarui satu ruas formulir sekaligus menghapus pesan galatnya. */
+  /**
+   * Memperbarui satu ruas nilai formulir sekaligus menghapus pesan galat terkait.
+   * 
+   * @param field - Nama properti formulir
+   * @param value - Nilai teks baru
+   */
   function updateField(field: keyof NewGuestInput, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))
     setErrors((prev) => ({ ...prev, [field]: undefined }))
   }
 
-  /** Memeriksa isi formulir dan mengembalikan daftar galat. */
+  /**
+   * Memeriksa validitas input formulir dan mengembalikan objek galat.
+   * 
+   * @returns Objek FormErrors berisi pesan error jika data tidak valid
+   */
   function validate(): FormErrors {
     const nextErrors: FormErrors = {}
 
@@ -80,17 +91,22 @@ export function GuestFormModal({
     }
 
     if (!form.category) {
-      nextErrors.category = 'Pilih salah satu kategori'
+      nextErrors.category = 'Pilih salah satu kategori tamu'
     }
 
     const phone = form.phone?.trim()
     if (phone && !/^0\d{8,14}$/.test(phone)) {
-      nextErrors.phone = 'Format tidak valid, contoh: 08123456789'
+      nextErrors.phone = 'Format nomor HP tidak valid (contoh: 08123456789)'
     }
 
     return nextErrors
   }
 
+  /**
+   * Menangani pengiriman formulir saat tombol simpan diklik.
+   * 
+   * @param event - Event pengiriman form
+   */
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -113,88 +129,102 @@ export function GuestFormModal({
       isOpen={isOpen}
       onClose={onClose}
       title={isEditMode ? 'Ubah Data Tamu' : 'Tambah Tamu Baru'}
-      maxWidth="xl"
+      description={isEditMode ? 'Perbarui informasi rincian tamu undangan' : 'Daftarkan nama tamu untuk buku kehadiran & undangan digital'}
+      maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Nama tamu */}
         <div>
           <label htmlFor="guest-name" className={labelClass}>
-            Nama Tamu
+            <User size={13} className="text-primary" />
+            <span>Nama Tamu</span>
+            <span className="text-danger">*</span>
           </label>
           <input
             id="guest-name"
             type="text"
             value={form.name}
             onChange={(event) => updateField('name', event.target.value)}
-            placeholder="Masukkan nama tamu"
+            placeholder="Contoh: Bpk. H. Hendra Gunawan & Istri"
             className={fieldClass}
           />
-          {errors.name && <p className="mt-1 text-[11px] text-danger">{errors.name}</p>}
+          {errors.name && <p className="mt-1 text-[11px] text-danger font-medium">{errors.name}</p>}
         </div>
 
-        {/* Kategori & Nomor HP berdampingan */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
+        {/* Kategori Tamu & Quick Chips */}
+        <div>
+          <div className="flex items-baseline justify-between gap-2">
             <label htmlFor="guest-category" className={labelClass}>
-              Kategori
+              <Tag size={13} className="text-primary" />
+              <span>Kategori Tamu</span>
+              <span className="text-danger">*</span>
             </label>
-            <select
-              id="guest-category"
-              value={form.category}
-              onChange={(event) => updateField('category', event.target.value)}
-              className={fieldClass}
-            >
-              <option value="">Pilih Kategori</option>
-              {GUEST_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-            {errors.category && (
-              <p className="mt-1 text-[11px] text-danger">{errors.category}</p>
-            )}
           </div>
 
-          <div>
-            <div className="flex items-baseline justify-between gap-2">
-              <label htmlFor="guest-phone" className={labelClass}>
-                Nomor HP
-              </label>
-              <span className="text-[10px] text-slate-400">opsional</span>
-            </div>
-            <input
-              id="guest-phone"
-              type="tel"
-              inputMode="numeric"
-              value={form.phone}
-              onChange={(event) => updateField('phone', event.target.value)}
-              placeholder="Contoh: 08123456789"
-              className={fieldClass}
-            />
-            {errors.phone && <p className="mt-1 text-[11px] text-danger">{errors.phone}</p>}
+          {/* Quick Selection Chips */}
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {GUEST_CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => updateField('category', cat)}
+                className={cn(
+                  'rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer border',
+                  form.category === cat
+                    ? 'border-primary bg-primary text-white shadow-xs'
+                    : 'border-slate-200 bg-slate-50/80 text-slate-600 hover:border-slate-300 hover:bg-white',
+                )}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
+          {errors.category && (
+            <p className="mt-1 text-[11px] text-danger font-medium">{errors.category}</p>
+          )}
         </div>
 
-        {/* Keterangan */}
+        {/* Nomor HP WhatsApp */}
+        <div>
+          <div className="flex items-baseline justify-between gap-2">
+            <label htmlFor="guest-phone" className={labelClass}>
+              <Phone size={13} className="text-primary" />
+              <span>Nomor HP (WhatsApp)</span>
+            </label>
+            <span className="text-[10px] text-slate-400 font-medium">Opsional</span>
+          </div>
+          <input
+            id="guest-phone"
+            type="tel"
+            inputMode="numeric"
+            value={form.phone}
+            onChange={(event) => updateField('phone', event.target.value)}
+            placeholder="Contoh: 081234567890"
+            className={fieldClass}
+          />
+          {errors.phone && <p className="mt-1 text-[11px] text-danger font-medium">{errors.phone}</p>}
+        </div>
+
+        {/* Catatan / Keterangan Tambahan */}
         <div>
           <div className="flex items-baseline justify-between gap-2">
             <label htmlFor="guest-note" className={labelClass}>
-              Keterangan
+              <MessageSquare size={13} className="text-primary" />
+              <span>Keterangan / Ucapan Singkat</span>
             </label>
-            <span className="text-[10px] text-slate-400">opsional</span>
+            <span className="text-[10px] text-slate-400 font-medium">Opsional</span>
           </div>
           <textarea
             id="guest-note"
             rows={3}
             value={form.note}
             onChange={(event) => updateField('note', event.target.value)}
-            placeholder="Tambahkan catatan khusus, hubungan keluarga, atau permintaan khusus..."
+            placeholder="Catatan khusus, sesi meja VIP, atau ucapan selamat dari tamu..."
             className={`${fieldClass} resize-none leading-relaxed`}
           />
         </div>
 
-        {/* Tombol aksi */}
+        {/* Tombol Aksi */}
         <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
           <Button type="button" variant="outline" onClick={onClose}>
             Batal
@@ -207,3 +237,4 @@ export function GuestFormModal({
     </Modal>
   )
 }
+
