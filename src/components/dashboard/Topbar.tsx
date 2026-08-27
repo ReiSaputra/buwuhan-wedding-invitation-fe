@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { Bell, Menu, User, Settings, CreditCard, LogOut, CheckCheck, Clock } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useClock } from '@/hooks/useClock'
+import { useAuth } from '@/hooks/useAuth'
 import { PlanBadge } from './PlanBadge'
 import type { CurrentUser, UserNotification } from '@/types/dashboard'
 import { cn } from '@/lib/cn'
@@ -49,9 +50,12 @@ const INITIAL_NOTIFICATIONS: UserNotification[] = [
  */
 export function Topbar({ user, onMenuToggle }: TopbarProps) {
   const clock = useClock()
+  const navigate = useNavigate()
+  const { logout } = useAuth()
   const [notifications, setNotifications] = useState<UserNotification[]>(INITIAL_NOTIFICATIONS)
   const [isNotifOpen, setIsNotifOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+
 
   const notifRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
@@ -239,9 +243,10 @@ export function Topbar({ user, onMenuToggle }: TopbarProps) {
               <div className="pt-1 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setIsProfileOpen(false)
-                    alert('Logout berhasil.')
+                    await logout()
+                    navigate('/login', { replace: true })
                   }}
                   className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-danger hover:bg-red-50 transition cursor-pointer"
                 >

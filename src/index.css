@@ -65,6 +65,13 @@ body.is-locked {
   overflow: hidden;
 }
 
+/* Sembunyikan tombol lihat sandi bawaan browser (misal: Microsoft Edge pada Windows) agar tidak duplikat */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
+
 /* Custom modern scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
