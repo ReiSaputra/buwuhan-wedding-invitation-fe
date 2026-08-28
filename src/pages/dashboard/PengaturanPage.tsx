@@ -200,9 +200,10 @@ export default function PengaturanPage() {
                     className="mt-0.5 accent-indigo-600 rounded"
                   />
                   <div>
-                    <strong className="block font-bold">Notifikasi Konfirmasi Kehadiran (RSVP)</strong>
+                    <strong className="block font-bold">Notifikasi Konfirmasi Kehadiran</strong>
                     <span className="text-muted text-[11px]">Kirim pesan WhatsApp setiap kali ada tamu yang mengonfirmasi kehadiran.</span>
                   </div>
+
                 </label>
 
                 <label className="flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-xs text-ink cursor-pointer hover:bg-slate-50 transition">

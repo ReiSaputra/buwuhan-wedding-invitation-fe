@@ -66,8 +66,9 @@ export type InvitationDetail = {
 }
 
 /**
- * Log catatan aktivitas tamu dan RSVP pada panel undangan.
+ * Log catatan aktivitas tamu dan konfirmasi kehadiran pada panel undangan.
  */
+
 export type ActivityLog = {
   id: string
   message: string

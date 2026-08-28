@@ -17,7 +17,7 @@ const MOCK_GUESTS: RsvpGuest[] = [
 ]
 
 /**
- * Hook pengambil daftar tamu beserta status RSVP untuk sebuah undangan.
+ * Hook pengambil daftar tamu beserta status konfirmasi kehadiran untuk sebuah undangan.
  *
  * Parameter diberi awalan garis bawah karena belum dipakai selama data masih
  * mock. TypeScript memperbolehkan parameter tak terpakai hanya bila namanya

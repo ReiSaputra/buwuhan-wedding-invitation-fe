@@ -15,8 +15,9 @@ export type QuickActionCardProps = {
 
 /**
  * Komponen kartu jalan pintas fitur (Quick Action) pada panel undangan.
- * Memberikan navigasi cepat ke modul Buku Tamu, RSVP, Hadiah, Petugas, Template, dll.
+ * Memberikan navigasi cepat ke modul Buku Tamu, Kehadiran, Hadiah, Petugas, Template, dll.
  * 
+
  * @param props - Properti QuickActionCard (label, to, value, icon)
  */
 export function QuickActionCard({ label, to, value, icon }: QuickActionCardProps) {

@@ -15,8 +15,9 @@ export type PanelPageHeaderProps = {
 /**
  * Komponen Header Standar Halaman Panel Undangan (PanelPageHeader).
  * Menjaga tata letak jejak breadcrumb, judul halaman, deskripsi, serta deretan tombol aksi
- * tetap seragam di seluruh modul sub-panel (Buku Tamu, RSVP, Hadiah, Petugas, Template, dll).
+ * tetap seragam di seluruh modul sub-panel (Buku Tamu, Kehadiran, Hadiah, Petugas, Template, dll).
  * 
+
  * @param props - Properti PanelPageHeader (crumbs, title, subtitle, actions)
  * 
  * @example

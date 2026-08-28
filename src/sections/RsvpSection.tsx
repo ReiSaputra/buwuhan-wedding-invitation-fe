@@ -147,11 +147,12 @@ export function RsvpSection({ guestNameDefault = 'Tamu Undangan' }: RsvpSectionP
                 className="w-full flex items-center justify-center gap-2 rounded-xl bg-sage py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md hover:bg-sage-dark transition cursor-pointer active:scale-98"
               >
                 <Send size={15} />
-                <span>{isSubmitting ? 'Mengirim...' : 'Kirim Konfirmasi RSVP'}</span>
+                <span>{isSubmitting ? 'Mengirim...' : 'Kirim Konfirmasi Kehadiran'}</span>
               </button>
             </form>
           )}
         </motion.div>
+
       </div>
     </section>
   )

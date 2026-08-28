@@ -22,8 +22,9 @@ export default function UndanganPage() {
             Kelola Undangan Pernikahan
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted">
-            Atur detail acara, kelola data tamu undangan, pantau RSVP, dan ubah tema tampilan sesuai keinginan.
+            Atur detail acara, kelola data tamu undangan, pantau kehadiran, dan ubah tema tampilan sesuai keinginan.
           </p>
+
         </div>
       </div>
 

@@ -94,9 +94,10 @@ export function ActivityLogList({ logs }: ActivityLogListProps) {
         {(
           [
             { key: 'ALL', label: 'Semua Aktivitas' },
-            { key: 'RSVP', label: 'Konfirmasi RSVP' },
+            { key: 'RSVP', label: 'Konfirmasi Kehadiran' },
             { key: 'UCAPAN', label: 'Ucapan Doa' },
           ] as const
+
         ).map((tab) => (
           <button
             key={tab.key}

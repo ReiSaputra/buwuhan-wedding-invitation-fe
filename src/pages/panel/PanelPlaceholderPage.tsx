@@ -22,10 +22,11 @@ export type PanelPlaceholderPageProps = {
 /**
  * Komponen Halaman Fitur Sub-Panel Undangan.
  * Menampilkan antarmuka interaktif yang disesuaikan secara dinamis
- * untuk Scan QR, Buku Tamu, RSVP, Hadiah, Petugas, Template, dan Catatan Buwuh.
+ * untuk Scan QR, Buku Tamu, Kehadiran, Hadiah, Petugas, Template, dan Catatan Buwuh.
  * 
  * @param props - Properti modul (title)
  */
+
 export default function PanelPlaceholderPage({ title }: PanelPlaceholderPageProps) {
   const { id = '' } = useParams()
   const { invitation } = useInvitationDetail(id)

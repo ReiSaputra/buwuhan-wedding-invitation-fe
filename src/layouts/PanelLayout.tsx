@@ -8,9 +8,10 @@ import { buildPanelNav, panelNavFooter } from '@/config/navigation'
 
 /**
  * Layout khusus untuk panel manajemen per-undangan digital.
- * Menyediakan navigasi kontekstual (Edit, Tamu, RSVP, Hadiah, Buwuh, Scan QR),
+ * Menyediakan navigasi kontekstual (Edit, Tamu, Kehadiran, Hadiah, Buwuh, Scan QR),
  * drawer mobile responsif, serta topbar aplikasi.
  */
+
 export default function PanelLayout() {
   const { id = '' } = useParams()
   const user = useCurrentUser()

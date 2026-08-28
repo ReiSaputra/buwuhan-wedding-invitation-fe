@@ -37,8 +37,9 @@ export default function BerandaPage() {
               Halo, {user.nickname || user.fullName}!
             </h1>
             <p className="text-xs sm:text-sm text-white/85 leading-relaxed">
-              Senang melihat Anda kembali. Pantau konfirmasi kehadiran tamu, RSVP, dan amplop digital buwuh secara real-time dari satu tempat.
+              Senang melihat Anda kembali. Pantau konfirmasi kehadiran tamu, buku ucapan, dan amplop digital buwuh secara real-time dari satu tempat.
             </p>
+
           </div>
 
           <div className="flex flex-wrap items-center gap-3">

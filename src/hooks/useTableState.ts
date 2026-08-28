@@ -13,8 +13,9 @@ export type UseTableStateOptions<T> = {
 
 /**
  * Hook pengelola state tabel: pencarian, filter, dan penomoran halaman.
- * Dipakai bersama oleh halaman RSVP, Buku Tamu, dan tabel lain agar
- * logika paginasi tidak ditulis ulang di setiap halaman.
+ * Dipakai bersama oleh halaman Kehadiran, Buku Tamu, dan tabel lain agar
+ * logika pencarian, penyaringan (filter), pemilahan halaman (pagination),
+ * tidak ditulis ulang di setiap halaman.
  *
  * @param options - Konfigurasi baris, ukuran halaman, dan fungsi pencarian
  * @returns State tabel siap pakai beserta baris untuk halaman aktif

@@ -220,8 +220,9 @@ export function InvitationList({
         isOpen={Boolean(deleteTargetId)}
         onClose={() => setDeleteTargetId(null)}
         title="Hapus Undangan?"
-        description="Tindakan ini permanen dan akan menghapus seluruh data tamu, RSVP, serta buku ucapan terkait."
+        description="Tindakan ini permanen dan akan menghapus seluruh data tamu, konfirmasi kehadiran, serta buku ucapan terkait."
       >
+
         <div className="rounded-xl bg-amber-50 p-3.5 border border-amber-200/80 flex items-start gap-3 text-amber-900 text-xs">
           <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
           <div>

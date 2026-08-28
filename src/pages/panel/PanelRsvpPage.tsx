@@ -24,7 +24,7 @@ import { useTableState } from '@/hooks/useTableState'
 import { formatNumber, getInitial } from '@/lib/format'
 import type { RsvpGuest, RsvpStatus } from '@/types/panel'
 
-/** Label dan warna badge untuk setiap status konfirmasi RSVP. */
+/** Label dan warna badge untuk setiap status konfirmasi kehadiran. */
 const statusMeta: Record<RsvpStatus, { label: string; variant: BadgeVariant }> = {
   HADIR: { label: 'Pasti Hadir', variant: 'success' },
   TIDAK_HADIR: { label: 'Tidak Hadir', variant: 'default' },
@@ -59,10 +59,11 @@ const thClass = 'px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-
 const tdClass = 'px-6 py-4 align-middle'
 
 /**
- * Halaman RSVP & Konfirmasi Kehadiran pada Panel Pengelolaan Undangan.
+ * Halaman Konfirmasi Kehadiran pada Panel Pengelolaan Undangan.
  * Menampilkan ringkasan status kehadiran seluruh tamu, progres persentase hadir,
  * tabel pencarian tamu, filter status, dan jalan pintas kirim pesan WhatsApp.
  */
+
 export default function PanelRsvpPage() {
   const { id = '' } = useParams()
   const { invitation } = useInvitationDetail(id)
@@ -105,11 +106,12 @@ export default function PanelRsvpPage() {
         crumbs={[
           { label: 'Beranda', to: '/dashboard' },
           { label: `Panel ${invitation.coupleName || invitation.panelName}`, to: `/dashboard/undangan/${id}` },
-          { label: 'RSVP' },
+          { label: 'Kehadiran' },
         ]}
-        title="Konfirmasi Kehadiran (RSVP)"
+        title="Konfirmasi Kehadiran"
         subtitle={`Pantau rekap kehadiran tamu untuk acara pernikahan ${invitation.coupleName}`}
       />
+
 
       {/* Kartu Ringkasan Metrik Statistik */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -208,7 +210,7 @@ export default function PanelRsvpPage() {
                 table.resetPage()
               }}
               className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-ink transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 cursor-pointer shadow-2xs"
-              aria-label="Saring berdasarkan status RSVP"
+              aria-label="Saring berdasarkan status kehadiran"
             >
               {filterOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -238,7 +240,7 @@ export default function PanelRsvpPage() {
               <th className={thClass}>Nomor WhatsApp</th>
               <th className={thClass}>Kategori</th>
               <th className={thClass}>Jumlah Pax</th>
-              <th className={thClass}>Status RSVP</th>
+              <th className={thClass}>Status Kehadiran</th>
               <th className={`${thClass} text-right`}>Aksi</th>
             </tr>
           </thead>
@@ -251,12 +253,13 @@ export default function PanelRsvpPage() {
                     <UsersRound size={28} className="mx-auto text-slate-300" />
                     <p className="font-semibold text-slate-600">Tidak ada tamu yang cocok</p>
                     <p className="text-[11px] text-slate-400">
-                      Coba sesuaikan kata kunci pencarian atau filter status RSVP.
+                      Coba sesuaikan kata kunci pencarian atau filter status kehadiran.
                     </p>
                   </div>
                 </td>
               </tr>
             )}
+
 
             {table.pageRows.map((guest) => (
               <tr key={guest.id} className="transition hover:bg-slate-50/70">

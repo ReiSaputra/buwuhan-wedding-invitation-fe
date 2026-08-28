@@ -68,8 +68,9 @@ export function buildPanelNav(id: string): NavEntry[] {
       icon: <Sparkles size={ICON} />,
       children: [
         { to: `${base}/buku-tamu`, label: 'Buku Tamu' },
-        { to: `${base}/rsvp`, label: 'RSVP' },
+        { to: `${base}/rsvp`, label: 'Kehadiran' },
         { to: `${base}/hadiah`, label: 'Hadiah' },
+
       ],
     },
     { type: 'item', to: `${base}/catatan-buwuh`, label: 'Catatan Buwuh', icon: <Wallet size={ICON} /> },

@@ -34,8 +34,9 @@ export default function PanelBerandaPage() {
 
   const quickActions = [
     { label: 'Buku Tamu', to: `${base}/buku-tamu`, icon: <BookUser size={16} />, value: `${formatNumber(invitation.guestCount)} Tamu` },
-    { label: 'Konfirmasi RSVP', to: `${base}/rsvp`, icon: <ClipboardCheck size={16} />, value: `${rsvpPercent}% Hadir` },
+    { label: 'Konfirmasi Kehadiran', to: `${base}/rsvp`, icon: <ClipboardCheck size={16} />, value: `${rsvpPercent}% Hadir` },
     { label: 'Amplop & Hadiah', to: `${base}/hadiah`, icon: <Gift size={16} />, value: 'Aktif' },
+
     { label: 'Petugas Penerima', to: `${base}/petugas`, icon: <Users size={16} />, value: '3 Akun' },
     { label: 'Desain Template', to: `${base}/template`, icon: <LayoutTemplate size={16} />, value: 'Custom' },
     { label: 'Catatan Buwuh', to: `${base}/catatan-buwuh`, icon: <Wallet size={16} />, value: formatRupiah(invitation.buwuhTotal) },

@@ -1,11 +1,11 @@
 /**
- * Status konfirmasi kehadiran (RSVP) yang dikirim tamu lewat form di undangan.
+ * Status konfirmasi kehadiran yang dikirim tamu lewat form di undangan.
  * Berbeda dengan AttendanceStatus yang mencatat kehadiran nyata di lokasi.
  */
 export type RsvpStatus = 'HADIR' | 'TIDAK_HADIR' | 'BELUM_KONFIRMASI'
 
 /**
- * Baris data tamu pada halaman RSVP.
+ * Baris data tamu pada halaman Konfirmasi Kehadiran.
  */
 export type RsvpGuest = {
   id: string
@@ -18,9 +18,10 @@ export type RsvpGuest = {
 }
 
 /**
- * Rekap angka pada empat kartu statistik halaman RSVP.
+ * Rekap angka pada empat kartu statistik halaman Konfirmasi Kehadiran.
  */
 export type RsvpStats = {
+
   total: number
   hadir: number
   tidakHadir: number

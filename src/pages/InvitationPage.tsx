@@ -132,8 +132,9 @@ export default function InvitationPage() {
           {/* Kisah Cinta & Galeri Prewedding */}
           <LoveStoryGallerySection />
 
-          {/* Konfirmasi Kehadiran RSVP */}
+          {/* Konfirmasi Kehadiran */}
           <RsvpSection guestNameDefault={guestName} />
+
 
           {/* Buku Ucapan & Doa Restu */}
           <WishesSection />

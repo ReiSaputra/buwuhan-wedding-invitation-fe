@@ -13,8 +13,9 @@ const PLANS: PlanTier[] = [
       '1 undangan aktif',
       'Maksimal 50 tamu',
       '10 foto galeri',
-      'RSVP & buku ucapan dasar',
+      'Kehadiran & buku ucapan dasar',
       'Watermark Buwuh Panel',
+
     ],
     ctaLabel: 'Mulai Gratis',
   },
