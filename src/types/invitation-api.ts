@@ -10,21 +10,19 @@ export interface ApiCouple {
 }
 
 export interface ApiGalleryPhoto {
-  id: string;
-  imageUrl: string;
-  caption: string | null;
-  order: number;
-  createdAt: string;
+  id: string
+  imageUrl: string
+  caption: string | null
+  order: number
 }
 
 export interface ApiLoveStory {
-  id: string;
-  yearOrDate: string;
-  title: string;
-  story: string;
-  imageUrl: string | null;
-  order: number;
-  createdAt: string;
+  id: string
+  yearOrDate: string
+  title: string
+  story: string
+  imageUrl: string | null
+  order: number
 }
 
 /** GET /invitations/:id  →  data */
@@ -111,4 +109,27 @@ export interface RsvpStatsApiData {
   totalConfirmed: number;
   totalDeclined: number;
   totalPaxConfirmed: number;
+}
+
+/** Status kehadiran tamu. Backend hanya mengenal dua nilai ini. */
+export type ApiRsvpStatus = 'CONFIRMED' | 'DECLINED'
+
+/** Satu item ucapan dari endpoint publik buku ucapan. */
+export interface ApiWishItem {
+  id: string
+  guestName: string
+  status: ApiRsvpStatus
+  message: string
+  createdAt: string
+}
+
+/** Data yang dikirim tamu saat mengisi konfirmasi kehadiran. */
+export interface RsvpSubmitPayload {
+  name: string
+  status: ApiRsvpStatus
+  message?: string
+  reservation?: number
+  phone?: string
+  email?: string
+  qrCode?: string
 }

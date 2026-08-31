@@ -4,13 +4,12 @@ import { HeroIntroSection } from '@/sections/HeroIntroSection'
 import { CoupleSection } from '@/sections/CoupleSection'
 import { EventDetailsSection } from '@/sections/EventDetailsSection'
 import { LoveStoryGallerySection } from '@/sections/LoveStoryGallerySection'
-import { RsvpSection } from '@/sections/RsvpSection'
 import { WishesSection } from '@/sections/WishesSection'
 import { GiftSection } from '@/sections/GiftSection'
-import { QrTicketSection } from '@/sections/QrTicketSection'
 import { FloatingNav } from '@/sections/FloatingNav'
 import { useGuest } from '@/hooks/useGuest'
-import { Heart, Sparkles } from 'lucide-react'
+import { usePublicInvitation } from '@/hooks/usePublicInvitation'
+import { Heart, Sparkles, HeartCrack } from 'lucide-react'
 
 /**
  * Halaman Utama Undangan Pernikahan Digital Publik (`/undangan/:slug`).
@@ -28,15 +27,31 @@ import { Heart, Sparkles } from 'lucide-react'
  * - Navigasi melayang (Floating Navigation Bar)
  */
 export default function InvitationPage() {
-  const { guestName, isLoading } = useGuest()
+  const { guestName, isLoading: isGuestLoading } = useGuest()
+  const {
+    groom,
+    bride,
+    groomName,
+    brideName,
+    coupleNames,
+    eventDateText,
+    eventDate,
+    eventTime,
+    venue,
+    address,
+    isLoading: isInvitationLoading,
+    isNotFound,
+    galleryPhotos,
+    loveStories,
+    slug,
+  } = usePublicInvitation()
+
   const [isOpened, setIsOpened] = useState(false)
   const [isMusicPlaying, setIsMusicPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Konfigurasi nama pasangan berdasarkan slug atau default
-  const groomName = 'Hanung'
-  const brideName = 'Ratna'
-  const eventDateStr = 'Minggu, 18 Januari 2026'
+  // Halaman baru siap ditampilkan setelah data undangan dan data tamu selesai dimuat
+  const isLoading = isGuestLoading || isInvitationLoading
 
   // Kunci scroll saat cover masih aktif
   useEffect(() => {
@@ -86,6 +101,23 @@ export default function InvitationPage() {
     )
   }
 
+    if (isNotFound) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-cream px-6">
+        <div className="max-w-sm space-y-3 text-center">
+          <HeartCrack size={40} className="mx-auto text-gold" />
+          <h1 className="font-display text-2xl font-bold text-sage">
+            Undangan Tidak Ditemukan
+          </h1>
+          <p className="text-sm leading-relaxed text-slate-600">
+            Tautan undangan ini tidak valid atau sudah tidak berlaku. Silakan periksa
+            kembali tautan yang Anda terima dari mempelai.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-cream font-body text-slate-800 selection:bg-gold/20 selection:text-sage">
       {/* Audio Elemen Tersembunyi (Romantic Acoustic / Wedding Theme) */}
@@ -102,7 +134,7 @@ export default function InvitationPage() {
           guestName={guestName}
           groomName={groomName}
           brideName={brideName}
-          eventDate={eventDateStr}
+          eventDate={eventDateText}
           onOpen={handleOpenInvitation}
         />
       )}
@@ -120,30 +152,33 @@ export default function InvitationPage() {
           <HeroIntroSection
             groomName={groomName}
             brideName={brideName}
-            eventDateStr={eventDateStr}
+            eventDateStr={eventDateText}
           />
 
           {/* Profil Mempelai */}
-          <CoupleSection />
+          <CoupleSection groom={groom} bride={bride} />
 
           {/* Rangkaian Acara, Countdown & Lokasi */}
-          <EventDetailsSection />
+          <EventDetailsSection
+            eventDate={eventDate}
+            eventDateText={eventDateText}
+            eventTime={eventTime}
+            venue={venue}
+            address={address}
+            coupleNames={coupleNames || `${groomName} ${brideName}`.trim()}
+          />
 
           {/* Kisah Cinta & Galeri Prewedding */}
-          <LoveStoryGallerySection />
-
-          {/* Konfirmasi Kehadiran */}
-          <RsvpSection guestNameDefault={guestName} />
-
+          <LoveStoryGallerySection
+            loveStories={loveStories}
+            galleryPhotos={galleryPhotos}
+          />
 
           {/* Buku Ucapan & Doa Restu */}
-          <WishesSection />
+          <WishesSection slug={slug} guestNameDefault={guestName} />
 
           {/* Amplop Digital & Buwuh */}
           <GiftSection />
-
-          {/* QR Pass Tiket Tamu */}
-          <QrTicketSection guestName={guestName} />
 
           {/* Footer Penutup */}
           <footer className="py-16 px-6 text-center bg-night text-white space-y-4">
@@ -151,7 +186,7 @@ export default function InvitationPage() {
               Merupakan suatu kehormatan &amp; kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
             </p>
             <h3 className="font-display text-3xl font-bold text-gold">
-              Hanung &amp; Ratna
+              {coupleNames || `${groomName} ${brideName}`.trim()}
             </h3>
             <div className="pt-6 border-t border-white/10 flex items-center justify-center gap-1.5 text-xs text-white/50">
               <span>Powered by</span>

@@ -2,20 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Gift, Copy, Check, CreditCard } from 'lucide-react'
 
-const BANK_ACCOUNTS = [
-  {
-    bankName: 'Bank Central Asia (BCA)',
-    accountNumber: '8820192831',
-    accountHolder: 'Hanung Saputra',
-    type: 'Pria',
-  },
-  {
-    bankName: 'Bank Mandiri',
-    accountNumber: '1370019283112',
-    accountHolder: 'Ratna Anindya Permata',
-    type: 'Wanita',
-  },
-]
+import { GIFT_ACCOUNTS, GIFT_ADDRESS } from '@/config/gift-accounts'
 
 /**
  * Komponen Amplop Digital & Tanda Kasih (Gift Section).
@@ -25,9 +12,9 @@ const BANK_ACCOUNTS = [
 export function GiftSection() {
   const [copiedBank, setCopiedBank] = useState<string | null>(null)
   const [copiedAddress, setCopiedAddress] = useState(false)
-
-  const giftAddress = 'Jl. Senayan Raya No. 45, Kebayoran Baru, Jakarta Selatan 12190'
-
+  const giftAddress = GIFT_ADDRESS
+  // Sembunyikan section bila tidak ada data amplop maupun alamat kado
+  if (GIFT_ACCOUNTS.length === 0 && !giftAddress) return null
   /**
    * Menyalin nomor rekening bank ke clipboard.
    * 
@@ -66,7 +53,7 @@ export function GiftSection() {
 
         {/* Rekening Bank Cards */}
         <div className="grid gap-6 sm:grid-cols-2">
-          {BANK_ACCOUNTS.map((acc) => {
+          {GIFT_ACCOUNTS.map((acc) => {
             const isCopied = copiedBank === acc.accountNumber
 
             return (

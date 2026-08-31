@@ -15,6 +15,8 @@ import {
   LayoutTemplate,
   Wallet,
   CheckCircle2,
+  Archive,
+  FileEdit,
 } from 'lucide-react'
 
 /**
@@ -24,7 +26,7 @@ import {
  */
 export default function PanelBerandaPage() {
   const { id = '' } = useParams()
-  const { invitation, activities } = useInvitationDetail(id)
+  const { invitation, activities, rawInvitation } = useInvitationDetail(id)
   const base = `/dashboard/undangan/${id}`
 
   const rsvpPercent =
@@ -37,8 +39,8 @@ export default function PanelBerandaPage() {
     { label: 'Konfirmasi Kehadiran', to: `${base}/rsvp`, icon: <ClipboardCheck size={16} />, value: `${rsvpPercent}% Hadir` },
     { label: 'Amplop & Hadiah', to: `${base}/hadiah`, icon: <Gift size={16} />, value: 'Aktif' },
 
-    { label: 'Petugas Penerima', to: `${base}/petugas`, icon: <Users size={16} />, value: '3 Akun' },
-    { label: 'Desain Template', to: `${base}/template`, icon: <LayoutTemplate size={16} />, value: 'Custom' },
+    { label: 'Petugas Penerima', to: `${base}/petugas`, icon: <Users size={16} />, value: 'Belum diatur' },
+    { label: 'Desain Template', to: `${base}/template`, icon: <LayoutTemplate size={16} />, value: rawInvitation?.template?.name ?? 'Belum dipilih' },
     { label: 'Catatan Buwuh', to: `${base}/catatan-buwuh`, icon: <Wallet size={16} />, value: formatRupiah(invitation.buwuhTotal) },
   ]
 
@@ -104,10 +106,22 @@ export default function PanelBerandaPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Status Acara
               </span>
-              <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                <CheckCircle2 size={12} />
-                Live Aktif
-              </span>
+              {rawInvitation?.status === 'ACTIVE' ? (
+                <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  <CheckCircle2 size={12} />
+                  Live Aktif
+                </span>
+              ) : rawInvitation?.status === 'COMPLETED' ? (
+                <span className="flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                  <Archive size={12} />
+                  Selesai
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                  <FileEdit size={12} />
+                  Draft
+                </span>
+              )}
             </div>
 
             {/* Progress RSVP */}

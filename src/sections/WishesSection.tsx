@@ -1,71 +1,66 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Send, CheckCircle2, Clock } from 'lucide-react'
+import { Send, CheckCircle2, XCircle, Clock, MessageSquareDashed } from 'lucide-react'
+import { usePublicWishes, useSubmitRsvp, formatTimeAgo } from '@/hooks/usePublicWishes'
+import { parseApiError } from '@/lib/errorHandler'
+import type { ApiRsvpStatus } from '@/types/invitation-api'
 
-type WishItem = {
-  id: string
-  name: string
-  attendance: string
-  message: string
-  timeAgo: string
+export type WishesSectionProps = {
+  /** Slug undangan yang sedang dibuka */
+  slug: string
+  /** Nama tamu dari parameter URL, dipakai sebagai nilai awal kolom nama */
+  guestNameDefault?: string
 }
 
-const INITIAL_WISHES: WishItem[] = [
-  {
-    id: 'w1',
-    name: 'Budi Santoso & Istri',
-    attendance: 'Pasti Hadir',
-    message: 'Selamat berbahagia Han & Ratna! Semoga menjadi keluarga yang sakinah, mawaddah, wa rahmah sampai akhir hayat.',
-    timeAgo: '10 menit yang lalu',
-  },
-  {
-    id: 'w2',
-    name: 'Siti Rahmawati',
-    attendance: 'Pasti Hadir',
-    message: 'Barakallahu laka wa baraka alaika wa jamaa bainakuma fii khair. Cantik dan gagah sekali pengantinnya!',
-    timeAgo: '1 jam yang lalu',
-  },
-  {
-    id: 'w3',
-    name: 'Dimas Wicaksono',
-    attendance: 'Berhalangan',
-    message: 'Mohon maaf belum bisa hadir langsung karena dinas luar kota. Doa terbaik dan lancar acaranya kawan!',
-    timeAgo: '3 jam yang lalu',
-  },
+/** Pilihan status kehadiran, mengikuti enum RSVPStatus di backend. */
+const ATTENDANCE_OPTIONS: Array<{ value: ApiRsvpStatus; label: string }> = [
+  { value: 'CONFIRMED', label: 'Ya, saya akan hadir' },
+  { value: 'DECLINED', label: 'Maaf, saya berhalangan' },
 ]
 
 /**
  * Komponen Buku Ucapan & Doa Restu (Wishes Section).
- * Memungkinkan tamu menulis ucapan dan langsung melihat komentar terbit di linimasa.
+ * Memuat ucapan tamu dari backend, serta mengirim konfirmasi kehadiran
+ * dan ucapan baru melalui endpoint RSVP publik.
+ *
+ * @param props - Properti WishesSection (slug, guestNameDefault)
  */
-export function WishesSection() {
-  const [wishes, setWishes] = useState<WishItem[]>(INITIAL_WISHES)
-  const [name, setName] = useState('')
+export function WishesSection({ slug, guestNameDefault = '' }: WishesSectionProps) {
+  const { wishes, isLoading } = usePublicWishes(slug)
+  const submitRsvp = useSubmitRsvp(slug)
+
+  const [name, setName] = useState(
+    guestNameDefault === 'Tamu Undangan' ? '' : guestNameDefault,
+  )
   const [message, setMessage] = useState('')
-  const [attendance, setAttendance] = useState('Pasti Hadir')
-  const [isSending, setIsSending] = useState(false)
+  const [status, setStatus] = useState<ApiRsvpStatus>('CONFIRMED')
+  const [reservation, setReservation] = useState(1)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isSent, setIsSent] = useState(false)
 
   /**
-   * Menangani pengiriman ucapan doa restu baru ke linimasa.
+   * Mengirim konfirmasi kehadiran dan ucapan doa restu tamu ke backend.
    */
-  function handleSendWish(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSendWish(event: React.FormEvent) {
+    event.preventDefault()
     if (!name.trim() || !message.trim()) return
 
-    setIsSending(true)
-    setTimeout(() => {
-      const newWish: WishItem = {
-        id: `w-${Date.now()}`,
-        name,
-        attendance,
-        message,
-        timeAgo: 'Baru saja',
-      }
-      setWishes([newWish, ...wishes])
-      setName('')
+    setErrorMessage(null)
+
+    try {
+      await submitRsvp.mutateAsync({
+        name: name.trim(),
+        status,
+        message: message.trim(),
+        reservation: status === 'CONFIRMED' ? reservation : 0,
+      })
+
       setMessage('')
-      setIsSending(false)
-    }, 600)
+      setIsSent(true)
+    } catch (error) {
+      const parsed = parseApiError(error)
+      setErrorMessage(parsed.generalMessage)
+    }
   }
 
   return (
@@ -92,6 +87,7 @@ export function WishesSection() {
                 <input
                   type="text"
                   required
+                  maxLength={255}
                   placeholder="Nama pengirim..."
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -100,24 +96,47 @@ export function WishesSection() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Status Kehadiran</label>
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  Status Kehadiran
+                </label>
                 <select
-                  value={attendance}
-                  onChange={(e) => setAttendance(e.target.value)}
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as ApiRsvpStatus)}
                   className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-sage focus:outline-none transition"
                 >
-                  <option value="Pasti Hadir">Pasti Hadir</option>
-                  <option value="Masih Ragu">Masih Ragu</option>
-                  <option value="Berhalangan">Berhalangan</option>
+                  {ATTENDANCE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
 
+            {status === 'CONFIRMED' && (
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  Jumlah Orang yang Hadir
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={reservation}
+                  onChange={(e) => setReservation(Number(e.target.value) || 1)}
+                  className="w-full sm:w-32 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-sage focus:outline-none transition"
+                />
+              </div>
+            )}
+
             <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1">Ucapan & Doa Restu</label>
+              <label className="block text-xs font-bold text-slate-800 mb-1">
+                Ucapan &amp; Doa Restu
+              </label>
               <textarea
                 required
                 rows={3}
+                maxLength={1000}
                 placeholder="Tuliskan doa restu dan ucapan selamat untuk kedua mempelai..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -125,13 +144,25 @@ export function WishesSection() {
               />
             </div>
 
+            {errorMessage && (
+              <p className="rounded-xl bg-red-50 border border-red-200 px-4 py-2.5 text-xs font-semibold text-red-700">
+                {errorMessage}
+              </p>
+            )}
+
+            {isSent && !errorMessage && (
+              <p className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-xs font-semibold text-emerald-700">
+                Terima kasih! Ucapan Anda sudah kami terima.
+              </p>
+            )}
+
             <button
               type="submit"
-              disabled={isSending}
-              className="inline-flex items-center gap-2 rounded-xl bg-sage px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs hover:bg-sage-dark transition cursor-pointer active:scale-95"
+              disabled={submitRsvp.isPending}
+              className="inline-flex items-center gap-2 rounded-xl bg-sage px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs hover:bg-sage-dark transition cursor-pointer active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Send size={14} />
-              <span>{isSending ? 'Mengirim...' : 'Kirim Ucapan'}</span>
+              <span>{submitRsvp.isPending ? 'Mengirim...' : 'Kirim Ucapan'}</span>
             </button>
           </form>
         </div>
@@ -140,14 +171,23 @@ export function WishesSection() {
         <div className="space-y-3">
           <div className="flex items-center justify-between pb-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Total {wishes.length} Ucapan Masuk
+              {isLoading ? 'Memuat ucapan...' : `Total ${wishes.length} Ucapan Masuk`}
             </h4>
           </div>
 
+          {!isLoading && wishes.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 py-12 text-center">
+              <MessageSquareDashed size={28} className="mx-auto text-slate-400" />
+              <p className="mt-3 text-xs text-slate-500">
+                Belum ada ucapan. Jadilah yang pertama mengirim doa restu.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
-            {wishes.map((w) => (
+            {wishes.map((wish) => (
               <motion.div
-                key={w.id}
+                key={wish.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-2xs space-y-2"
@@ -155,25 +195,32 @@ export function WishesSection() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-sage to-gold text-white font-bold text-xs shadow-xs uppercase">
-                      {w.name.charAt(0)}
+                      {wish.guestName.charAt(0)}
                     </div>
                     <div>
-                      <p className="font-bold text-xs text-slate-900">{w.name}</p>
-                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full mt-0.5">
-                        <CheckCircle2 size={10} />
-                        {w.attendance}
-                      </span>
+                      <p className="font-bold text-xs text-slate-900">{wish.guestName}</p>
+                      {wish.status === 'CONFIRMED' ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full mt-0.5">
+                          <CheckCircle2 size={10} />
+                          Hadir
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-slate-600 font-semibold bg-slate-100 px-2 py-0.5 rounded-full mt-0.5">
+                          <XCircle size={10} />
+                          Berhalangan
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                  <span className="flex items-center gap-1 text-[10px] text-slate-400 shrink-0">
                     <Clock size={11} />
-                    {w.timeAgo}
+                    {formatTimeAgo(wish.createdAt)}
                   </span>
                 </div>
 
-                <p className="text-xs leading-relaxed text-slate-700 pt-1 font-serif italic">
-                  "{w.message}"
+                <p className="text-xs leading-relaxed text-slate-700 pt-1 font-serif italic whitespace-pre-line">
+                  "{wish.message}"
                 </p>
               </motion.div>
             ))}

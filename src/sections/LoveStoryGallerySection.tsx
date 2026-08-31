@@ -1,95 +1,130 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Image as ImageIcon, X } from 'lucide-react'
+import type { ApiGalleryPhoto, ApiLoveStory } from '@/types/invitation-api'
 
-const GALLERY_IMAGES = [
-  { url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&auto=format&fit=crop&q=60', caption: 'Momen Prewedding di Bromo' },
-  { url: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&auto=format&fit=crop&q=60', caption: 'Lamaran & Pertunangan' },
-  { url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&auto=format&fit=crop&q=60', caption: 'Tawa & Bahagia Bersama' },
-  { url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&auto=format&fit=crop&q=60', caption: 'Langkah Menuju Masa Depan' },
-]
-
-const STORIES = [
-  { year: '2022', title: 'Pertama Kali Bertemu', desc: 'Pertemuan pertama di sebuah seminar teknologi di Jakarta yang membuka jalan percakapan berharga.' },
-  { year: '2024', title: 'Komitmen Menjalin Hubungan', desc: 'Setelah saling mengenal kepribadian masing-masing, kami memantapkan hati melangkah bersama.' },
-  { year: '2025', title: 'Lamaran Resmi Keluarga', desc: 'Pertemuan dua keluarga besar untuk mengikat janji suci menuju pelaminan.' },
-]
+export type LoveStoryGallerySectionProps = {
+  /** Daftar kisah cinta dari backend, urut berdasarkan kolom order */
+  loveStories: ApiLoveStory[]
+  /** Daftar foto galeri dari backend, urut berdasarkan kolom order */
+  galleryPhotos: ApiGalleryPhoto[]
+}
 
 /**
  * Komponen Galeri Foto Prewedding & Cerita Cinta (Love Story).
- * Dilengkapi dengan interaksi popup modal gambar resolusi penuh.
+ * Menampilkan kisah perjalanan dan galeri kenangan berdasarkan data asli undangan,
+ * dilengkapi interaksi popup modal gambar resolusi penuh.
+ *
+ * @param props - Properti LoveStoryGallerySection (loveStories, galleryPhotos)
  */
-export function LoveStoryGallerySection() {
+export function LoveStoryGallerySection({
+  loveStories,
+  galleryPhotos,
+}: LoveStoryGallerySectionProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
+
+  // Urutkan berdasarkan kolom order agar tampil sesuai pengaturan pengguna
+  const sortedStories = [...loveStories].sort((a, b) => a.order - b.order)
+  const sortedPhotos = [...galleryPhotos].sort((a, b) => a.order - b.order)
+
+  const hasStories = sortedStories.length > 0
+  const hasPhotos = sortedPhotos.length > 0
+
+  // Bila kedua data kosong, section ini tidak perlu dirender sama sekali
+  if (!hasStories && !hasPhotos) return null
 
   return (
     <section id="galeri" className="py-20 px-6 bg-white relative overflow-hidden">
       <div className="mx-auto max-w-4xl space-y-16">
         {/* Cerita Cinta */}
-        <div className="space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-bold uppercase tracking-[0.25em] text-sage">
-              Our Journey
-            </span>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
-              Kisah Perjalanan Cinta Kami
-            </h2>
-          </div>
+        {hasStories && (
+          <div className="space-y-8">
+            <div className="text-center space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.25em] text-sage">
+                Our Journey
+              </span>
+              <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
+                Kisah Perjalanan Cinta Kami
+              </h2>
+            </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            {STORIES.map((item, i) => (
-              <motion.div
-                key={item.year}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.15 }}
-                className="rounded-3xl border border-border bg-cream p-6 text-center space-y-3 relative shadow-2xs"
-              >
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sage text-white font-bold text-xs shadow-xs">
-                  {item.year}
-                </span>
-                <h4 className="font-display text-base font-bold text-slate-900">{item.title}</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">{item.desc}</p>
-              </motion.div>
-            ))}
+            <div className="grid gap-4 sm:grid-cols-3">
+              {sortedStories.map((item, i) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: i * 0.15 }}
+                  className="rounded-3xl border border-border bg-cream p-6 text-center space-y-3 relative shadow-2xs"
+                >
+                  {item.imageUrl && (
+                    <div className="h-32 w-full overflow-hidden rounded-2xl">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  <span className="inline-flex items-center justify-center rounded-full bg-sage px-3 py-1.5 text-white font-bold text-xs shadow-xs">
+                    {item.yearOrDate}
+                  </span>
+                  <h4 className="font-display text-base font-bold text-slate-900">
+                    {item.title}
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+                    {item.story}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Galeri Foto */}
-        <div className="space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-bold uppercase tracking-[0.25em] text-gold">
-              Galeri Kenangan
-            </span>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
-              Momen-momen Indah
-            </h2>
-          </div>
+        {hasPhotos && (
+          <div className="space-y-8">
+            <div className="text-center space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.25em] text-gold">
+                Galeri Kenangan
+              </span>
+              <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
+                Momen-momen Indah
+              </h2>
+            </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {GALLERY_IMAGES.map((photo, i) => (
-              <motion.div
-                key={photo.url}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                onClick={() => setSelectedPhoto(photo.url)}
-                className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-xs border border-slate-200"
-              >
-                <img
-                  src={photo.url}
-                  alt={photo.caption}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                  <ImageIcon size={24} />
-                </div>
-              </motion.div>
-            ))}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {sortedPhotos.map((photo, i) => (
+                <motion.div
+                  key={photo.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  onClick={() => setSelectedPhoto(photo.imageUrl)}
+                  className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-xs border border-slate-200"
+                >
+                  <img
+                    src={photo.imageUrl}
+                    alt={photo.caption ?? 'Foto kenangan'}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 text-white px-2 text-center">
+                    <ImageIcon size={24} />
+                    {photo.caption && (
+                      <span className="text-[11px] font-semibold leading-snug">
+                        {photo.caption}
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Lightbox Modal */}
@@ -105,7 +140,11 @@ export function LoveStoryGallerySection() {
             >
               <X size={20} />
             </button>
-            <img src={selectedPhoto} alt="" className="max-h-[80vh] w-auto object-contain rounded-xl" />
+            <img
+              src={selectedPhoto}
+              alt=""
+              className="max-h-[80vh] w-auto object-contain rounded-xl"
+            />
           </div>
         </div>
       )}

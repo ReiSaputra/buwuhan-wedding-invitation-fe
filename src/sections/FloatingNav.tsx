@@ -2,10 +2,7 @@ import {
   Heart,
   Calendar,
   Image,
-  Send,
   MessageSquare,
-  Gift,
-  QrCode,
   Volume2,
   VolumeX,
 } from 'lucide-react'
@@ -27,11 +24,7 @@ export function FloatingNav({ isMusicPlaying, onToggleMusic }: FloatingNavProps)
     { label: 'Mempelai', href: '#mempelai', icon: <Heart size={15} /> },
     { label: 'Acara', href: '#acara', icon: <Calendar size={15} /> },
     { label: 'Galeri', href: '#galeri', icon: <Image size={15} /> },
-    { label: 'Kehadiran', href: '#rsvp', icon: <Send size={15} /> },
-    { label: 'Ucapan', href: '#ucapan', icon: <MessageSquare size={15} /> },
-
-    { label: 'Hadiah', href: '#hadiah', icon: <Gift size={15} /> },
-    { label: 'QR Pass', href: '#tiket', icon: <QrCode size={15} /> },
+    { label: 'Kehadiran', href: '#ucapan', icon: <MessageSquare size={15} /> },
   ]
 
   /**
