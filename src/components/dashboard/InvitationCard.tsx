@@ -15,7 +15,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/id'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import type { InvitationSummary, ViewMode } from '@/types/dashboard'
+import type { InvitationSummary, ViewMode, InvitationStatus } from '@/types/dashboard'
 import { getDaysRemaining } from '@/lib/format'
 import { cn } from '@/lib/cn'
 
@@ -34,10 +34,13 @@ export type InvitationCardProps = {
   onScan: (id: string) => void
 }
 
-const statusBadgeConfig = {
-  PUBLISHED: { label: 'Aktif', variant: 'success' as const },
-  DRAFT: { label: 'Draft', variant: 'warning' as const },
-  EXPIRED: { label: 'Selesai', variant: 'default' as const },
+const statusBadgeConfig: Record<
+  InvitationStatus,
+  { label: string; variant: 'success' | 'warning' | 'default' }
+> = {
+  ACTIVE: { label: 'Aktif', variant: 'success' },
+  DRAFT: { label: 'Draft', variant: 'warning' },
+  COMPLETED: { label: 'Selesai', variant: 'default' },
 }
 
 /**
@@ -62,15 +65,15 @@ export function InvitationCard({
     eventTime,
     thumbnailUrl,
     slug,
-    status = 'PUBLISHED',
+    status = 'DRAFT',
     guestCount = 0,
     checkedInCount = 0,
   } = invitation
 
-  const dateLabel = dayjs(eventDate).format('D MMMM YYYY')
+  const dateLabel = eventDate ? dayjs(eventDate).format('D MMMM YYYY') : 'Tanggal belum diatur'
   const daysLeft = getDaysRemaining(eventDate)
   const checkInPercent = guestCount > 0 ? Math.round((checkedInCount / guestCount) * 100) : 0
-  const statusInfo = statusBadgeConfig[status] || statusBadgeConfig.PUBLISHED
+  const statusInfo = statusBadgeConfig[status] ?? statusBadgeConfig.DRAFT
   const publicUrl = `${window.location.origin}/undangan/${slug}`
 
   /**
@@ -111,7 +114,7 @@ export function InvitationCard({
           <span
             className={cn(
               'h-1.5 w-1.5 rounded-full',
-              status === 'PUBLISHED'
+                status === 'ACTIVE'
                 ? 'bg-emerald-500'
                 : status === 'DRAFT'
                 ? 'bg-amber-500'
@@ -148,10 +151,12 @@ export function InvitationCard({
           <Calendar size={13} className="text-slate-400" />
           {dateLabel}
         </span>
-        <span className="flex items-center gap-1">
-          <Clock size={13} className="text-slate-400" />
-          {eventTime} WIB
-        </span>
+        {eventTime && (
+          <span className="flex items-center gap-1">
+            <Clock size={13} className="text-slate-400" />
+            {eventTime} WIB
+          </span>
+        )}
       </div>
 
       {/* Mini Progress Tamu */}

@@ -19,7 +19,7 @@ export type CurrentUser = {
 /**
  * Status publikasi undangan digital.
  */
-export type InvitationStatus = 'DRAFT' | 'PUBLISHED' | 'EXPIRED'
+export type InvitationStatus = 'DRAFT' | 'ACTIVE' | 'COMPLETED'
 
 /**
  * Ringkasan data undangan digital untuk ditampilkan pada daftar/kartu dashboard.
@@ -28,13 +28,14 @@ export type InvitationSummary = {
   id: string
   slug: string
   coupleName: string
-  eventDate: string
-  eventTime: string
+  eventDate: string | null
+  eventTime: string | null
   thumbnailUrl: string | null
   status: InvitationStatus
   guestCount: number
   checkedInCount: number
   themeName?: string
+  title?: string
 }
 
 /**
@@ -59,9 +60,15 @@ export type InvitationDetail = {
   slug: string
   panelName: string
   coupleName: string
-  eventDate: string
+  title: string
+  eventDate: string | null
+  eventTime: string | null
+  venue: string | null
+  address: string | null
+  status: InvitationStatus
   guestCount: number
   confirmedCount: number
+  checkedInCount: number
   buwuhTotal: number
 }
 

@@ -15,6 +15,7 @@ import BuwuhPage from '@/pages/dashboard/BuwuhPage'
 import PengaturanPage from '@/pages/dashboard/PengaturanPage'
 import PanelBerandaPage from '@/pages/panel/PanelBerandaPage'
 import PanelPlaceholderPage from '@/pages/panel/PanelPlaceholderPage'
+import PanelEditPage from '@/pages/panel/PanelEditPage'
 import PanelRsvpPage from '@/pages/panel/PanelRsvpPage'
 import PanelBukuTamuPage from '@/pages/panel/PanelBukuTamuPage'
 import PanelHadiahPage from '@/pages/panel/PanelHadiahPage'
@@ -57,7 +58,7 @@ export default function App() {
           {/* Panel per undangan — sidebar kontekstual */}
           <Route path="/dashboard/undangan/:id" element={<PanelLayout />}>
             <Route index element={<PanelBerandaPage />} />
-            <Route path="edit" element={<PanelPlaceholderPage title="Edit Undangan" />} />
+            <Route path="edit" element={<PanelEditPage />} />
             <Route path="petugas" element={<PanelPlaceholderPage title="Petugas" />} />
             <Route path="template" element={<PanelPlaceholderPage title="Template" />} />
             <Route path="buku-tamu" element={<PanelBukuTamuPage />} />

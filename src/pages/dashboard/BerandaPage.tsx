@@ -14,7 +14,10 @@ import { formatNumber } from '@/lib/format'
  */
 export default function BerandaPage() {
   const user = useCurrentUser()
-  const { invitations, stats } = useInvitations()
+  const { invitations, stats, isLoading, isError } = useInvitations()
+
+  // Undangan pertama yang berstatus aktif — dipakai untuk tombol Preview.
+  const previewTarget = invitations.find((item) => item.status === 'ACTIVE') ?? invitations[0]
 
   return (
     <div className="space-y-7 animate-in fade-in duration-300">
@@ -46,9 +49,15 @@ export default function BerandaPage() {
             <Button
               variant="outline"
               size="md"
-              className="bg-white/15 text-white border-white/25 hover:bg-white/25 backdrop-blur-xs shadow-none"
+              className="bg-white/15 text-white border-white/25 hover:bg-white/25 backdrop-blur-xs shadow-none disabled:opacity-50"
               icon={<HeartHandshake size={16} />}
-              onClick={() => window.open('/undangan/han-saputra', '_blank')}
+              disabled={!previewTarget}
+              title={previewTarget ? undefined : 'Buat undangan terlebih dahulu'}
+              onClick={() => {
+                if (previewTarget) {
+                  window.open(`/undangan/${previewTarget.slug}`, '_blank')
+                }
+              }}
             >
               Preview Undangan
             </Button>
@@ -69,31 +78,54 @@ export default function BerandaPage() {
             label="Total Undangan"
             value={stats.totalInvitations}
             icon={<Mail size={18} />}
-            hint="2 undangan tersimpan"
+            hint={
+              stats.totalInvitations === 0
+                ? 'Belum ada undangan dibuat'
+                : `${stats.totalInvitations} undangan tersimpan`
+            }
             colorAccent="indigo"
-            trend="+100% dari bulan lalu"
           />
           <StatCard
             label="Total Tamu Diundang"
             value={formatNumber(stats.totalGuests)}
             icon={<Users size={18} />}
-            hint="Dari seluruh daftar undangan aktif"
+            hint="Dari seluruh daftar undangan"
             colorAccent="violet"
-            trend="+240 tamu baru"
           />
           <StatCard
             label="Tamu Sudah Check-in"
             value={formatNumber(stats.totalCheckedIn)}
             icon={<QrCode size={18} />}
-            hint={`${Math.round((stats.totalCheckedIn / stats.totalGuests) * 100)}% tingkat kehadiran tercatat`}
+            hint={
+              stats.totalGuests > 0
+                ? `${Math.round((stats.totalCheckedIn / stats.totalGuests) * 100)}% tingkat kehadiran tercatat`
+                : 'Belum ada tamu terdaftar'
+            }
             colorAccent="emerald"
-            trend="Aktif via Scan QR"
           />
         </div>
       </div>
 
       {/* Daftar Undangan Website */}
-      <InvitationList title="Panel Website Undangan" invitations={invitations} />
+      {isError ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-sm font-bold text-red-700">Gagal memuat data dashboard</p>
+          <p className="mt-1 text-xs text-red-600">
+            Periksa apakah server backend sudah berjalan, lalu muat ulang halaman.
+          </p>
+        </div>
+      ) : isLoading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((index) => (
+            <div
+              key={index}
+              className="h-44 animate-pulse rounded-2xl border border-border bg-slate-100"
+            />
+          ))}
+        </div>
+      ) : (
+        <InvitationList title="Panel Website Undangan" invitations={invitations} />
+      )}
     </div>
   )
 }

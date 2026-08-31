@@ -178,8 +178,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: data.id || 'user-id',
         fullName: data.fullName || 'Pengguna Buwuhan',
         email: data.email || input.email,
-        role: 'USER',
-        plan: 'FREE',
+        role: data.role,
+        plan: data.planTier,
       }
       try {
         localStorage.setItem('buwuhan_cached_user', JSON.stringify(userObj))

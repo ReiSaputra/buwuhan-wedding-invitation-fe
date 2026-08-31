@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Mail, Search, Plus, AlertTriangle, Sparkles } from 'lucide-react'
+import { Mail, Search, Plus, AlertTriangle } from 'lucide-react'
 import { ViewToggle } from './ViewToggle'
 import { InvitationCard } from './InvitationCard'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import type { InvitationSummary, ViewMode, InvitationStatus } from '@/types/dashboard'
 import { cn } from '@/lib/cn'
+import { CreateInvitationModal } from './CreateInvitationModal'
+import { useDeleteInvitation } from '@/hooks/useInvitationMutations'
 
 export type InvitationListProps = {
   /** Judul bagian daftar undangan */
@@ -31,7 +33,7 @@ type FilterStatus = 'ALL' | InvitationStatus
  */
 export function InvitationList({
   title,
-  invitations: initialInvitations,
+  invitations,
   defaultView = 'list',
   emptyMessage = 'Belum ada undangan. Buat undangan pertamamu untuk memulai.',
   showCreateButton = true,
@@ -39,22 +41,22 @@ export function InvitationList({
   const [view, setView] = useState<ViewMode>(defaultView)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<FilterStatus>('ALL')
-  const [invitationsList, setInvitationsList] = useState(initialInvitations)
 
   // State untuk Modal Konfirmasi Hapus
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
-  // State untuk Modal Buat Undangan Baru (Preview/Simulasi)
+  // State untuk Modal Buat Undangan Baru
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
+  const deleteInvitation = useDeleteInvitation()
   const navigate = useNavigate()
 
   /**
    * Menyaring daftar undangan berdasarkan query pencarian dan status yang dipilih.
    */
   const filteredInvitations = useMemo(() => {
-    return invitationsList.filter((inv) => {
+    return invitations.filter((inv) => {
       const matchSearch =
         inv.coupleName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         inv.slug.toLowerCase().includes(searchQuery.toLowerCase())
@@ -64,32 +66,35 @@ export function InvitationList({
 
       return matchSearch && matchStatus
     })
-  }, [invitationsList, searchQuery, selectedStatus])
+  }, [invitations, searchQuery, selectedStatus])
 
   /**
    * Membuka modal konfirmasi hapus undangan.
-   * 
+   *
    * @param id - ID undangan yang ingin dihapus
    */
   function handleOpenDeleteModal(id: string) {
+    setDeleteError(null)
     setDeleteTargetId(id)
   }
 
   /**
-   * Menjalankan aksi penghapusan undangan setelah dikonfirmasi di modal.
+   * Menghapus undangan di backend setelah dikonfirmasi pengguna.
+   * Daftar akan menyusut sendiri karena cache dashboard di-invalidate.
    */
-  function handleConfirmDelete() {
+  async function handleConfirmDelete() {
     if (!deleteTargetId) return
-    setIsDeleting(true)
+    setDeleteError(null)
 
-    setTimeout(() => {
-      setInvitationsList((prev) => prev.filter((item) => item.id !== deleteTargetId))
-      setIsDeleting(false)
+    try {
+      await deleteInvitation.mutateAsync(deleteTargetId)
       setDeleteTargetId(null)
-    }, 600)
+    } catch {
+      setDeleteError('Gagal menghapus undangan. Periksa koneksi lalu coba lagi.')
+    }
   }
 
-  const targetInvitation = invitationsList.find((i) => i.id === deleteTargetId)
+  const targetInvitation = invitations.find((i) => i.id === deleteTargetId)
 
   return (
     <section className="space-y-4">
@@ -146,9 +151,9 @@ export function InvitationList({
           {(
             [
               { key: 'ALL', label: 'Semua' },
-              { key: 'PUBLISHED', label: 'Aktif' },
+              { key: 'ACTIVE', label: 'Aktif' },
               { key: 'DRAFT', label: 'Draft' },
-              { key: 'EXPIRED', label: 'Selesai' },
+              { key: 'COMPLETED', label: 'Selesai' },
             ] as const
           ).map((tab) => (
             <button
@@ -230,19 +235,25 @@ export function InvitationList({
           </div>
         </div>
 
+        {deleteError && (
+          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-danger">
+            {deleteError}
+          </div>
+        )}
+
         <div className="mt-6 flex items-center justify-end gap-2.5">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setDeleteTargetId(null)}
-            disabled={isDeleting}
+            disabled={deleteInvitation.isPending}
           >
             Batal
           </Button>
           <Button
             variant="danger"
             size="sm"
-            isLoading={isDeleting}
+            isLoading={deleteInvitation.isPending}
             onClick={handleConfirmDelete}
           >
             Ya, Hapus Sekarang
@@ -250,51 +261,11 @@ export function InvitationList({
         </div>
       </Modal>
 
-      {/* Modal Buat Undangan Baru (Simulasi) */}
-      <Modal
+      {/* Modal Buat Undangan Baru */}
+      <CreateInvitationModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        title="Buat Undangan Baru"
-        description="Mulai siapkan undangan pernikahan digital dengan memilih template favorit."
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-ink mb-1">Nama Pasangan Mempelai</label>
-            <input
-              type="text"
-              placeholder="Contoh: Romeo & Juliet"
-              className="w-full rounded-xl border border-border p-2.5 text-xs text-ink focus:border-primary focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-ink mb-1">Tanggal Acara Utama</label>
-            <input
-              type="date"
-              className="w-full rounded-xl border border-border p-2.5 text-xs text-ink focus:border-primary focus:outline-none"
-            />
-          </div>
-          <div className="rounded-xl bg-indigo-50 p-3 text-xs text-primary flex items-center gap-2">
-            <Sparkles size={16} />
-            <span>Pilihan template tema dapat dipilih setelah undangan dibuat.</span>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)}>
-              Batal
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                setIsCreateModalOpen(false)
-                navigate('/dashboard/undangan/1')
-              }}
-            >
-              Lanjutkan ke Panel
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      />
     </section>
   )
 }

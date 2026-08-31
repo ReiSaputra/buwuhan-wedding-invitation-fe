@@ -10,8 +10,8 @@ dayjs.locale('id')
 export type PanelHeaderProps = {
   /** Nama pasangan mempelai pengantin */
   coupleName: string
-  /** Tanggal pelaksanaan acara pernikahan (format YYYY-MM-DD) */
-  eventDate: string
+  /** Tanggal pelaksanaan acara pernikahan (format YYYY-MM-DD), null bila belum diatur */
+  eventDate: string | null
   /** Slug URL publik undangan */
   slug: string
 }
@@ -53,15 +53,19 @@ export function PanelHeader({ coupleName, eventDate, slug }: PanelHeaderProps) {
             {coupleName}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
             <span className="flex items-center gap-1 font-medium text-slate-600">
               <Calendar size={14} className="text-primary" />
-              {dayjs(eventDate).format('D MMMM YYYY')}
+              {eventDate ? dayjs(eventDate).format('D MMMM YYYY') : 'Tanggal belum diatur'}
             </span>
-            <span className="text-slate-300">&bull;</span>
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
-              {daysLeft > 0 ? `${daysLeft} Hari Lagi` : 'Hari Ini'}
-            </span>
+            {eventDate && (
+              <>
+                <span className="text-slate-300">&bull;</span>
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                  {daysLeft > 0 ? `${daysLeft} Hari Lagi` : 'Hari Ini'}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
