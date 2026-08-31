@@ -3,114 +3,122 @@ import { Breadcrumb } from '@/components/dashboard/Breadcrumb'
 import { StatCard } from '@/components/dashboard/StatCard'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { formatRupiah } from '@/lib/format'
 import {
-  Wallet,
-  ArrowDownToLine,
   Download,
-  QrCode,
-  CreditCard,
-  Banknote,
   Search,
-  CheckCircle2,
+  Gift,
+  Package,
+  CalendarCheck,
 } from 'lucide-react'
 
-type BuwuhTransaction = {
+export type BuwuhAidRecord = {
   id: string
   donorName: string
   invitationTitle: string
-  amount: number
-  method: 'QRIS' | 'TRANSFER' | 'AMPLOP_FISIK'
+  aidType: string
+  quantity: string
   createdAt: string
   message: string
 }
 
-const MOCK_TRANSACTIONS: BuwuhTransaction[] = [
+const MOCK_AID_RECORDS: BuwuhAidRecord[] = [
   {
-    id: 'tx1',
+    id: 'aid-1',
     donorName: 'H. Ahmad & Keluarga',
     invitationTitle: 'Han & Saputra',
-    amount: 1500000,
-    method: 'TRANSFER',
+    aidType: 'Beras',
+    quantity: '50 Kg',
     createdAt: '21 Agustus 2026, 20:15',
     message: 'Selamat menempuh hidup baru, semoga sakinah mawaddah warahmah.',
   },
   {
-    id: 'tx2',
+    id: 'aid-2',
     donorName: 'Dr. Diana Kusuma',
     invitationTitle: 'Han & Saputra',
-    amount: 500000,
-    method: 'QRIS',
+    aidType: 'Sayuran',
+    quantity: '3 Keranjang',
     createdAt: '21 Agustus 2026, 18:30',
     message: 'Semoga selalu dilimpahi kebahagiaan berdua!',
   },
   {
-    id: 'tx3',
+    id: 'aid-3',
     donorName: 'Rudi Hartono',
     invitationTitle: 'Janpiter & Yudi',
-    amount: 300000,
-    method: 'QRIS',
+    aidType: 'Buah',
+    quantity: '5 Dus',
     createdAt: '21 Agustus 2026, 14:10',
     message: 'Langgeng sampai kakek nenek bro.',
   },
   {
-    id: 'tx4',
+    id: 'aid-4',
     donorName: 'Siti Aminah',
     invitationTitle: 'Han & Saputra',
-    amount: 250000,
-    method: 'AMPLOP_FISIK',
+    aidType: 'Sembako',
+    quantity: '4 Paket',
     createdAt: '20 Agustus 2026, 11:00',
     message: 'Mohon maaf belum bisa hadir langsung, doa terbaik untuk kalian.',
+  },
+  {
+    id: 'aid-5',
+    donorName: 'Bpk. Bambang Sutrisno',
+    invitationTitle: 'Han & Saputra',
+    aidType: 'Beras',
+    quantity: '100 Kg',
+    createdAt: '20 Agustus 2026, 09:30',
+    message: 'Semoga lancar dan berkah seluruh rangkaian acaranya.',
+  },
+  {
+    id: 'aid-6',
+    donorName: 'Ibu Hj. Maryam',
+    invitationTitle: 'Han & Saputra',
+    aidType: 'Sayuran',
+    quantity: '2 Karung',
+    createdAt: '19 Agustus 2026, 16:45',
+    message: 'Selamat berbahagia untuk kedua mempelai.',
   },
 ]
 
 /**
- * Halaman Manajemen Buwuh & Amplop Digital.
- * Menyediakan ikhtisar total sumbangan/hadiah uang yang masuk dari tamu,
- * rincian kanal pembayaran (Transfer, QRIS, Tunai), dan riwayat transaksi dengan fitur pencarian & ekspor.
+ * Halaman Manajemen Catatan Buwuh.
+ * Menyediakan ikhtisar total bantuan (beras, sayuran, buah, sembako) yang masuk dari tamu,
+ * rincian rekapitulasi bantuan, serta riwayat catatan dengan fitur pencarian & ekspor.
  */
 export default function BuwuhPage() {
   const [search, setSearch] = useState('')
-  const [selectedMethod, setSelectedMethod] = useState<string>('ALL')
 
-  const totalBuwuh = useMemo(
-    () => MOCK_TRANSACTIONS.reduce((sum, tx) => sum + tx.amount, 0),
-    [],
-  )
-
-  const filteredTransactions = useMemo(() => {
-    return MOCK_TRANSACTIONS.filter((tx) => {
-      const matchSearch =
-        tx.donorName.toLowerCase().includes(search.toLowerCase()) ||
-        tx.invitationTitle.toLowerCase().includes(search.toLowerCase()) ||
-        tx.message.toLowerCase().includes(search.toLowerCase())
-
-      const matchMethod = selectedMethod === 'ALL' || tx.method === selectedMethod
-
-      return matchSearch && matchMethod
+  const filteredRecords = useMemo(() => {
+    return MOCK_AID_RECORDS.filter((rec) => {
+      const query = search.toLowerCase()
+      return (
+        rec.donorName.toLowerCase().includes(query) ||
+        rec.invitationTitle.toLowerCase().includes(query) ||
+        rec.aidType.toLowerCase().includes(query) ||
+        rec.quantity.toLowerCase().includes(query) ||
+        rec.message.toLowerCase().includes(query)
+      )
     })
-  }, [search, selectedMethod])
+  }, [search])
 
   /**
-   * Mengekspor laporan buwuh ke file CSV/Excel.
+   * Mengekspor laporan catatan buwuh ke file CSV/Excel.
    */
   function handleExport() {
-    alert('Laporan riwayat buwuh berhasil diekspor (Format .CSV / .XLSX).')
+    alert('Laporan riwayat catatan buwuh berhasil diekspor (Format .CSV / .XLSX).')
   }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Breadcrumb Navigasi */}
-      <Breadcrumb items={[{ label: 'Beranda', to: '/dashboard' }, { label: 'Buwuh' }]} />
+      <Breadcrumb items={[{ label: 'Beranda', to: '/dashboard' }, { label: 'Catatan Buwuh' }]} />
 
       {/* Header Halaman */}
       <div className="rounded-2xl bg-white p-6 border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-ink flex items-center gap-2">
-            <span>Catatan Buwuh & Amplop Digital</span>
+            <span>Catatan Buwuh</span>
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted">
-            Pantau dan kelola seluruh pemberian tanda kasih serta amplop digital dari para tamu undangan.
+            Pantau dan kelola seluruh catatan pemberian bantuan (beras, sayuran, buah, dll) dari para tamu undangan.
           </p>
         </div>
 
@@ -123,85 +131,47 @@ export default function BuwuhPage() {
           >
             Export Data
           </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            icon={<ArrowDownToLine size={14} />}
-            onClick={() => alert('Fitur pencairan dana akan mentransfer saldo ke rekening utama Anda dalam 1x24 jam.')}
-          >
-            Tarik Dana
-          </Button>
         </div>
       </div>
 
-      {/* Kartu Ringkasan Metrik Buwuh */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Kartu Ringkasan Metrik Bantuan Buwuh */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          label="Total Dana Terkumpul"
-          value={formatRupiah(totalBuwuh)}
-          icon={<Wallet size={18} />}
-          hint="Siap dicairkan ke rekening"
+          label="Total Bantuan Terkumpul"
+          value="148 Bantuan"
+          icon={<Gift size={18} />}
+          hint="Dari seluruh daftar tamu buwuhan"
           colorAccent="emerald"
         />
         <StatCard
-          label="Via Transfer Bank"
-          value={formatRupiah(1500000)}
-          icon={<CreditCard size={18} />}
-          hint="1 transaksi terverifikasi"
-          colorAccent="indigo"
-        />
-        <StatCard
-          label="Via QRIS Instan"
-          value={formatRupiah(800000)}
-          icon={<QrCode size={18} />}
-          hint="2 transaksi real-time"
-          colorAccent="violet"
-        />
-        <StatCard
-          label="Amplop Fisik (Tercatat)"
-          value={formatRupiah(250000)}
-          icon={<Banknote size={18} />}
-          hint="1 amplop di kotak acara"
+          label="Beras"
+          value="350 Kg"
+          icon={<Package size={18} />}
+          hint="Sumbangan bahan pokok beras"
           colorAccent="amber"
+        />
+        <StatCard
+          label="Total Bantuan Masuk Bulan Ini"
+          value="24 Bantuan"
+          icon={<CalendarCheck size={18} />}
+          hint="Tercatat di bulan Agustus 2026"
+          colorAccent="violet"
         />
       </div>
 
-      {/* Tabel Riwayat Transaksi */}
+      {/* Tabel Riwayat Catatan Bantuan Buwuh */}
       <div className="rounded-2xl border border-border bg-white shadow-xs overflow-hidden">
-        {/* Toolbar Pencarian & Filter */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 border-b border-slate-100 bg-slate-50/50">
+        {/* Toolbar Pencarian */}
+        <div className="flex items-center justify-between gap-3 p-4 border-b border-slate-100 bg-slate-50/50">
           <div className="relative flex-1 max-w-md">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari nama pemberi atau ucapan..."
+              placeholder="Cari nama pemberi, jenis bantuan, atau ucapan..."
               className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs text-ink focus:border-primary focus:outline-none"
             />
-          </div>
-
-          <div className="flex items-center gap-1 overflow-x-auto">
-            {['ALL', 'TRANSFER', 'QRIS', 'AMPLOP_FISIK'].map((method) => (
-              <button
-                key={method}
-                type="button"
-                onClick={() => setSelectedMethod(method)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                  selectedMethod === method
-                    ? 'bg-primary text-white shadow-2xs'
-                    : 'text-slate-600 hover:bg-slate-200/60'
-                }`}
-              >
-                {method === 'ALL'
-                  ? 'Semua Metode'
-                  : method === 'TRANSFER'
-                  ? 'Transfer Bank'
-                  : method === 'QRIS'
-                  ? 'QRIS'
-                  : 'Amplop Fisik'}
-              </button>
-            ))}
           </div>
         </div>
 
@@ -212,58 +182,49 @@ export default function BuwuhPage() {
               <tr>
                 <th className="px-5 py-3.5">Pemberi / Tamu</th>
                 <th className="px-5 py-3.5">Acara Undangan</th>
-                <th className="px-5 py-3.5">Metode</th>
-                <th className="px-5 py-3.5">Nominal</th>
+                <th className="px-5 py-3.5">Jenis Bantuan</th>
+                <th className="px-5 py-3.5">Jumlah / Rincian</th>
                 <th className="px-5 py-3.5">Waktu</th>
-                <th className="px-5 py-3.5">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredTransactions.length === 0 ? (
+              {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-muted">
+                  <td colSpan={5} className="px-5 py-10 text-center text-muted">
                     Tidak ada catatan buwuh yang sesuai.
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors">
+                filteredRecords.map((rec) => (
+                  <tr key={rec.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-5 py-4">
-                      <p className="font-bold text-ink">{tx.donorName}</p>
+                      <p className="font-bold text-ink">{rec.donorName}</p>
                       <p className="text-[11px] text-slate-500 italic mt-0.5 max-w-xs truncate">
-                        "{tx.message}"
+                        "{rec.message}"
                       </p>
                     </td>
                     <td className="px-5 py-4 text-slate-700 font-medium">
-                      {tx.invitationTitle}
+                      {rec.invitationTitle}
                     </td>
                     <td className="px-5 py-4">
                       <Badge
                         variant={
-                          tx.method === 'QRIS'
+                          rec.aidType === 'Beras'
+                            ? 'warning'
+                            : rec.aidType === 'Sayuran'
+                            ? 'success'
+                            : rec.aidType === 'Buah'
                             ? 'primary'
-                            : tx.method === 'TRANSFER'
-                            ? 'default'
-                            : 'warning'
+                            : 'default'
                         }
                       >
-                        {tx.method === 'TRANSFER'
-                          ? 'Transfer Bank'
-                          : tx.method === 'QRIS'
-                          ? 'QRIS Instan'
-                          : 'Amplop Fisik'}
+                        {rec.aidType}
                       </Badge>
                     </td>
-                    <td className="px-5 py-4 font-bold text-emerald-600 font-display text-sm">
-                      {formatRupiah(tx.amount)}
+                    <td className="px-5 py-4 font-bold text-ink font-display text-sm">
+                      {rec.quantity}
                     </td>
-                    <td className="px-5 py-4 text-slate-500">{tx.createdAt}</td>
-                    <td className="px-5 py-4">
-                      <span className="inline-flex items-center gap-1 text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded-md">
-                        <CheckCircle2 size={12} />
-                        Diterima
-                      </span>
-                    </td>
+                    <td className="px-5 py-4 text-slate-500">{rec.createdAt}</td>
                   </tr>
                 ))
               )}

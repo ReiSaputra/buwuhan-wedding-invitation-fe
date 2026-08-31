@@ -284,6 +284,7 @@ export default function PanelHadiahPage() {
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        icon={<Gift size={22} className="text-primary" />}
         title="Catat Hadiah Tamu Manual"
         description="Tambahkan catatan amplop tunai atau kado fisik yang diserahkan di lokasi"
         maxWidth="md"
@@ -396,7 +397,9 @@ export default function PanelHadiahPage() {
       <Modal
         isOpen={deletingGift !== null}
         onClose={() => setDeletingGift(null)}
+        icon={<Trash2 size={20} className="text-danger" />}
         title="Hapus Catatan Hadiah?"
+        description="Tindakan ini tidak dapat dibatalkan"
         maxWidth="sm"
       >
         <div className="space-y-4">

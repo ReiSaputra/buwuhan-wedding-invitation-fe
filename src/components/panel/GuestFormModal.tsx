@@ -128,6 +128,7 @@ export function GuestFormModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      icon={<User size={22} className="text-primary" />}
       title={isEditMode ? 'Ubah Data Tamu' : 'Tambah Tamu Baru'}
       description={isEditMode ? 'Perbarui informasi rincian tamu undangan' : 'Daftarkan nama tamu untuk buku kehadiran & undangan digital'}
       maxWidth="lg"

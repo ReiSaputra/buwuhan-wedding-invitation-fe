@@ -219,18 +219,23 @@ export function InvitationList({
       <Modal
         isOpen={Boolean(deleteTargetId)}
         onClose={() => setDeleteTargetId(null)}
+        icon={<AlertTriangle size={20} className="text-amber-600" />}
         title="Hapus Undangan?"
         description="Tindakan ini permanen dan akan menghapus seluruh data tamu, konfirmasi kehadiran, serta buku ucapan terkait."
+        maxWidth="md"
       >
-
-        <div className="rounded-xl bg-amber-50 p-3.5 border border-amber-200/80 flex items-start gap-3 text-amber-900 text-xs">
-          <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+        <div className="rounded-2xl bg-amber-50/80 p-4 border border-amber-200/80 flex items-start gap-3.5 text-amber-900 text-xs">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+            <AlertTriangle size={16} />
+          </div>
           <div>
-            Undangan: <strong>{targetInvitation?.coupleName}</strong> ({targetInvitation?.slug})
+            <p className="font-semibold">Undangan yang akan dihapus:</p>
+            <p className="mt-0.5 text-ink font-bold">{targetInvitation?.coupleName}</p>
+            <p className="text-[11px] text-muted">Slug: /undangan/{targetInvitation?.slug}</p>
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-end gap-2.5">
+        <div className="mt-6 flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
           <Button
             variant="outline"
             size="sm"
@@ -250,50 +255,129 @@ export function InvitationList({
         </div>
       </Modal>
 
-      {/* Modal Buat Undangan Baru (Simulasi) */}
+      {/* Modal Buat Undangan Baru */}
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        icon={<Sparkles size={20} className="text-primary" />}
         title="Buat Undangan Baru"
-        description="Mulai siapkan undangan pernikahan digital dengan memilih template favorit."
+        description="Lengkapi detail awal pasangan dan tanggal acara untuk membuat website undangan pernikahan."
+        maxWidth="lg"
       >
-        <div className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            const form = e.currentTarget
+            const coupleName = (form.elements.namedItem('coupleName') as HTMLInputElement)?.value || 'Mempelai Baru'
+            const dateVal = (form.elements.namedItem('eventDate') as HTMLInputElement)?.value || '2026-10-20'
+            const slugVal = (form.elements.namedItem('slug') as HTMLInputElement)?.value || coupleName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+            
+            const newInv: InvitationSummary = {
+              id: `inv-${Date.now()}`,
+              coupleName,
+              slug: slugVal,
+              eventDate: dateVal,
+              eventTime: '09:00',
+              status: 'DRAFT',
+              guestCount: 0,
+              checkedInCount: 0,
+              thumbnailUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=500&auto=format&fit=crop&q=60',
+            }
+
+            setInvitationsList((prev) => [newInv, ...prev])
+            setIsCreateModalOpen(false)
+            navigate(`/dashboard/undangan/${newInv.id}`)
+          }}
+          className="space-y-4"
+        >
           <div>
-            <label className="block text-xs font-semibold text-ink mb-1">Nama Pasangan Mempelai</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Nama Pasangan Mempelai <span className="text-danger">*</span>
+            </label>
             <input
+              name="coupleName"
               type="text"
-              placeholder="Contoh: Romeo & Juliet"
-              className="w-full rounded-xl border border-border p-2.5 text-xs text-ink focus:border-primary focus:outline-none"
+              required
+              placeholder="Contoh: Han & Saputra"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-xs text-ink placeholder:text-slate-400 focus:bg-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition"
             />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-ink mb-1">Tanggal Acara Utama</label>
-            <input
-              type="date"
-              className="w-full rounded-xl border border-border p-2.5 text-xs text-ink focus:border-primary focus:outline-none"
-            />
-          </div>
-          <div className="rounded-xl bg-indigo-50 p-3 text-xs text-primary flex items-center gap-2">
-            <Sparkles size={16} />
-            <span>Pilihan template tema dapat dipilih setelah undangan dibuat.</span>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Tautan / Slug Undangan <span className="text-danger">*</span>
+              </label>
+              <div className="relative flex items-center">
+                <span className="absolute left-3 text-xs text-slate-400 font-medium select-none">/undangan/</span>
+                <input
+                  name="slug"
+                  type="text"
+                  placeholder="han-saputra"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-24 pr-3 py-3 text-xs text-ink placeholder:text-slate-400 focus:bg-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Tanggal Acara Utama <span className="text-danger">*</span>
+              </label>
+              <input
+                name="eventDate"
+                type="date"
+                required
+                defaultValue="2026-10-20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-xs text-ink focus:bg-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Pilihan Template Desain Awal
+            </label>
+            <div className="grid grid-cols-3 gap-2.5">
+              {[
+                { name: 'Royal Floral', desc: 'Elegan & Bunga', active: true },
+                { name: 'Modern Minimalist', desc: 'Bersih & Simpel', active: false },
+                { name: 'Javanese Classic', desc: 'Adat & Budaya', active: false },
+              ].map((theme, idx) => (
+                <div
+                  key={theme.name}
+                  className={cn(
+                    'rounded-xl border p-2.5 text-center cursor-pointer transition-all',
+                    idx === 0
+                      ? 'border-primary bg-indigo-50/60 text-primary ring-2 ring-indigo-500/20'
+                      : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 text-slate-600',
+                  )}
+                >
+                  <p className="text-xs font-bold">{theme.name}</p>
+                  <p className="text-[10px] text-muted mt-0.5">{theme.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-indigo-50/70 p-3 text-xs text-primary flex items-center gap-2 border border-indigo-100">
+            <Sparkles size={16} className="shrink-0 text-amber-500" />
+            <span>Foto galeri, kisah cinta, lokasi Google Maps, dan buku tamu dapat diatur setelah undangan dibuat.</span>
+          </div>
+
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)}>
               Batal
             </Button>
             <Button
+              type="submit"
               variant="primary"
               size="sm"
-              onClick={() => {
-                setIsCreateModalOpen(false)
-                navigate('/dashboard/undangan/1')
-              }}
+              icon={<Plus size={15} />}
             >
-              Lanjutkan ke Panel
+              Buat Undangan Sekarang
             </Button>
           </div>
-        </div>
+        </form>
       </Modal>
     </section>
   )

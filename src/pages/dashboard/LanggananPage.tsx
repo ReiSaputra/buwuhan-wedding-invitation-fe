@@ -162,12 +162,20 @@ export default function LanggananPage() {
       <Modal
         isOpen={Boolean(selectedPlanCode)}
         onClose={() => setSelectedPlanCode(null)}
+        icon={
+          isSuccess ? (
+            <CheckCircle2 size={22} className="text-emerald-600" />
+          ) : (
+            <Sparkles size={22} className="text-primary" />
+          )
+        }
         title={isSuccess ? 'Pembayaran Berhasil!' : `Upgrade ke Paket ${selectedPlan?.name}`}
         description={
           isSuccess
             ? 'Selamat, paket Anda telah aktif secara otomatis.'
             : 'Selesaikan transaksi untuk mengaktifkan seluruh fitur premium.'
         }
+        maxWidth="md"
       >
         {isSuccess ? (
           <div className="py-6 text-center space-y-4">

@@ -375,6 +375,7 @@ export default function PanelBukuTamuPage() {
       <Modal
         isOpen={viewedMessage !== null}
         onClose={() => setViewedMessage(null)}
+        icon={<MessageSquareQuote size={22} className="text-primary" />}
         title="Ucapan & Doa Restu Tamu"
         description={viewedMessage ? `Dikirimkan oleh ${viewedMessage.name}` : undefined}
         maxWidth="md"
@@ -399,7 +400,9 @@ export default function PanelBukuTamuPage() {
       <Modal
         isOpen={deletingEntry !== null}
         onClose={() => setDeletingEntry(null)}
+        icon={<Trash2 size={20} className="text-danger" />}
         title="Hapus Catatan Tamu?"
+        description="Tindakan ini permanen dan tidak dapat dipulihkan"
         maxWidth="sm"
       >
         <div className="space-y-4">
