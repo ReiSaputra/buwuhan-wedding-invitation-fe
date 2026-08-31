@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Save, Type, Link2, User, Calendar, Clock, MapPin, Home } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { fetchData } from '@/lib/api'
+import { Save, Type, Link2, User, Calendar, Clock, MapPin, Home, LayoutTemplate, Check } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { slugify } from '@/hooks/useInvitationMutations'
 import { parseApiError } from '@/lib/errorHandler'
-import type { ApiInvitation, InvitationPayload } from '@/types/invitation-api'
+import type { ApiInvitation, InvitationPayload, ApiTemplate } from '@/types/invitation-api'
 import { cn } from '@/lib/cn'
 
 export type InvitationFormProps = {
@@ -30,6 +32,7 @@ type FormState = {
   eventTime: string
   venue: string
   address: string
+  templateId: string
 }
 
 const EMPTY_FORM: FormState = {
@@ -45,6 +48,7 @@ const EMPTY_FORM: FormState = {
   eventTime: '',
   venue: '',
   address: '',
+  templateId: '',
 }
 
 type FormErrors = Partial<Record<keyof FormState, string>>
@@ -71,11 +75,11 @@ function toFormState(data: ApiInvitation): FormState {
     brideName: bride?.name ?? '',
     brideFather: bride?.fatherName ?? '',
     brideMother: bride?.motherName ?? '',
-    // input type="date" hanya menerima format YYYY-MM-DD
     eventDate: data.eventDate ? data.eventDate.slice(0, 10) : '',
     eventTime: data.eventTime ?? '',
     venue: data.venue ?? '',
     address: data.address ?? '',
+    templateId: data.template?.id ?? '',
   }
 }
 
@@ -97,19 +101,37 @@ export function InvitationForm({
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<FormErrors>({})
   const [generalError, setGeneralError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  
+  // Fetch daftar template dari backend
+  const { data: templates = [], isLoading: isLoadingTemplates } = useQuery({
+    queryKey: ['templates'],
+    queryFn: () => fetchData<ApiTemplate[]>('/templates'),
+  })
+
   // Di mode buat baru, slug ikut judul otomatis sampai user mengetik slug sendiri.
   const [slugTouched, setSlugTouched] = useState(false)
+  // Parse initial eventTime if it has format "HH:MM - HH:MM WIB"
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
 
   useEffect(() => {
     if (initialValue) {
       setForm(toFormState(initialValue))
       setSlugTouched(true)
+      
+      if (initialValue.eventTime) {
+        const parts = initialValue.eventTime.replace(' WIB', '').split(' - ')
+        setStartTime(parts[0] || '')
+        setEndTime(parts[1] || '')
+      }
     } else {
       setForm(EMPTY_FORM)
       setSlugTouched(false)
     }
     setErrors({})
     setGeneralError(null)
+    setSuccessMessage(null)
   }, [initialValue])
 
   /**
@@ -181,10 +203,20 @@ export function InvitationForm({
       ],
     }
 
-    if (form.eventDate) payload.eventDate = form.eventDate
-    if (form.eventTime.trim()) payload.eventTime = form.eventTime.trim()
+    if (form.eventDate) {
+      // Ubah format "YYYY-MM-DD" dari input type="date" menjadi format ISO string lengkap "YYYY-MM-DDT00:00:00.000Z"
+      const dateObj = new Date(form.eventDate)
+      payload.eventDate = dateObj.toISOString()
+    }
+    
+    // Gabung startTime dan endTime
+    if (startTime || endTime) {
+      payload.eventTime = endTime ? `${startTime} - ${endTime} WIB` : `${startTime} WIB`
+    }
+    
     if (form.venue.trim()) payload.venue = form.venue.trim()
     if (form.address.trim()) payload.address = form.address.trim()
+    if (form.templateId) payload.templateId = form.templateId
 
     return payload
   }
@@ -195,6 +227,7 @@ export function InvitationForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setGeneralError(null)
+    setSuccessMessage(null)
 
     const nextErrors = validate()
     setErrors(nextErrors)
@@ -202,6 +235,10 @@ export function InvitationForm({
 
     try {
       await onSubmit(buildPayload())
+      if (isEditMode) {
+        setSuccessMessage('Undangan berhasil di edit')
+        setTimeout(() => setSuccessMessage(null), 3000)
+      }
     } catch (error) {
       const parsed = parseApiError(error)
       const mapped: FormErrors = {}
@@ -224,6 +261,12 @@ export function InvitationForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {successMessage && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-medium text-emerald-700">
+          {successMessage}
+        </div>
+      )}
+      
       {generalError && (
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium text-danger">
           {generalError}
@@ -378,18 +421,25 @@ export function InvitationForm({
           />
         </div>
         <div>
-          <label htmlFor="inv-time" className={labelClass}>
+          <label className={labelClass}>
             <Clock size={13} className="text-primary" />
             <span>Waktu Acara</span>
           </label>
-          <input
-            id="inv-time"
-            type="text"
-            value={form.eventTime}
-            onChange={(e) => updateField('eventTime', e.target.value)}
-            placeholder="08.00 - 11.00 WIB"
-            className={cn(fieldClass, errors.eventTime && 'border-red-300')}
-          />
+          <div className="mt-1.5 flex items-center gap-2">
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className={cn(fieldClass, "mt-0")}
+            />
+            <span className="text-sm font-medium text-slate-400">-</span>
+            <input
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              className={cn(fieldClass, "mt-0")}
+            />
+          </div>
           {errors.eventTime && <p className="mt-1 text-[11px] font-medium text-danger">{errors.eventTime}</p>}
         </div>
       </div>
@@ -425,6 +475,64 @@ export function InvitationForm({
           className={cn(fieldClass, 'resize-none', errors.address && 'border-red-300')}
         />
         {errors.address && <p className="mt-1 text-[11px] font-medium text-danger">{errors.address}</p>}
+      </div>
+
+      {/* Template */}
+      <div>
+        <label className={labelClass}>
+          <LayoutTemplate size={13} className="text-primary" />
+          <span>Pilih Template Tema</span>
+        </label>
+        
+        {isLoadingTemplates ? (
+          <div className="mt-2 flex h-32 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50">
+            <span className="text-xs font-medium text-slate-400">Memuat template...</span>
+          </div>
+        ) : (
+          <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {templates.map((tpl) => (
+              <button
+                key={tpl.id}
+                type="button"
+                onClick={() => updateField('templateId', tpl.id)}
+                className={cn(
+                  "relative flex flex-col items-center overflow-hidden rounded-2xl border-2 p-2 text-left transition-all",
+                  form.templateId === tpl.id
+                    ? "border-primary bg-indigo-50/30"
+                    : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50",
+                  errors.templateId && "border-red-300"
+                )}
+              >
+                <div className="mb-2 aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100 relative group">
+                  {tpl.thumbnailUrl ? (
+                    <img src={tpl.thumbnailUrl} alt={tpl.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center bg-slate-100 text-slate-300">
+                      <LayoutTemplate size={28} className="mb-1" />
+                      <span className="text-[9px] font-bold uppercase tracking-wider">No Image</span>
+                    </div>
+                  )}
+                </div>
+                <div className="w-full px-1 text-center">
+                  <span className="block truncate text-xs font-bold text-ink" title={tpl.name}>
+                    {tpl.name}
+                  </span>
+                  {tpl.description && (
+                    <span className="mt-0.5 block truncate text-[10px] text-muted" title={tpl.description}>
+                      {tpl.description}
+                    </span>
+                  )}
+                </div>
+                {form.templateId === tpl.id && (
+                  <div className="absolute right-2 top-2 rounded-full bg-primary p-1 text-white shadow-sm ring-2 ring-white">
+                    <Check size={12} strokeWidth={3} />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+        {errors.templateId && <p className="mt-1 text-[11px] font-medium text-danger">{errors.templateId}</p>}
       </div>
 
       {/* Aksi */}

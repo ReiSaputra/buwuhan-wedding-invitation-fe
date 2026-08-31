@@ -124,11 +124,6 @@ export default function PanelEditPage() {
 
       {/* Formulir data undangan */}
       <div className="rounded-2xl border border-border bg-white p-4 shadow-xs sm:p-6">
-        {updateInvitation.isSuccess && !updateInvitation.isPending && (
-          <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-medium text-emerald-700">
-            Perubahan berhasil disimpan.
-          </div>
-        )}
 
         <InvitationForm
           initialValue={rawInvitation}

@@ -9,6 +9,14 @@ export interface ApiCouple {
   motherName: string;
 }
 
+export interface ApiTemplate {
+  id: string;
+  name: string;
+  slug: string;
+  thumbnailUrl: string | null;
+  description: string | null;
+}
+
 export interface ApiGalleryPhoto {
   id: string
   imageUrl: string

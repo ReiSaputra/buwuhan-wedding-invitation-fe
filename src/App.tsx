@@ -70,7 +70,7 @@ export default function App() {
         </Route>
 
         {/* Halaman undangan publik untuk tamu resepsi (tanpa proteksi login) */}
-        <Route path="/undangan/:slug" element={<InvitationPage />} />
+        <Route path="/undangan/:id" element={<InvitationPage />} />
 
         {/* Fallback rute */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

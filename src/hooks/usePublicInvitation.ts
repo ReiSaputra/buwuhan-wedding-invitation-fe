@@ -55,12 +55,12 @@ function findCouple(
  * const { groom, bride, eventDateText, isLoading } = usePublicInvitation()
  */
 export function usePublicInvitation() {
-  const { slug = '' } = useParams()
+  const { id = '' } = useParams()
 
   const query = useQuery({
-    queryKey: ['public-invitation', slug],
-    queryFn: () => fetchData<ApiInvitation>(`/public/invitations/${slug}`),
-    enabled: Boolean(slug),
+    queryKey: ['invitation', id],
+    queryFn: () => fetchData<ApiInvitation>(`/invitations/${id}`),
+    enabled: Boolean(id),
     retry: false,
   })
 
@@ -69,7 +69,8 @@ export function usePublicInvitation() {
   const bride = findCouple(invitation?.couples, 'BRIDE')
 
   return {
-    slug,
+    id,
+    slug: invitation?.slug ?? '',
     invitation,
 
     // Data mempelai terpisah
@@ -87,6 +88,7 @@ export function usePublicInvitation() {
     address: invitation?.address ?? '',
     galleryPhotos: invitation?.galleryPhotos ?? [],
     loveStories: invitation?.loveStories ?? [],
+    templateId: invitation?.template?.id ?? '',
 
     // Status permintaan
     isLoading: Boolean(slug) && query.isLoading,

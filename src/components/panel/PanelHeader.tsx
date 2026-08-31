@@ -12,8 +12,10 @@ export type PanelHeaderProps = {
   coupleName: string
   /** Tanggal pelaksanaan acara pernikahan (format YYYY-MM-DD), null bila belum diatur */
   eventDate: string | null
-  /** Slug URL publik undangan */
-  slug: string
+  /** ID Undangan untuk preview */
+  id: string
+  /** Apakah template undangan sudah dipilih? */
+  hasTemplate?: boolean
 }
 
 /**
@@ -23,9 +25,9 @@ export type PanelHeaderProps = {
  * 
  * @param props - Properti PanelHeader (coupleName, eventDate, slug)
  */
-export function PanelHeader({ coupleName, eventDate, slug }: PanelHeaderProps) {
+export function PanelHeader({ coupleName, eventDate, id, hasTemplate = true }: PanelHeaderProps) {
   const [copied, setCopied] = useState(false)
-  const publicUrl = `${window.location.origin}/undangan/${slug}`
+  const publicUrl = `${window.location.origin}/undangan/${id}`
   const daysLeft = getDaysRemaining(eventDate)
 
   /**
@@ -80,15 +82,27 @@ export function PanelHeader({ coupleName, eventDate, slug }: PanelHeaderProps) {
             {copied ? 'Link Tersalin!' : 'Salin Link Undangan'}
           </Button>
 
-          <a
-            href={publicUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-primary-hover transition cursor-pointer active:scale-95"
-          >
-            <ExternalLink size={15} />
-            <span>Lihat Website</span>
-          </a>
+          {hasTemplate ? (
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-primary-hover transition cursor-pointer active:scale-95"
+            >
+              <ExternalLink size={15} />
+              <span>Lihat Website</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled
+              title="Pilih desain template terlebih dahulu untuk dapat melihat website"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-400 shadow-xs cursor-not-allowed"
+            >
+              <ExternalLink size={15} />
+              <span>Lihat Website</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
