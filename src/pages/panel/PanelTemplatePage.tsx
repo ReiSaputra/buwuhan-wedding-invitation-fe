@@ -1,0 +1,106 @@
+import { useParams } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Check, LayoutTemplate } from 'lucide-react'
+import { patchData } from '@/lib/api'
+import { QueryState } from '@/components/common/QueryState'
+import { useInvitationDetail } from '@/hooks/useInvitationDetail'
+import { useTemplates } from '@/hooks/useTemplates'
+import type { ApiInvitation } from '@/types/invitation-api'
+import { cn } from '@/lib/cn'
+
+/**
+ * Halaman Pilih Template pada Panel Pengelolaan Undangan.
+ * Menampilkan seluruh template dari backend dan menyimpan pilihan pengguna
+ * lewat PATCH /invitations/:id dengan hanya mengirim ruas templateId.
+ */
+export default function PanelTemplatePage() {
+  const { id = '' } = useParams()
+  const queryClient = useQueryClient()
+  const { rawInvitation } = useInvitationDetail(id)
+  const { templates, isLoading, isError } = useTemplates()
+
+  const activeTemplateId = rawInvitation?.template?.id ?? ''
+
+  // Mutation lokal dipakai karena useUpdateInvitation mewajibkan payload penuh
+  // (title, slug, couples), sedangkan di sini cukup mengirim templateId saja.
+  const selectTemplate = useMutation({
+    mutationFn: (templateId: string) =>
+      patchData<ApiInvitation, { templateId: string }>(`/invitations/${id}`, { templateId }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['invitation', id] })
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">
+          Pilih Desain Template
+        </h1>
+        <p className="mt-1 text-xs text-muted">
+          Tentukan tampilan undangan digital yang akan dilihat tamu Anda.
+        </p>
+      </div>
+
+      {selectTemplate.isError && (
+        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium text-danger">
+          Gagal menyimpan pilihan template. Coba lagi.
+        </p>
+      )}
+
+      <QueryState isLoading={isLoading} isError={isError}>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {templates.map((template) => {
+            const isActive = template.id === activeTemplateId
+
+            return (
+              <button
+                key={template.id}
+                type="button"
+                disabled={selectTemplate.isPending}
+                onClick={() => selectTemplate.mutate(template.id)}
+                className={cn(
+                  'group overflow-hidden rounded-3xl border bg-white text-left transition-all',
+                  isActive
+                    ? 'border-primary ring-2 ring-primary/20'
+                    : 'border-border hover:border-slate-300 cursor-pointer',
+                  selectTemplate.isPending && 'pointer-events-none opacity-60',
+                )}
+              >
+                <div className="relative aspect-4/3 bg-slate-100">
+                  {template.thumbnailUrl ? (
+                    <img
+                      src={template.thumbnailUrl}
+                      alt={`Pratinjau template ${template.name}`}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <LayoutTemplate
+                      size={28}
+                      className="absolute inset-0 m-auto text-slate-300"
+                    />
+                  )}
+
+                  {isActive && (
+                    <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-xl bg-primary px-2.5 py-1 text-[11px] font-bold text-white">
+                      <Check size={12} /> Terpakai
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-0.5 p-4">
+                  <p className="text-xs font-bold text-ink">{template.name}</p>
+                  <p className="line-clamp-2 text-[11px] text-slate-400">
+                    {template.description ?? 'Tanpa deskripsi'}
+                  </p>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </QueryState>
+    </div>
+  )
+}

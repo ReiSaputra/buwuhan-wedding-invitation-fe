@@ -16,9 +16,9 @@ export type HeroIntroSectionProps = {
  */
 export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroIntroSectionProps) {
   return (
-    <section id="salam" className="relative py-20 px-6 text-center bg-cream overflow-hidden">
+    <section id="salam" className="relative py-20 px-6 text-center bg-inv-page overflow-hidden">
       {/* Background patterns */}
-      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
+      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full bg-inv-gold/10 blur-3xl" />
 
       <div className="mx-auto max-w-2xl space-y-8">
         <motion.div
@@ -28,10 +28,10 @@ export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroInt
           transition={{ duration: 0.8 }}
           className="space-y-3"
         >
-          <span className="text-xs font-bold uppercase tracking-[0.3em] text-sage">
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-inv-accent">
             Assalamu’alaikum Warahmatullahi Wabarakatuh
           </span>
-          <p className="font-serif text-sm sm:text-base text-slate-700 italic leading-relaxed pt-2">
+          <p className="font-serif text-sm sm:text-base text-inv-ink italic leading-relaxed pt-2">
             Dengan memohon rahmat dan ridho Allah Subhanahu Wa Ta’ala, kami bermaksud mengundang Bapak/Ibu/Saudara/i sekalian untuk menghadiri dan memberikan doa restu pada acara pernikahan kami:
           </p>
         </motion.div>
@@ -50,10 +50,10 @@ export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroInt
               alt="Cincin Pernikahan"
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center p-6 text-white text-center">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center p-6 text-inv-on-accent text-center">
               <div>
                 <p className="font-display text-2xl font-bold">{groomName} &amp; {brideName}</p>
-                <p className="text-xs text-white/80 uppercase tracking-widest mt-0.5">{eventDateStr}</p>
+                <p className="text-xs text-inv-on-accent/80 uppercase tracking-widest mt-0.5">{eventDateStr}</p>
               </div>
             </div>
           </div>
@@ -65,13 +65,13 @@ export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroInt
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="rounded-3xl border border-gold/25 bg-white/80 p-6 sm:p-8 shadow-xs backdrop-blur-xs text-center relative"
+          className="rounded-3xl border border-inv-gold/25 bg-inv-card/80 p-6 sm:p-8 shadow-xs backdrop-blur-xs text-center relative"
         >
-          <Quote size={28} className="mx-auto text-gold/40 mb-3" />
-          <p className="font-serif text-sm sm:text-base leading-relaxed text-slate-700 italic">
+          <Quote size={28} className="mx-auto text-inv-gold/40 mb-3" />
+          <p className="font-serif text-sm sm:text-base leading-relaxed text-inv-ink italic">
             "Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang."
           </p>
-          <p className="mt-3 text-xs font-bold text-sage uppercase tracking-wider">
+          <p className="mt-3 text-xs font-bold text-inv-accent uppercase tracking-wider">
             — QS. Ar-Rum: 21 —
           </p>
         </motion.div>

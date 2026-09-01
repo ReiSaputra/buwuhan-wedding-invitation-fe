@@ -12,10 +12,12 @@ export type PanelHeaderProps = {
   coupleName: string
   /** Tanggal pelaksanaan acara pernikahan (format YYYY-MM-DD), null bila belum diatur */
   eventDate: string | null
-  /** ID Undangan untuk preview */
-  id: string
+  /** Slug undangan untuk tautan publik `/undangan/:slug` */
+  slug: string
   /** Apakah template undangan sudah dipilih? */
   hasTemplate?: boolean
+  /** Status undangan; website publik hanya bisa dibuka bila ACTIVE atau COMPLETED */
+  status?: 'DRAFT' | 'ACTIVE' | 'COMPLETED'
 }
 
 /**
@@ -23,12 +25,14 @@ export type PanelHeaderProps = {
  * Menampilkan nama pasangan dengan tipografi mewah, hitung mundur hari acara,
  * tombol salin tautan undangan dengan umpan balik, dan tautan langsung ke website tamu.
  * 
- * @param props - Properti PanelHeader (coupleName, eventDate, slug)
+ * @param props - Properti PanelHeader (coupleName, eventDate, slug, hasTemplate, status)
  */
-export function PanelHeader({ coupleName, eventDate, id, hasTemplate = true }: PanelHeaderProps) {
+export function PanelHeader({ coupleName, eventDate, slug, hasTemplate = true, status = 'ACTIVE' }: PanelHeaderProps) {
   const [copied, setCopied] = useState(false)
-  const publicUrl = `${window.location.origin}/undangan/${id}`
+  const publicUrl = `${window.location.origin}/undangan/${slug}`
   const daysLeft = getDaysRemaining(eventDate)
+  const isPublished = status === 'ACTIVE' || status === 'COMPLETED'
+  const canOpenWebsite = hasTemplate && isPublished && Boolean(slug)
 
   /**
    * Menyalin tautan undangan ke clipboard pengguna.
@@ -82,7 +86,7 @@ export function PanelHeader({ coupleName, eventDate, id, hasTemplate = true }: P
             {copied ? 'Link Tersalin!' : 'Salin Link Undangan'}
           </Button>
 
-          {hasTemplate ? (
+          {canOpenWebsite ? (
             <a
               href={publicUrl}
               target="_blank"
@@ -96,7 +100,11 @@ export function PanelHeader({ coupleName, eventDate, id, hasTemplate = true }: P
             <button
               type="button"
               disabled
-              title="Pilih desain template terlebih dahulu untuk dapat melihat website"
+              title={
+                !hasTemplate
+                  ? 'Pilih desain template terlebih dahulu untuk dapat melihat website'
+                  : 'Ubah status undangan menjadi Aktif terlebih dahulu agar website dapat dibuka tamu'
+              }
               className="inline-flex items-center gap-2 rounded-xl bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-400 shadow-xs cursor-not-allowed"
             >
               <ExternalLink size={15} />

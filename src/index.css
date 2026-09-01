@@ -44,6 +44,87 @@
 --color-night: #1f2937;
 --color-night-muted: #6b7280;
 --color-danger-strong: #be123c;
+  /* Token tema undangan publik — nilainya dioverride per template di bawah */
+  --color-inv-page: #faf7f2;
+  --color-inv-page-alt: #ffffff;
+  --color-inv-card: #ffffff;
+  --color-inv-accent: #526b5d;
+  --color-inv-accent-dark: #3c5044;
+  --color-inv-on-accent: #ffffff;
+  --color-inv-ink: #1f2937;
+  --color-inv-ink-muted: #6b7280;
+  --color-inv-line: #e2e8f0;
+  --color-inv-gold: #c59b27;
+}
+
+/* ============================================
+   TEMA UNDANGAN PUBLIK
+   Selector cocok dengan data-template pada wrapper TemplateShell.
+   ============================================ */
+
+[data-template="klasik"] {
+  --color-inv-page: #0f172a;
+  --color-inv-page-alt: #1a2334;
+  --color-inv-card: #263241;
+  --color-inv-accent: #c59b27;
+  --color-inv-accent-dark: #a17c18;
+  --color-inv-on-accent: #0f172a;
+  --color-inv-ink: #f1f5f9;
+  --color-inv-ink-muted: #94a3b8;
+  --color-inv-line: #3a4657;
+  --color-inv-gold: #e0c264;
+}
+
+[data-template="elegan"] {
+  --color-inv-page: #faf7f2;
+  --color-inv-page-alt: #ffffff;
+  --color-inv-card: #ffffff;
+  --color-inv-accent: #526b5d;
+  --color-inv-accent-dark: #3c5044;
+  --color-inv-on-accent: #ffffff;
+  --color-inv-ink: #1f2937;
+  --color-inv-ink-muted: #6b7280;
+  --color-inv-line: #e2e8f0;
+  --color-inv-gold: #c59b27;
+}
+
+[data-template="minimalis"] {
+  --color-inv-page: #ffffff;
+  --color-inv-page-alt: #f8fafc;
+  --color-inv-card: #ffffff;
+  --color-inv-accent: #111827;
+  --color-inv-accent-dark: #000000;
+  --color-inv-on-accent: #ffffff;
+  --color-inv-ink: #111827;
+  --color-inv-ink-muted: #6b7280;
+  --color-inv-line: #e5e7eb;
+  --color-inv-gold: #9ca3af;
+}
+
+[data-template="ceria"] {
+  --color-inv-page: #eff6ff;
+  --color-inv-page-alt: #ffffff;
+  --color-inv-card: #ffffff;
+  --color-inv-accent: #1d4ed8;
+  --color-inv-accent-dark: #1e3fa8;
+  --color-inv-on-accent: #ffffff;
+  --color-inv-ink: #172554;
+  --color-inv-ink-muted: #475569;
+  --color-inv-line: #bfdbfe;
+  --color-inv-gold: #0ea5e9;
+}
+
+[data-template="syukuran"] {
+  --color-inv-page: #fffbeb;
+  --color-inv-page-alt: #fffef8;
+  --color-inv-card: #ffffff;
+  --color-inv-accent: #92400e;
+  --color-inv-accent-dark: #78350f;
+  --color-inv-on-accent: #ffffff;
+  --color-inv-ink: #451a03;
+  --color-inv-ink-muted: #78716c;
+  --color-inv-line: #fde68a;
+  --color-inv-gold: #b45309;
 }
 
 /* Base resets & typography */

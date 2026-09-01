@@ -12,6 +12,7 @@ import {
   Check,
 } from 'lucide-react'
 import { PanelPageHeader } from '@/components/panel/PanelPageHeader'
+import { QueryState } from '@/components/common/QueryState'
 import { StatCard } from '@/components/dashboard/StatCard'
 import { TableCard } from '@/components/ui/TableCard'
 import { SearchInput } from '@/components/ui/SearchInput'
@@ -67,7 +68,7 @@ const tdClass = 'px-6 py-4 align-middle'
 export default function PanelRsvpPage() {
   const { id = '' } = useParams()
   const { invitation } = useInvitationDetail(id)
-  const { guests, stats } = useRsvpGuests(id)
+  const { guests, stats, isLoading, isError } = useRsvpGuests(id)
 
   const [statusFilter, setStatusFilter] = useState<RsvpStatus | 'ALL'>('ALL')
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -86,6 +87,14 @@ export default function PanelRsvpPage() {
 
   const hadirPercentage =
     stats.total > 0 ? Math.round((stats.hadir / stats.total) * 100) : 0
+  /**
+   * Menghitung lebar segmen progress bar secara aman.
+   * Tanpa pengaman ini, pembagian dengan nol menghasilkan "NaN%" saat
+   * undangan belum punya tamu sama sekali.
+   */
+  function toWidth(value: number): string {
+    return stats.total > 0 ? `${(value / stats.total) * 100}%` : '0%'
+  }
 
   /**
    * Menyalin nomor HP tamu ke clipboard dan memberikan notifikasi visual sesaat.
@@ -160,17 +169,17 @@ export default function PanelRsvpPage() {
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 flex">
           <div
             className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-500"
-            style={{ width: `${(stats.hadir / stats.total) * 100}%` }}
+            style={{ width: toWidth(stats.hadir) }}
             title={`Hadir: ${stats.hadir}`}
           />
           <div
             className="h-full bg-amber-400 transition-all duration-500"
-            style={{ width: `${(stats.tidakHadir / stats.total) * 100}%` }}
+            style={{ width: toWidth(stats.tidakHadir) }}
             title={`Tidak Hadir: ${stats.tidakHadir}`}
           />
           <div
             className="h-full bg-slate-200 transition-all duration-500"
-            style={{ width: `${(stats.belumKonfirmasi / stats.total) * 100}%` }}
+            style={{ width: toWidth(stats.belumKonfirmasi) }}
             title={`Belum Konfirmasi: ${stats.belumKonfirmasi}`}
           />
         </div>
@@ -192,7 +201,8 @@ export default function PanelRsvpPage() {
       </div>
 
       {/* Tabel Data RSVP */}
-      <TableCard
+      <QueryState isLoading={isLoading} isError={isError}>
+<TableCard
         title="Daftar Konfirmasi Tamu"
         toolbar={
           <>
@@ -331,6 +341,8 @@ export default function PanelRsvpPage() {
           </tbody>
         </table>
       </TableCard>
+      </QueryState>
+      
     </div>
   )
 }

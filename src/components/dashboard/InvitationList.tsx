@@ -9,6 +9,7 @@ import type { InvitationSummary, ViewMode, InvitationStatus } from '@/types/dash
 import { cn } from '@/lib/cn'
 import { CreateInvitationModal } from './CreateInvitationModal'
 import { useDeleteInvitation } from '@/hooks/useInvitationMutations'
+import { parseApiError } from '@/lib/errorHandler'
 
 export type InvitationListProps = {
   /** Judul bagian daftar undangan */
@@ -89,8 +90,11 @@ export function InvitationList({
     try {
       await deleteInvitation.mutateAsync(deleteTargetId)
       setDeleteTargetId(null)
-    } catch {
-      setDeleteError('Gagal menghapus undangan. Periksa koneksi lalu coba lagi.')
+    } catch (error) {
+      // Tampilkan pesan asli dari backend agar penyebab kegagalan jelas,
+      // misalnya sesi kedaluwarsa, undangan sudah terhapus, atau galat relasi.
+      const parsed = parseApiError(error)
+      setDeleteError(parsed.generalMessage)
     }
   }
 
@@ -261,8 +265,13 @@ export function InvitationList({
         </div>
       </Modal>
 
-      {/* Modal Buat Undangan Baru */}
+      {/* Modal Buat Undangan Baru.
+          Prop `key` berubah setiap modal dibuka atau ditutup, sehingga React
+          memasang ulang modal beserta InvitationForm di dalamnya. Inilah yang
+          menggantikan reset formulir lewat useEffect (aturan React Compiler
+          melarang setState langsung di dalam effect). */}
       <CreateInvitationModal
+        key={isCreateModalOpen ? 'buat-undangan-terbuka' : 'buat-undangan-tertutup'}
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
       />

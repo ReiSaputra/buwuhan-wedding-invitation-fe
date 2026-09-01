@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { MailOpen, Heart, Sparkles } from 'lucide-react'
+import { THEME_ELEGAN, type TemplateTheme } from '@/templates/template-themes'
 
 export type CoverSectionProps = {
   /** Nama tamu undangan yang sedang membuka halaman */
@@ -12,14 +13,18 @@ export type CoverSectionProps = {
   eventDate?: string
   /** Callback saat tombol 'Buka Undangan' diklik */
   onOpen: () => void
+  /** Tema visual dari template yang sedang dirender */
+  theme?: TemplateTheme
 }
 
 /**
  * Komponen Sampul Depan Undangan Digital (Cover Section).
- * Menampilkan nama kedua mempelai, nama tamu yang dituju, ornamen pernikahan,
- * serta tombol interaktif untuk membuka seluruh isi undangan.
- * 
- * @param props - Properti CoverSection (guestName, groomName, brideName, eventDate, onOpen)
+ *
+ * Seluruh warna diambil dari `theme` agar cover ikut berubah mengikuti
+ * template yang dipilih. Sebelumnya warna teks dipatok mati (`text-night`),
+ * sehingga nama mempelai tidak terbaca di atas template berlatar gelap.
+ *
+ * @param props - Properti CoverSection (guestName, groomName, brideName, eventDate, onOpen, theme)
  */
 export function CoverSection({
   guestName,
@@ -27,12 +32,20 @@ export function CoverSection({
   brideName,
   eventDate = 'Minggu, 18 Januari 2026',
   onOpen,
+  theme = THEME_ELEGAN,
 }: CoverSectionProps) {
   return (
-    <section className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-gradient-to-b from-cream via-cream-warm to-cream-deep px-6 py-10 text-center overflow-hidden">
+    <section
+      data-cover-variant={theme.key}
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-between px-6 py-10 text-center overflow-hidden ${theme.cover}`}
+    >
       {/* Ornamen Latar Belakang */}
-      <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-gold-blush/40 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 -bottom-20 h-80 w-80 rounded-full bg-sage-mist/50 blur-3xl" />
+      {theme.coverOrnament && (
+        <>
+          <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-gold-blush/40 blur-3xl" />
+          <div className="pointer-events-none absolute -right-20 -bottom-20 h-80 w-80 rounded-full bg-sage-mist/50 blur-3xl" />
+        </>
+      )}
 
       {/* Bagian Atas */}
       <motion.div
@@ -40,8 +53,10 @@ export function CoverSection({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] text-sage shadow-xs backdrop-blur-xs border border-sage/15">
-          <Sparkles size={11} className="text-gold" />
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] ${theme.coverBadge}`}
+        >
+          <Sparkles size={11} />
           The Wedding Of
         </span>
       </motion.div>
@@ -52,10 +67,12 @@ export function CoverSection({
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.9, delay: 0.2 }}
-          className="mx-auto flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full bg-gradient-to-tr from-gold/30 to-sage/20 p-1 shadow-md"
+          className={`mx-auto flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full p-1 shadow-md ${theme.coverIconRing}`}
         >
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-white/90 shadow-inner">
-            <Heart size={32} className="text-gold fill-gold/20 animate-pulse" />
+          <div
+            className={`flex h-full w-full items-center justify-center rounded-full shadow-inner ${theme.coverIconInner}`}
+          >
+            <Heart size={32} className={`animate-pulse ${theme.coverIcon}`} />
           </div>
         </motion.div>
 
@@ -64,12 +81,12 @@ export function CoverSection({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
-          <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-night leading-tight">
+          <h1 className={`text-4xl sm:text-5xl leading-tight ${theme.coverTitle}`}>
             <span>{groomName}</span>
-            <span className="mx-2.5 text-gold font-serif italic">&amp;</span>
+            <span className={`mx-2.5 ${theme.coverAmp}`}>&amp;</span>
             <span>{brideName}</span>
           </h1>
-          <p className="mt-2 text-xs sm:text-sm font-medium tracking-widest text-sage uppercase">
+          <p className={`mt-2 text-xs sm:text-sm font-medium tracking-widest uppercase ${theme.coverDate}`}>
             {eventDate}
           </p>
         </motion.div>
@@ -79,13 +96,11 @@ export function CoverSection({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="rounded-2xl border border-white/80 bg-white/70 px-6 py-4 shadow-xs backdrop-blur-xs"
+          className={`px-6 py-4 ${theme.coverCard}`}
         >
-          <p className="text-xs text-night-muted">Kepada Yth. Bapak/Ibu/Saudara/i:</p>
-          <p className="mt-1 font-display text-xl sm:text-2xl font-bold text-night">
-            {guestName}
-          </p>
-          <p className="mt-1 text-[11px] text-sage italic">
+          <p className={`text-xs ${theme.coverCardLabel}`}>Kepada Yth. Bapak/Ibu/Saudara/i:</p>
+          <p className={`mt-1 text-xl sm:text-2xl ${theme.coverCardName}`}>{guestName}</p>
+          <p className={`mt-1 text-[11px] ${theme.coverCardNote}`}>
             *Mohon maaf bila ada kesalahan penulisan nama/gelar
           </p>
         </motion.div>
@@ -100,7 +115,7 @@ export function CoverSection({
         <button
           type="button"
           onClick={onOpen}
-          className="group inline-flex items-center gap-2.5 rounded-full bg-sage px-8 py-3.5 text-sm font-bold tracking-wider text-white shadow-lg shadow-sage/30 transition-all duration-200 hover:bg-sage-dark hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
+          className={`group inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-bold tracking-wider transition-all duration-200 hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer ${theme.coverButton}`}
         >
           <MailOpen size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
           <span>Buka Undangan</span>

@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { Loader2, AlertCircle, Send, Archive, FileEdit, Check } from 'lucide-react'
 import { InvitationForm } from '@/components/dashboard/InvitationForm'
+import { GalleryManager } from '@/components/panel/GalleryManager'
 import { useInvitationDetail } from '@/hooks/useInvitationDetail'
 import {
   useUpdateInvitation,
@@ -124,13 +125,19 @@ export default function PanelEditPage() {
 
       {/* Formulir data undangan */}
       <div className="rounded-2xl border border-border bg-white p-4 shadow-xs sm:p-6">
-
         <InvitationForm
+          key={rawInvitation.id}
           initialValue={rawInvitation}
           onSubmit={handleSubmit}
           isSubmitting={updateInvitation.isPending}
         />
       </div>
+
+      {/* Pengelola foto galeri undangan */}
+      <GalleryManager
+        invitationId={id}
+        photos={rawInvitation.galleryPhotos ?? []}
+      />
     </div>
   )
 }

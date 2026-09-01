@@ -28,6 +28,7 @@ import { useTableState } from '@/hooks/useTableState'
 import { downloadCsv } from '@/lib/export'
 import { formatDateId, formatNumber, formatTimeWib, getInitial } from '@/lib/format'
 import type { AttendanceStatus, GuestBookEntry, NewGuestInput } from '@/types/panel'
+import { QueryState } from '@/components/common/QueryState'
 
 const filterOptions: Array<{ value: AttendanceStatus | 'ALL'; label: string }> = [
   { value: 'ALL', label: 'Semua Kehadiran' },
@@ -48,7 +49,8 @@ const iconButtonClass =
 export default function PanelBukuTamuPage() {
   const { id = '' } = useParams()
   const { invitation } = useInvitationDetail(id)
-  const { entries, stats, addGuest, updateGuest, removeGuest } = useGuestBook(id)
+  const { entries, stats, addGuest, updateGuest, removeGuest, isLoading, isError, isMutating } =
+    useGuestBook(id)
 
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | 'ALL'>('ALL')
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -202,7 +204,8 @@ export default function PanelBukuTamuPage() {
       </div>
 
       {/* Tabel Data Buku Tamu */}
-      <TableCard
+      <QueryState isLoading={isLoading} isError={isError}>
+<TableCard
         title="Daftar Kehadiran Buku Tamu"
         toolbar={
           <>
@@ -350,9 +353,12 @@ export default function PanelBukuTamuPage() {
           </tbody>
         </table>
       </TableCard>
+      </QueryState>
+      
 
       {/* Formulir Modal Tambah dan Ubah Tamu */}
       <GuestFormModal
+        key={`${isFormOpen}-${editingEntry?.id ?? 'tamu-baru'}`}
         isOpen={isFormOpen}
         onClose={() => {
           setIsFormOpen(false)
@@ -411,8 +417,13 @@ export default function PanelBukuTamuPage() {
             <Button variant="outline" size="sm" onClick={() => setDeletingEntry(null)}>
               Batal
             </Button>
-            <Button variant="danger" size="sm" onClick={handleConfirmDelete}>
-              Ya, Hapus Tamu
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleConfirmDelete}
+              disabled={isMutating}
+            >
+              {isMutating ? 'Menghapus…' : 'Ya, Hapus Tamu'}
             </Button>
           </div>
         </div>

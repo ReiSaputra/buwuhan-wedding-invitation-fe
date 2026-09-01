@@ -1,20 +1,42 @@
 import { useGuest } from '@/hooks/useGuest'
 import { usePublicInvitation } from '@/hooks/usePublicInvitation'
 import { Heart, HeartCrack } from 'lucide-react'
-import TemplateElegan from '@/templates/TemplateElegan'
-import TemplateKlasik from '@/templates/TemplateKlasik'
+import { TemplateRenderer } from '@/templates/TemplateRenderer'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 /**
  * Halaman Utama Undangan Pernikahan Digital Publik (`/undangan/:slug`).
  * Berfungsi sebagai "Router" untuk merender desain template yang sesuai 
- * dengan pilihan mempelai, berdasarkan `templateId`.
+ * dengan pilihan mempelai, berdasarkan `template.slug` dari response API.
  */
 export default function InvitationPage() {
-  const { isLoading: isGuestLoading } = useGuest()
-  const { isLoading: isInvitationLoading, isNotFound, templateId } = usePublicInvitation()
+  const {
+    slug,
+    isLoading: isInvitationLoading,
+    isNotFound,
+    templateSlug,
+    coupleNames,
+    eventDateText,
+    venue,
+    galleryPhotos,
+    viewModel,
+  } = usePublicInvitation()
+  const { isLoading: isGuestLoading } = useGuest(slug)
 
   // Halaman baru siap ditampilkan setelah data undangan dan data tamu selesai dimuat
   const isLoading = isGuestLoading || isInvitationLoading
+
+    // Judul tab & meta Open Graph mengikuti data undangan yang sedang dibuka
+  usePageMeta({
+    title: coupleNames
+      ? `Undangan Pernikahan ${coupleNames}`
+      : 'Undangan Pernikahan Buwuhan',
+    description: eventDateText
+      ? `Dengan penuh rasa syukur, kami mengundang Anda hadir pada ${eventDateText}${venue ? ` di ${venue}` : ''}.`
+      : undefined,
+    imageUrl: galleryPhotos[0]?.imageUrl,
+    url: `${import.meta.env.VITE_PUBLIC_BASE_URL ?? ''}/undangan/${slug}`,
+  })
 
   if (isLoading) {
     return (
@@ -46,12 +68,8 @@ export default function InvitationPage() {
     )
   }
 
-  // Pilih template berdasarkan ID Template
-  // ID ini harus disesuaikan dengan ID yang ada di database / API Anda
-  if (templateId === 'cmthe5f040002scsmz80xac8b') {
-    return <TemplateKlasik />
-  }
-
-  // Default fallback jika templateId tidak cocok / kosong (misal ID 'cmthe5f040002scsmz80xac8a')
-  return <TemplateElegan />
+  // Pemilihan desain mengikuti slug template dari backend, dan seluruh
+  // data undangan diteruskan sebagai props tunggal ke template terpilih
+  console.log('[DEBUG] templateSlug dari API =', JSON.stringify(templateSlug))
+  return <TemplateRenderer slug={templateSlug} data={viewModel} />
 }

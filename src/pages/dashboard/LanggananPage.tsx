@@ -8,6 +8,7 @@ import type { PlanCode, PlanTier } from '@/types/dashboard'
 import { formatRupiah } from '@/lib/format'
 import { Sparkles, QrCode, CreditCard, ChevronDown, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { PreviewDataBanner } from '@/components/common/PreviewDataBanner'
 
 const FAQS = [
   {
@@ -64,6 +65,7 @@ export default function LanggananPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-12 pt-4 pb-12 animate-in fade-in duration-300">
       {/* Header & Judul */}
+      <PreviewDataBanner featureName="Paket Langganan" detail="Harga dan fitur masih dikonfigurasi di frontend; belum ada endpoint langganan dan pembayaran." />
       <div className="text-center max-w-2xl mx-auto space-y-3">
         <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200/60 px-3.5 py-1 text-xs font-bold text-primary">
           <Sparkles size={13} className="text-amber-500" />

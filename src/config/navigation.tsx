@@ -1,6 +1,7 @@
 import {
   Grid2x2, Mail, CreditCard, Gift, Settings,
   Users, LayoutTemplate, Sparkles, BookUser, ClipboardCheck, Wallet,
+  Scan,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -74,6 +75,7 @@ export function buildPanelNav(id: string): NavEntry[] {
       ],
     },
     { type: 'item', to: `${base}/catatan-buwuh`, label: 'Catatan Buwuh', icon: <Wallet size={ICON} /> },
+    { type: 'item', to: `${base}/scan-qr`, label: 'Scan QR', icon: <Scan size={ICON} /> },
   ]
 }
 

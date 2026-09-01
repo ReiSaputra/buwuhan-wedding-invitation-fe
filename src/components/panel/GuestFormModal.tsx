@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Save, User, Phone, Tag, MessageSquare } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -45,25 +45,20 @@ export function GuestFormModal({
   initialValue = null,
 }: GuestFormModalProps) {
   const isEditMode = initialValue !== null
-  const [form, setForm] = useState<NewGuestInput>(EMPTY_FORM)
+  // Nilai awal dihitung sekali saat komponen dipasang. Komponen induk memberi
+  // prop `key` yang berubah setiap modal dibuka, sehingga React memasang ulang
+  // modal ini dan formulir otomatis ter-reset — tanpa setState di dalam effect.
+  const [form, setForm] = useState<NewGuestInput>(() =>
+    initialValue
+      ? {
+          name: initialValue.name,
+          category: initialValue.category,
+          phone: initialValue.phone ?? '',
+          note: initialValue.note ?? '',
+        }
+      : EMPTY_FORM,
+  )
   const [errors, setErrors] = useState<FormErrors>({})
-
-  // Mengisi ulang formulir setiap kali modal dibuka, sesuai mode tambah atau ubah
-  useEffect(() => {
-    if (isOpen) {
-      setForm(
-        initialValue
-          ? {
-              name: initialValue.name,
-              category: initialValue.category,
-              phone: initialValue.phone ?? '',
-              note: initialValue.note ?? '',
-            }
-          : EMPTY_FORM,
-      )
-      setErrors({})
-    }
-  }, [isOpen, initialValue])
 
   /**
    * Memperbarui satu ruas nilai formulir sekaligus menghapus pesan galat terkait.

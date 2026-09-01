@@ -1,6 +1,6 @@
+import type { ApiUserProfile } from '@/types/invitation-api'
+import { AuthContext } from '@/contexts/auth-context'
 import {
-  createContext,
-  useContext,
   useEffect,
   useState,
   useCallback,
@@ -17,62 +17,28 @@ import type {
   BackendSuccessEnvelope,
 } from '@/types/auth'
 
-
 /**
- * Interface data dan metode yang diekspos oleh AuthContext ke seluruh aplikasi.
+ * Mengambil profil pengguna yang sedang login dari endpoint GET /users/me.
+ *
+ * Pendekatan ini menggantikan pembacaan payload JWT secara manual dan
+ * penyimpanan profil di localStorage. Selain lebih akurat (nama, email, dan
+ * paket selalu terbaru), data pengguna tidak lagi tertinggal di penyimpanan
+ * browser setelah pengguna keluar.
+ *
+ * @returns Objek AuthUser, atau null bila gagal diambil
  */
-export type AuthContextType = {
-  /** Data profil user yang sedang login, atau null jika anonim */
-  user: AuthUser | null
-  /** Access Token (JWT) yang tersimpan di memori */
-  accessToken: string | null
-  /** Status apakah sesi user terotentikasi */
-  isAuthenticated: boolean
-  /** Status apakah pengecekan sesi awal (silent refresh) sedang berlangsung */
-  isLoading: boolean
-  /** Fungsi untuk proses masuk (Sign In) */
-  login: (input: LoginInput) => Promise<void>
-  /** Fungsi untuk proses pendaftaran akun (Sign Up) */
-  register: (input: RegisterInput) => Promise<void>
-  /** Fungsi untuk keluar (Sign Out) */
-  logout: () => Promise<void>
-  /** Fungsi untuk memperbarui token sesi secara manual jika dibutuhkan */
-  refreshSession: () => Promise<boolean>
-}
-
-export const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-/**
- * Ekstraksi payload user dari JWT Access Token sebagai fallback
- * jika backend hanya mengembalikan token string tanpa objek user utuh.
- * 
- * @param token - String JWT access token
- * @returns Parsed user object atau null jika tidak valid
- */
-function parseJwtUser(token: string): AuthUser | null {
+async function fetchCurrentUser(): Promise<AuthUser | null> {
   try {
-    const base64Url = token.split('.')[1]
-    if (!base64Url) return null
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join(''),
-    )
-    const payload = JSON.parse(jsonPayload)
-    let cachedUser: Partial<AuthUser> = {}
-    try {
-      const cachedStr = localStorage.getItem('buwuhan_cached_user')
-      if (cachedStr) cachedUser = JSON.parse(cachedStr)
-    } catch {}
+    const res = await api.get<BackendSuccessEnvelope<ApiUserProfile>>('/users/me')
+    const profile = res.data?.data
+    if (!profile) return null
 
     return {
-      id: payload.id || payload.sub || cachedUser.id || 'user-id',
-      email: cachedUser.email || '',
-      fullName: cachedUser.fullName || 'Pengguna Buwuhan',
-      role: payload.role || cachedUser.role || 'USER',
-      plan: payload.planTier || cachedUser.plan || 'FREE',
+      id: profile.id,
+      fullName: profile.fullName,
+      email: profile.email,
+      role: profile.role,
+      plan: profile.planTier,
     }
   } catch {
     return null
@@ -116,8 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       updateAccessToken(token)
 
-      const parsed = parseJwtUser(token)
-      if (parsed) setUser(parsed)
+      // Profil diambil dari server agar nama, email, dan paket selalu terbaru
+      const profile = await fetchCurrentUser()
+      if (profile) setUser(profile)
 
       return true
     } catch {
@@ -174,17 +141,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       updateAccessToken(data.accessToken)
-      const userObj: AuthUser = {
-        id: data.id || 'user-id',
-        fullName: data.fullName || 'Pengguna Buwuhan',
+      setUser({
+        id: data.id,
+        fullName: data.fullName,
         email: data.email || input.email,
         role: data.role,
         plan: data.planTier,
-      }
-      try {
-        localStorage.setItem('buwuhan_cached_user', JSON.stringify(userObj))
-      } catch {}
-      setUser(userObj)
+      })
     },
     [updateAccessToken],
   )
@@ -218,9 +181,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       updateAccessToken(null)
       setUser(null)
-      try {
-        localStorage.removeItem('buwuhan_cached_user')
-      } catch {}
     }
   }, [updateAccessToken])
 
@@ -243,16 +203,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 }
 
-/**
- * Hook bantuan untuk mengakses AuthContext di seluruh komponen.
- * 
- * @returns Objek AuthContextType
- * @throws Error jika dipanggil di luar AuthProvider
- */
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth harus digunakan di dalam <AuthProvider>')
-  }
-  return context
-}

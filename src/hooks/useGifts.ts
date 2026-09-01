@@ -17,10 +17,18 @@ const MOCK_GIFTS: GiftRecord[] = [
 /**
  * Hook pengelola catatan pemberian tamu (uang maupun barang) untuk satu undangan.
  *
- * @param _invitationId - ID undangan yang sedang dikelola
+ * ⚠️ DATA MASIH CONTOH. Backend belum memiliki model dan endpoint untuk hadiah,
+ * sehingga `invitationId` belum dipakai. Setelah endpoint tersedia, ganti isi
+ * hook ini dengan useQuery ke GET /invitations/:invitationId/gifts.
+ *
+ * @param invitationId - ID undangan yang sedang dikelola
  * @returns Daftar `gifts`, rekap `stats`, dan aksi `removeGift`
  */
-export function useGifts(_invitationId: string) {
+export function useGifts(invitationId: string) {
+  // Parameter sengaja "dikonsumsi" agar tanda tangan hook tetap stabil
+  // dan pemanggil tidak perlu diubah saat integrasi backend menyusul.
+  void invitationId
+
   const [gifts, setGifts] = useState<GiftRecord[]>(MOCK_GIFTS)
 
   /** Menghapus satu catatan pemberian berdasarkan ID. */

@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/Button'
 import { useGifts } from '@/hooks/useGifts'
 import { formatDateId, formatNumber, formatRupiah, formatTimeWib, getInitial } from '@/lib/format'
 import type { GiftRecord } from '@/types/panel'
+import { PreviewDataBanner } from '@/components/common/PreviewDataBanner'
 
 /** Jumlah baris yang ditampilkan pertama kali dan setiap kali tombol muat ditekan. */
 const PAGE_STEP = 6
@@ -136,6 +137,8 @@ export default function PanelHadiahPage() {
           </Button>
         }
       />
+      <PreviewDataBanner featureName="Catatan Hadiah" detail="Backend belum memiliki endpoint hadiah/pembayaran. Data berikut masih contoh." />
+      
 
       {/* Kartu Ringkasan Metrik Statistik */}
       <div className="grid gap-4 sm:grid-cols-3">

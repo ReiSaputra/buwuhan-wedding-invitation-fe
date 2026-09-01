@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
 import type { NavGroupDef } from '@/config/navigation'
@@ -20,18 +20,19 @@ export type NavGroupProps = {
 export function NavGroup({ group, onItemClick }: NavGroupProps) {
   const { pathname } = useLocation()
   const hasActiveChild = group.children.some((c) => pathname === c.to)
-  const [isOpen, setIsOpen] = useState(hasActiveChild)
+  // Null berarti "ikuti rute aktif". Begitu pengguna menekan tombol, nilainya
+  // menjadi true/false dan pilihan manual itu yang menang.
+  const [manualOpen, setManualOpen] = useState<boolean | null>(null)
 
-  // Otomatis buka accordion jika user menavigasi ke rute anaknya
-  useEffect(() => {
-    if (hasActiveChild) setIsOpen(true)
-  }, [hasActiveChild])
+  // Status akhir diturunkan langsung saat render, sehingga tidak perlu effect
+  // yang memanggil setState (penyebab cascading render).
+  const isOpen = manualOpen ?? hasActiveChild
 
   /**
    * Menangani toggle buka/tutup grup menu.
    */
   function handleToggle() {
-    setIsOpen((prev) => !prev)
+    setManualOpen(!isOpen)
   }
 
   return (

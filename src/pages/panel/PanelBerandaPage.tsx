@@ -61,8 +61,9 @@ export default function PanelBerandaPage() {
           <PanelHeader
             coupleName={invitation.coupleName}
             eventDate={invitation.eventDate}
-            id={invitation.id}
+            slug={invitation.slug}
             hasTemplate={Boolean(rawInvitation?.template)}
+            status={invitation.status}
           />
 
           {/* Bagian Jalan Pintas Fitur */}

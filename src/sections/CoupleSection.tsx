@@ -46,13 +46,13 @@ export function CoupleSection({ groom, bride }: CoupleSectionProps) {
   const brideParents = buildParentsText(bride, 'Putri')
 
   return (
-    <section id="mempelai" className="py-20 px-6 bg-white relative overflow-hidden">
+<section id="mempelai" className="py-20 px-6 bg-inv-page-alt relative overflow-hidden">
       <div className="mx-auto max-w-4xl space-y-12">
         <div className="text-center space-y-2">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-sage">
+          <span className="text-xs font-bold uppercase tracking-[0.25em] text-inv-accent">
             Pasangan Mempelai
           </span>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-inv-ink">
             Maha Suci Allah yang Mempersatukan Kami
           </h2>
         </div>
@@ -77,11 +77,11 @@ export function CoupleSection({ groom, bride }: CoupleSectionProps) {
             </div>
 
             <div>
-              <h3 className="font-display text-2xl font-bold text-slate-900">
+              <h3 className="font-display text-2xl font-bold text-inv-ink">
                 {groom?.name ?? '—'}
               </h3>
               {buildNickname(groom?.name) && (
-                <p className="text-sm font-semibold text-sage mt-0.5">
+                <p className="text-sm font-semibold text-inv-accent mt-0.5">
                   ({buildNickname(groom?.name)})
                 </p>
               )}
@@ -112,11 +112,11 @@ export function CoupleSection({ groom, bride }: CoupleSectionProps) {
             </div>
 
             <div>
-              <h3 className="font-display text-2xl font-bold text-slate-900">
+              <h3 className="font-display text-2xl font-bold text-inv-ink">
                 {bride?.name ?? '—'}
               </h3>
               {buildNickname(bride?.name) && (
-                <p className="text-sm font-semibold text-gold mt-0.5">
+                <p className="text-sm font-semibold text-inv-gold mt-0.5">
                   ({buildNickname(bride?.name)})
                 </p>
               )}

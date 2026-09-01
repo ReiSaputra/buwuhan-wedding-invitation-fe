@@ -34,16 +34,16 @@ export function LoveStoryGallerySection({
   if (!hasStories && !hasPhotos) return null
 
   return (
-    <section id="galeri" className="py-20 px-6 bg-white relative overflow-hidden">
+    <section id="galeri" className="py-20 px-6 bg-inv-card relative overflow-hidden">
       <div className="mx-auto max-w-4xl space-y-16">
         {/* Cerita Cinta */}
         {hasStories && (
           <div className="space-y-8">
             <div className="text-center space-y-2">
-              <span className="text-xs font-bold uppercase tracking-[0.25em] text-sage">
+              <span className="text-xs font-bold uppercase tracking-[0.25em] text-inv-accent">
                 Our Journey
               </span>
-              <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
+              <h2 className="font-display text-3xl sm:text-4xl font-bold text-inv-ink">
                 Kisah Perjalanan Cinta Kami
               </h2>
             </div>
@@ -56,7 +56,7 @@ export function LoveStoryGallerySection({
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: i * 0.15 }}
-                  className="rounded-3xl border border-border bg-cream p-6 text-center space-y-3 relative shadow-2xs"
+                  className="rounded-3xl border border-inv-line bg-inv-page p-6 text-center space-y-3 relative shadow-2xs"
                 >
                   {item.imageUrl && (
                     <div className="h-32 w-full overflow-hidden rounded-2xl">
@@ -68,10 +68,10 @@ export function LoveStoryGallerySection({
                     </div>
                   )}
 
-                  <span className="inline-flex items-center justify-center rounded-full bg-sage px-3 py-1.5 text-white font-bold text-xs shadow-xs">
+                  <span className="inline-flex items-center justify-center rounded-full bg-inv-accent px-3 py-1.5 text-inv-on-accent font-bold text-xs shadow-xs">
                     {item.yearOrDate}
                   </span>
-                  <h4 className="font-display text-base font-bold text-slate-900">
+                  <h4 className="font-display text-base font-bold text-inv-ink">
                     {item.title}
                   </h4>
                   <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
@@ -87,10 +87,10 @@ export function LoveStoryGallerySection({
         {hasPhotos && (
           <div className="space-y-8">
             <div className="text-center space-y-2">
-              <span className="text-xs font-bold uppercase tracking-[0.25em] text-gold">
+              <span className="text-xs font-bold uppercase tracking-[0.25em] text-inv-gold">
                 Galeri Kenangan
               </span>
-              <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
+              <h2 className="font-display text-3xl sm:text-4xl font-bold text-inv-ink">
                 Momen-momen Indah
               </h2>
             </div>
@@ -104,7 +104,7 @@ export function LoveStoryGallerySection({
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: i * 0.1 }}
                   onClick={() => setSelectedPhoto(photo.imageUrl)}
-                  className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-xs border border-slate-200"
+                  className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-xs border border-inv-line"
                 >
                   <img
                     src={photo.imageUrl}
@@ -112,7 +112,7 @@ export function LoveStoryGallerySection({
                     loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 text-white px-2 text-center">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 text-inv-on-accent px-2 text-center">
                     <ImageIcon size={24} />
                     {photo.caption && (
                       <span className="text-[11px] font-semibold leading-snug">
@@ -136,7 +136,7 @@ export function LoveStoryGallerySection({
           <div className="relative max-w-2xl w-full max-h-[85vh] rounded-2xl overflow-hidden bg-black flex items-center justify-center">
             <button
               onClick={() => setSelectedPhoto(null)}
-              className="absolute top-3 right-3 rounded-full bg-black/60 p-2 text-white hover:bg-black transition cursor-pointer"
+              className="absolute top-3 right-3 rounded-full bg-black/60 p-2 text-inv-on-accent hover:bg-black transition cursor-pointer"
             >
               <X size={20} />
             </button>

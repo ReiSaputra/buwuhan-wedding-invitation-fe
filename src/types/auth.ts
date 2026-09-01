@@ -60,9 +60,13 @@ export type RefreshTokenResponseData = {
  * Amplop standar respon sukses backend Buwuhan:
  * { message, status, data }
  */
+/**
+ * Amplop standar respon sukses backend Buwuhan.
+ * Bentuk sebenarnya dari backend: { message: string, status: number, data: T }
+ */
 export type BackendSuccessEnvelope<T> = {
-  success: true;
   message: string;
+  status: number;
   data: T;
 };
 

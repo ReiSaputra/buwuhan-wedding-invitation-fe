@@ -1,12 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { fetchData } from '@/lib/api'
+import { useState, type FormEvent } from 'react'
 import { Save, Type, Link2, User, Calendar, Clock, MapPin, Home, LayoutTemplate, Check } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { slugify } from '@/hooks/useInvitationMutations'
 import { parseApiError } from '@/lib/errorHandler'
-import type { ApiInvitation, InvitationPayload, ApiTemplate } from '@/types/invitation-api'
 import { cn } from '@/lib/cn'
+import { useTemplates } from '@/hooks/useTemplates'
+import type { ApiInvitation, InvitationPayload } from '@/types/invitation-api'
 
 export type InvitationFormProps = {
   /** Data awal untuk mode edit. Berikan null untuk mode buat baru. */
@@ -84,6 +83,19 @@ function toFormState(data: ApiInvitation): FormState {
 }
 
 /**
+ * Memecah teks waktu acara backend ("09:00 - 12:00 WIB") menjadi
+ * jam mulai dan jam selesai untuk dua input bertipe time.
+ *
+ * @param eventTime - Teks waktu dari backend, boleh kosong
+ * @returns Pasangan [jamMulai, jamSelesai]
+ */
+function parseEventTime(eventTime?: string | null): [string, string] {
+  if (!eventTime) return ['', '']
+  const parts = eventTime.replace(' WIB', '').split(' - ')
+  return [parts[0] ?? '', parts[1] ?? '']
+}
+
+/**
  * Formulir data undangan pernikahan.
  * Dipakai bersama oleh alur buat undangan baru dan alur ubah undangan.
  * Validasi di sini disamakan dengan aturan Zod di backend (invitation.schema.ts)
@@ -98,41 +110,28 @@ export function InvitationForm({
   isSubmitting = false,
 }: InvitationFormProps) {
   const isEditMode = initialValue !== null
-  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  // Nilai awal dihitung sekali saat komponen dipasang. Untuk mode ubah, induk
+  // memberi prop key={invitation.id} sehingga formulir dipasang ulang ketika
+  // undangan yang diedit berganti. Pola ini menggantikan reset lewat useEffect.
+  const [form, setForm] = useState<FormState>(() =>
+    initialValue ? toFormState(initialValue) : EMPTY_FORM,
+  )
   const [errors, setErrors] = useState<FormErrors>({})
   const [generalError, setGeneralError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   
-  // Fetch daftar template dari backend
-  const { data: templates = [], isLoading: isLoadingTemplates } = useQuery({
-    queryKey: ['templates'],
-    queryFn: () => fetchData<ApiTemplate[]>('/templates'),
-  })
+  // Daftar template diambil lewat hook bersama agar cache-nya dipakai ulang
+  const { templates, isLoading: isLoadingTemplates } = useTemplates()
 
   // Di mode buat baru, slug ikut judul otomatis sampai user mengetik slug sendiri.
-  const [slugTouched, setSlugTouched] = useState(false)
-  // Parse initial eventTime if it has format "HH:MM - HH:MM WIB"
-  const [startTime, setStartTime] = useState('')
-  const [endTime, setEndTime] = useState('')
+  // Di mode ubah, slug dianggap sudah ditentukan sehingga tidak ditimpa judul.
+  const [slugTouched, setSlugTouched] = useState(isEditMode)
 
-  useEffect(() => {
-    if (initialValue) {
-      setForm(toFormState(initialValue))
-      setSlugTouched(true)
-      
-      if (initialValue.eventTime) {
-        const parts = initialValue.eventTime.replace(' WIB', '').split(' - ')
-        setStartTime(parts[0] || '')
-        setEndTime(parts[1] || '')
-      }
-    } else {
-      setForm(EMPTY_FORM)
-      setSlugTouched(false)
-    }
-    setErrors({})
-    setGeneralError(null)
-    setSuccessMessage(null)
-  }, [initialValue])
+  // Waktu acara backend berbentuk satu teks ("09:00 - 12:00 WIB"),
+  // sedangkan UI memakai dua input terpisah.
+  const [initialStart, initialEnd] = parseEventTime(initialValue?.eventTime)
+  const [startTime, setStartTime] = useState(initialStart)
+  const [endTime, setEndTime] = useState(initialEnd)
 
   /**
    * Memperbarui satu ruas formulir dan menghapus pesan galatnya.

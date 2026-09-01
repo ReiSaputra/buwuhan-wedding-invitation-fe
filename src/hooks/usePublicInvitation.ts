@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { fetchData } from '@/lib/api'
-import type { ApiInvitation, ApiCouple } from '@/types/invitation-api'
+import type {
+  ApiInvitation,
+  ApiCouple,
+  PublicInvitationViewModel,
+} from '@/types/invitation-api'
 
 /** Nama hari dalam bahasa Indonesia, indeks mengikuti Date.getDay(). */
 const DAY_NAMES = [
@@ -55,12 +59,14 @@ function findCouple(
  * const { groom, bride, eventDateText, isLoading } = usePublicInvitation()
  */
 export function usePublicInvitation() {
-  const { id = '' } = useParams()
+  // Route publik memakai /undangan/:slug, jadi ambil param `slug` (bukan `id`)
+  const { slug = '' } = useParams<{ slug: string }>()
 
   const query = useQuery({
-    queryKey: ['invitation', id],
-    queryFn: () => fetchData<ApiInvitation>(`/invitations/${id}`),
-    enabled: Boolean(id),
+    // Endpoint PUBLIK -- tidak memerlukan access token
+    queryKey: ['public-invitation', slug],
+    queryFn: () => fetchData<ApiInvitation>(`/public/invitations/${slug}`),
+    enabled: Boolean(slug),
     retry: false,
   })
 
@@ -68,9 +74,11 @@ export function usePublicInvitation() {
   const groom = findCouple(invitation?.couples, 'GROOM')
   const bride = findCouple(invitation?.couples, 'BRIDE')
 
-  return {
-    id,
-    slug: invitation?.slug ?? '',
+  // Seluruh data siap tampil dikumpulkan jadi satu objek agar bisa
+  // diteruskan utuh sebagai props ke komponen template.
+  const viewModel: PublicInvitationViewModel = {
+    slug,
+    id: invitation?.id ?? '',
     invitation,
 
     // Data mempelai terpisah
@@ -89,6 +97,15 @@ export function usePublicInvitation() {
     galleryPhotos: invitation?.galleryPhotos ?? [],
     loveStories: invitation?.loveStories ?? [],
     templateId: invitation?.template?.id ?? '',
+    templateSlug: invitation?.template?.slug ?? '',
+  }
+
+  return {
+    // Disebar flat agar pemakaian lama tetap berjalan
+    ...viewModel,
+
+    // Objek utuh untuk diteruskan ke <TemplateRenderer data={...} />
+    viewModel,
 
     // Status permintaan
     isLoading: Boolean(slug) && query.isLoading,

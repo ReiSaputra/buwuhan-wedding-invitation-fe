@@ -64,13 +64,13 @@ export function WishesSection({ slug, guestNameDefault = '' }: WishesSectionProp
   }
 
   return (
-    <section id="ucapan" className="py-20 px-6 bg-white relative overflow-hidden">
+    <section id="ucapan" className="py-20 px-6 bg-inv-card relative overflow-hidden">
       <div className="mx-auto max-w-3xl space-y-12">
         <div className="text-center space-y-2">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-gold">
+          <span className="text-xs font-bold uppercase tracking-[0.25em] text-inv-gold">
             Buku Ucapan
           </span>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-inv-ink">
             Kirimkan Doa &amp; Ucapan Restu
           </h2>
           <p className="text-xs sm:text-sm text-slate-600">
@@ -79,7 +79,7 @@ export function WishesSection({ slug, guestNameDefault = '' }: WishesSectionProp
         </div>
 
         {/* Form Kirim Ucapan */}
-        <div className="rounded-3xl border border-border bg-cream p-6 sm:p-8 shadow-xs">
+        <div className="rounded-3xl border border-inv-line bg-inv-page p-6 sm:p-8 shadow-xs">
           <form onSubmit={handleSendWish} className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
@@ -91,7 +91,7 @@ export function WishesSection({ slug, guestNameDefault = '' }: WishesSectionProp
                   placeholder="Nama pengirim..."
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-sage focus:outline-none transition"
+                  className="w-full rounded-xl border border-inv-line bg-inv-card p-3 text-xs text-inv-ink focus:border-inv-accent focus:outline-none transition"
                 />
               </div>
 
@@ -102,7 +102,7 @@ export function WishesSection({ slug, guestNameDefault = '' }: WishesSectionProp
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as ApiRsvpStatus)}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-sage focus:outline-none transition"
+                  className="w-full rounded-xl border border-inv-line bg-inv-card p-3 text-xs text-inv-ink focus:border-inv-accent focus:outline-none transition"
                 >
                   {ATTENDANCE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -124,7 +124,7 @@ export function WishesSection({ slug, guestNameDefault = '' }: WishesSectionProp
                   max={20}
                   value={reservation}
                   onChange={(e) => setReservation(Number(e.target.value) || 1)}
-                  className="w-full sm:w-32 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-sage focus:outline-none transition"
+                  className="w-full sm:w-32 rounded-xl border border-inv-line bg-inv-card p-3 text-xs text-inv-ink focus:border-inv-accent focus:outline-none transition"
                 />
               </div>
             )}
@@ -140,7 +140,7 @@ export function WishesSection({ slug, guestNameDefault = '' }: WishesSectionProp
                 placeholder="Tuliskan doa restu dan ucapan selamat untuk kedua mempelai..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 focus:border-sage focus:outline-none transition resize-none"
+                className="w-full rounded-xl border border-inv-line bg-inv-card p-3 text-xs text-inv-ink focus:border-inv-accent focus:outline-none transition resize-none"
               />
             </div>
 
@@ -159,7 +159,7 @@ export function WishesSection({ slug, guestNameDefault = '' }: WishesSectionProp
             <button
               type="submit"
               disabled={submitRsvp.isPending}
-              className="inline-flex items-center gap-2 rounded-xl bg-sage px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs hover:bg-sage-dark transition cursor-pointer active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 rounded-xl bg-inv-accent px-6 py-3 text-xs font-bold uppercase tracking-wider text-inv-on-accent shadow-xs hover:bg-inv-accent-dark transition cursor-pointer active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Send size={14} />
               <span>{submitRsvp.isPending ? 'Mengirim...' : 'Kirim Ucapan'}</span>
@@ -170,15 +170,15 @@ export function WishesSection({ slug, guestNameDefault = '' }: WishesSectionProp
         {/* Linimasa Daftar Ucapan */}
         <div className="space-y-3">
           <div className="flex items-center justify-between pb-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-inv-ink-muted">
               {isLoading ? 'Memuat ucapan...' : `Total ${wishes.length} Ucapan Masuk`}
             </h4>
           </div>
 
           {!isLoading && wishes.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 py-12 text-center">
-              <MessageSquareDashed size={28} className="mx-auto text-slate-400" />
-              <p className="mt-3 text-xs text-slate-500">
+            <div className="rounded-2xl border border-dashed border-inv-line bg-inv-page-alt/60 py-12 text-center">
+              <MessageSquareDashed size={28} className="mx-auto text-inv-ink-muted" />
+              <p className="mt-3 text-xs text-inv-ink-muted">
                 Belum ada ucapan. Jadilah yang pertama mengirim doa restu.
               </p>
             </div>
@@ -190,15 +190,15 @@ export function WishesSection({ slug, guestNameDefault = '' }: WishesSectionProp
                 key={wish.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-2xs space-y-2"
+                className="rounded-2xl border border-inv-line/80 bg-inv-card p-4 sm:p-5 shadow-2xs space-y-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-sage to-gold text-white font-bold text-xs shadow-xs uppercase">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-sage to-gold text-inv-on-accent font-bold text-xs shadow-xs uppercase">
                       {wish.guestName.charAt(0)}
                     </div>
                     <div>
-                      <p className="font-bold text-xs text-slate-900">{wish.guestName}</p>
+                      <p className="font-bold text-xs text-inv-ink">{wish.guestName}</p>
                       {wish.status === 'CONFIRMED' ? (
                         <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full mt-0.5">
                           <CheckCircle2 size={10} />
@@ -213,13 +213,13 @@ export function WishesSection({ slug, guestNameDefault = '' }: WishesSectionProp
                     </div>
                   </div>
 
-                  <span className="flex items-center gap-1 text-[10px] text-slate-400 shrink-0">
+                  <span className="flex items-center gap-1 text-[10px] text-inv-ink-muted shrink-0">
                     <Clock size={11} />
                     {formatTimeAgo(wish.createdAt)}
                   </span>
                 </div>
 
-                <p className="text-xs leading-relaxed text-slate-700 pt-1 font-serif italic whitespace-pre-line">
+                <p className="text-xs leading-relaxed text-inv-ink pt-1 font-serif italic whitespace-pre-line">
                   "{wish.message}"
                 </p>
               </motion.div>

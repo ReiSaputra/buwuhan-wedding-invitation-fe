@@ -109,14 +109,14 @@ export function EventDetailsSection({
   }
 
   return (
-    <section id="acara" className="py-20 px-6 bg-cream relative overflow-hidden">
+    <section id="acara" className="py-20 px-6 bg-inv-page relative overflow-hidden">
       <div className="mx-auto max-w-3xl space-y-12">
         {/* Countdown Timer */}
         <div className="text-center space-y-6">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-sage">
+          <span className="text-xs font-bold uppercase tracking-[0.25em] text-inv-accent">
             Save The Date
           </span>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900">
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-inv-ink">
             Menghitung Hari Bahagia
           </h2>
 
@@ -131,12 +131,12 @@ export function EventDetailsSection({
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="rounded-2xl border border-gold/30 bg-white p-3 sm:p-4 shadow-sm text-center"
+                    className="rounded-2xl border border-inv-gold/30 bg-inv-card p-3 sm:p-4 shadow-sm text-center"
                   >
-                    <span className="font-display text-2xl sm:text-4xl font-bold text-sage">
+                    <span className="font-display text-2xl sm:text-4xl font-bold text-inv-accent">
                       {item.value}
                     </span>
-                    <span className="block text-[10px] sm:text-xs font-semibold uppercase text-slate-500 mt-1">
+                    <span className="block text-[10px] sm:text-xs font-semibold uppercase text-inv-ink-muted mt-1">
                       {item.label}
                     </span>
                   </div>
@@ -146,14 +146,14 @@ export function EventDetailsSection({
               <button
                 type="button"
                 onClick={handleAddToCalendar}
-                className="inline-flex items-center gap-2 rounded-full border border-sage bg-white px-5 py-2.5 text-xs font-bold text-sage hover:bg-sage hover:text-white transition shadow-xs cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-2 rounded-full border border-inv-accent bg-inv-card px-5 py-2.5 text-xs font-bold text-inv-accent hover:bg-inv-accent hover:text-inv-on-accent transition shadow-xs cursor-pointer active:scale-95"
               >
                 <CalendarPlus size={15} />
                 <span>Tambahkan ke Google Calendar</span>
               </button>
             </>
           ) : (
-            <p className="text-sm text-slate-500 italic">
+            <p className="text-sm text-inv-ink-muted italic">
               Tanggal acara akan segera diumumkan.
             </p>
           )}
@@ -165,32 +165,32 @@ export function EventDetailsSection({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          className="rounded-3xl border-2 border-gold bg-white p-6 sm:p-8 shadow-md space-y-6 relative"
+          className="rounded-3xl border-2 border-inv-gold bg-inv-card p-6 sm:p-8 shadow-md space-y-6 relative"
         >
-          <span className="absolute -top-3 right-6 rounded-full bg-gold text-white px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+          <span className="absolute -top-3 right-6 rounded-full bg-inv-gold text-inv-on-accent px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider">
             Acara Utama
           </span>
 
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full bg-gold/15 px-3.5 py-1 text-xs font-bold text-gold uppercase">
+            <div className="inline-flex items-center gap-2 rounded-full bg-inv-gold/15 px-3.5 py-1 text-xs font-bold text-inv-gold uppercase">
               <Calendar size={13} />
               <span>Resepsi Pernikahan</span>
             </div>
 
-            <h3 className="font-display text-2xl font-bold text-slate-900">
+            <h3 className="font-display text-2xl font-bold text-inv-ink">
               {eventDateText || 'Tanggal menyusul'}
             </h3>
 
             <div className="space-y-2 text-xs sm:text-sm text-slate-600">
               {eventTime && (
                 <p className="flex items-center gap-2 font-medium">
-                  <Clock size={15} className="text-gold" />
+                  <Clock size={15} className="text-inv-gold" />
                   <span>{eventTime}</span>
                 </p>
               )}
               {fullLocation && (
                 <p className="flex items-start gap-2">
-                  <MapPin size={16} className="text-gold shrink-0 mt-0.5" />
+                  <MapPin size={16} className="text-inv-gold shrink-0 mt-0.5" />
                   <span>{fullLocation}</span>
                 </p>
               )}
@@ -202,7 +202,7 @@ export function EventDetailsSection({
               href={mapsUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold to-gold-dark px-4 py-2.5 text-xs font-bold text-white hover:opacity-95 transition shadow-xs"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold to-gold-dark px-4 py-2.5 text-xs font-bold text-inv-on-accent hover:opacity-95 transition shadow-xs"
             >
               <Navigation size={14} />
               <span>Petunjuk Arah Google Maps</span>
