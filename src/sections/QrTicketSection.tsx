@@ -33,10 +33,11 @@ export function QrTicketSection({
 
         {/* E-Ticket Card */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="rounded-3xl border-2 border-sage/30 bg-gradient-to-b from-white to-cream p-6 sm:p-8 shadow-xl text-center space-y-6 relative overflow-hidden"
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.45, ease: 'easeOut' }}
+          className="rounded-3xl border-2 border-sage/30 bg-gradient-to-b from-white to-cream p-6 sm:p-8 shadow-xl text-center space-y-6 relative overflow-hidden transform-gpu"
         >
           {/* Header Tiket */}
           <div className="border-b border-dashed border-slate-200 pb-4 space-y-1">

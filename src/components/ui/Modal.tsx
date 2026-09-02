@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/cn'
 
 export type ModalProps = {
@@ -28,8 +29,9 @@ const maxWidthMap = {
 }
 
 /**
- * Komponen modal dialog overlay dengan latar blur, animasi transisi,
- * penutupan saat tombol ESC ditekan, dan scroll lock pada body.
+ * Komponen modal dialog overlay dengan performa tinggi (GPU-composited),
+ * transisi pegas presisi tanpa lag/jank, penutupan via ESC/backdrop,
+ * dan body scroll lock.
  * 
  * @param props - Properti konfigurasi modal dialog
  */
@@ -59,48 +61,67 @@ export function Modal({
     }
   }, [isOpen, onClose])
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop overlay */}
-      <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop overlay animasi terakselerasi GPU */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
+            style={{ willChange: 'opacity' }}
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] transform-gpu"
+            onClick={onClose}
+            aria-hidden="true"
+          />
 
-      {/* Modal Card */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        className={cn(
-          'relative z-10 w-full overflow-hidden rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 transition-all',
-          maxWidthMap[maxWidth],
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            {title && <h3 className="font-display text-xl font-bold text-ink">{title}</h3>}
-            {description && <p className="mt-1 text-xs text-muted leading-relaxed">{description}</p>}
-          </div>
+          {/* Modal Card dengan animasi Spring presisi & GPU compositing */}
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            initial={{ opacity: 0, scale: 0.93, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 4 }}
+            transition={{
+              type: 'spring',
+              stiffness: 420,
+              damping: 28,
+              mass: 0.7,
+            }}
+            style={{ willChange: 'transform, opacity' }}
+            className={cn(
+              'relative z-10 w-full overflow-hidden rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 transform-gpu',
+              maxWidthMap[maxWidth],
+            )}
+          >
+            {/* Header */}
+            {(title || !hideCloseButton) && (
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  {title && <h3 className="font-display text-xl font-bold text-ink">{title}</h3>}
+                  {description && <p className="mt-1 text-xs text-muted leading-relaxed">{description}</p>}
+                </div>
 
-          {!hideCloseButton && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg p-1.5 text-muted hover:bg-slate-100 hover:text-ink transition cursor-pointer"
-              aria-label="Tutup modal"
-            >
-              <X size={18} />
-            </button>
-          )}
+                {!hideCloseButton && (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-lg p-1.5 text-muted hover:bg-slate-100 hover:text-ink transition cursor-pointer"
+                    aria-label="Tutup modal"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Body Content */}
+            <div className={title || !hideCloseButton ? 'mt-4' : ''}>{children}</div>
+          </motion.div>
         </div>
-
-        {/* Body Content */}
-        <div className="mt-5">{children}</div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   )
 }

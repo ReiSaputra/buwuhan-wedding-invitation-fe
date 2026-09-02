@@ -10,6 +10,8 @@ export type ImageUrlInputProps = {
   onChange: (value: string) => void
   /** Pesan galat validasi dari formulir induk */
   error?: string
+  /** Teks petunjuk (placeholder) pada input */
+  placeholder?: string
 }
 
 const fieldClass =
@@ -23,7 +25,13 @@ const fieldClass =
  * Setelah endpoint unggah tersedia, cukup ganti bagian bertanda TODO di
  * bawah dengan pemanggilan API unggah; antarmuka komponen tidak perlu berubah.
  */
-export function ImageUrlInput({ label, value, onChange, error }: ImageUrlInputProps) {
+export function ImageUrlInput({
+  label,
+  value,
+  onChange,
+  error,
+  placeholder = 'https://res.cloudinary.com/…/foto-prewedding.jpg',
+}: ImageUrlInputProps) {
   const [isBroken, setIsBroken] = useState(false)
 
   return (
@@ -40,7 +48,7 @@ export function ImageUrlInput({ label, value, onChange, error }: ImageUrlInputPr
           setIsBroken(false)
           onChange(event.target.value)
         }}
-        placeholder="https://res.cloudinary.com/…/foto-prewedding.jpg"
+        placeholder={placeholder}
         className={fieldClass}
       />
 

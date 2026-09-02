@@ -161,11 +161,11 @@ export function EventDetailsSection({
 
         {/* Kartu Rincian Acara */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          className="rounded-3xl border-2 border-inv-gold bg-inv-card p-6 sm:p-8 shadow-md space-y-6 relative"
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="rounded-3xl border-2 border-inv-gold bg-inv-card p-6 sm:p-8 shadow-md space-y-6 relative transform-gpu"
         >
           <span className="absolute -top-3 right-6 rounded-full bg-inv-gold text-inv-on-accent px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider">
             Acara Utama

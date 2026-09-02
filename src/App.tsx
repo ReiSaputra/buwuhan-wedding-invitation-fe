@@ -1,5 +1,12 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import {
+  createBrowserRouter,
+  createRoutesFromElements,
+  RouterProvider,
+  Route,
+  Navigate,
+  Outlet,
+} from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { PageLoader } from '@/components/common/PageLoader'
@@ -33,65 +40,80 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const PanelCatatanBuwuhPage = lazy(() => import('@/pages/panel/PanelCatatanBuwuhPage'))
 
 /**
- * Komponen Utama Aplikasi (App).
- * Membungkus pohon komponen dengan ErrorBoundary, AuthProvider, dan Suspense,
- * serta mendefinisikan rute publik (undangan), rute tamu (login/register),
- * dan rute terproteksi (dashboard & panel).
+ * Layout Akar (RootLayout).
+ * Membungkus seluruh aplikasi dengan ErrorBoundary, AuthProvider, dan Suspense.
  */
-export default function App() {
+function RootLayout() {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-            {/* Rute Khusus Tamu / Belum Login (Sign In & Sign Up) */}
-            <Route element={<GuestRoute />}>
-              <Route element={<AuthLayout />}>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-              </Route>
-            </Route>
-
-            {/* Rute Privat Dashboard yang Dilindungi ProtectedRoute */}
-            <Route element={<ProtectedRoute />}>
-              {/* Halaman penuh tanpa sidebar */}
-              <Route element={<PlainLayout />}>
-                <Route path="/dashboard/langganan" element={<LanggananPage />} />
-              </Route>
-
-              {/* Dashboard utama */}
-              <Route path="/dashboard" element={<DashboardLayout />}>
-                <Route index element={<BerandaPage />} />
-                <Route path="undangan" element={<UndanganPage />} />
-                <Route path="buwuh" element={<BuwuhPage />} />
-                <Route path="pengaturan" element={<PengaturanPage />} />
-              </Route>
-
-              {/* Panel per undangan — sidebar kontekstual */}
-              <Route path="/dashboard/undangan/:id" element={<PanelLayout />}>
-                <Route index element={<PanelBerandaPage />} />
-                <Route path="edit" element={<PanelEditPage />} />
-                <Route path="petugas" element={<PanelPlaceholderPage title="Petugas" />} />
-                <Route path="template" element={<PanelTemplatePage />} />
-                <Route path="buku-tamu" element={<PanelBukuTamuPage />} />
-                <Route path="rsvp" element={<PanelRsvpPage />} />
-                <Route path="hadiah" element={<PanelHadiahPage />} />
-                <Route path="catatan-buwuh" element={<PanelCatatanBuwuhPage />} />
-                <Route path="scan-qr" element={<PanelScanQrPage />} />
-              </Route>
-            </Route>
-
-            {/* Halaman undangan publik untuk tamu resepsi (tanpa proteksi login).
-                Parameter memakai :slug agar sesuai endpoint GET /public/invitations/:slug */}
-            <Route path="/undangan/:slug" element={<InvitationPage />} />
-
-            {/* Fallback rute: tampilkan 404, JANGAN redirect ke dashboard */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
+          <Outlet />
         </Suspense>
       </AuthProvider>
     </ErrorBoundary>
   )
+}
+
+/**
+ * Konfigurasi Router Data Aplikasi.
+ * Menggunakan createBrowserRouter agar mendukung hook useBlocker untuk
+ * pencegahan kehilangan data saat berpindah rute (unsaved changes guard).
+ */
+export const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route element={<RootLayout />}>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      {/* Rute Khusus Tamu / Belum Login (Sign In & Sign Up) */}
+      <Route element={<GuestRoute />}>
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
+      </Route>
+
+      {/* Rute Privat Dashboard yang Dilindungi ProtectedRoute */}
+      <Route element={<ProtectedRoute />}>
+        {/* Halaman penuh tanpa sidebar */}
+        <Route element={<PlainLayout />}>
+          <Route path="/dashboard/langganan" element={<LanggananPage />} />
+        </Route>
+
+        {/* Dashboard utama */}
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<BerandaPage />} />
+          <Route path="undangan" element={<UndanganPage />} />
+          <Route path="buwuh" element={<BuwuhPage />} />
+          <Route path="pengaturan" element={<PengaturanPage />} />
+        </Route>
+
+        {/* Panel per undangan — sidebar kontekstual */}
+        <Route path="/dashboard/undangan/:id" element={<PanelLayout />}>
+          <Route index element={<PanelBerandaPage />} />
+          <Route path="edit" element={<PanelEditPage />} />
+          <Route path="petugas" element={<PanelPlaceholderPage title="Petugas" />} />
+          <Route path="template" element={<PanelTemplatePage />} />
+          <Route path="buku-tamu" element={<PanelBukuTamuPage />} />
+          <Route path="rsvp" element={<PanelRsvpPage />} />
+          <Route path="hadiah" element={<PanelHadiahPage />} />
+          <Route path="catatan-buwuh" element={<PanelCatatanBuwuhPage />} />
+          <Route path="scan-qr" element={<PanelScanQrPage />} />
+        </Route>
+      </Route>
+
+      {/* Halaman undangan publik untuk tamu resepsi (tanpa proteksi login) */}
+      <Route path="/undangan/:slug" element={<InvitationPage />} />
+
+      {/* Fallback rute: tampilkan 404, JANGAN redirect ke dashboard */}
+      <Route path="*" element={<NotFoundPage />} />
+    </Route>,
+  ),
+)
+
+/**
+ * Komponen Utama Aplikasi (App).
+ */
+export default function App() {
+  return <RouterProvider router={router} />
 }

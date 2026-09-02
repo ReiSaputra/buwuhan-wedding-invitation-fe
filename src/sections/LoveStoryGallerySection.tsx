@@ -13,7 +13,7 @@ export type LoveStoryGallerySectionProps = {
 /**
  * Komponen Galeri Foto Prewedding & Cerita Cinta (Love Story).
  * Menampilkan kisah perjalanan dan galeri kenangan berdasarkan data asli undangan,
- * dilengkapi interaksi popup modal gambar resolusi penuh.
+ * dilengkapi interaksi popup modal gambar resolusi penuh dan animasi GPU ringan.
  *
  * @param props - Properti LoveStoryGallerySection (loveStories, galleryPhotos)
  */
@@ -52,11 +52,11 @@ export function LoveStoryGallerySection({
               {sortedStories.map((item, i) => (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 15 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: i * 0.15 }}
-                  className="rounded-3xl border border-inv-line bg-inv-page p-6 text-center space-y-3 relative shadow-2xs"
+                  viewport={{ once: true, margin: '-40px' }}
+                  transition={{ duration: 0.45, delay: i * 0.08, ease: 'easeOut' }}
+                  className="rounded-3xl border border-inv-line bg-inv-page p-6 text-center space-y-3 relative shadow-2xs transform-gpu"
                 >
                   {item.imageUrl && (
                     <div className="h-32 w-full overflow-hidden rounded-2xl">
@@ -99,18 +99,18 @@ export function LoveStoryGallerySection({
               {sortedPhotos.map((photo, i) => (
                 <motion.div
                   key={photo.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, scale: 0.94 }}
                   whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  viewport={{ once: true, margin: '-40px' }}
+                  transition={{ duration: 0.4, delay: i * 0.06, ease: 'easeOut' }}
                   onClick={() => setSelectedPhoto(photo.imageUrl)}
-                  className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-xs border border-inv-line"
+                  className="group relative h-48 sm:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-xs border border-inv-line transform-gpu"
                 >
                   <img
                     src={photo.imageUrl}
                     alt={photo.caption ?? 'Foto kenangan'}
                     loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 text-inv-on-accent px-2 text-center">
                     <ImageIcon size={24} />
@@ -130,7 +130,7 @@ export function LoveStoryGallerySection({
       {/* Lightbox Modal */}
       {selectedPhoto && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-xs animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 transform-gpu backdrop-blur-[2px] animate-in fade-in"
           onClick={() => setSelectedPhoto(null)}
         >
           <div className="relative max-w-2xl w-full max-h-[85vh] rounded-2xl overflow-hidden bg-black flex items-center justify-center">

@@ -59,10 +59,11 @@ export function GiftSection() {
             return (
               <motion.div
                 key={acc.accountNumber}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="rounded-3xl border border-inv-gold/30 bg-inv-card p-6 shadow-xs flex flex-col justify-between space-y-5 relative overflow-hidden"
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.45, ease: 'easeOut' }}
+                className="rounded-3xl border border-inv-gold/30 bg-inv-card p-6 shadow-xs flex flex-col justify-between space-y-5 relative overflow-hidden transform-gpu"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

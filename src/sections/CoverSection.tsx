@@ -19,10 +19,7 @@ export type CoverSectionProps = {
 
 /**
  * Komponen Sampul Depan Undangan Digital (Cover Section).
- *
- * Seluruh warna diambil dari `theme` agar cover ikut berubah mengikuti
- * template yang dipilih. Sebelumnya warna teks dipatok mati (`text-night`),
- * sehingga nama mempelai tidak terbaca di atas template berlatar gelap.
+ * Dilengkapi animasi GPU terakselerasi dengan timing optimal bebas lag.
  *
  * @param props - Properti CoverSection (guestName, groomName, brideName, eventDate, onOpen, theme)
  */
@@ -42,16 +39,17 @@ export function CoverSection({
       {/* Ornamen Latar Belakang */}
       {theme.coverOrnament && (
         <>
-          <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-gold-blush/40 blur-3xl" />
-          <div className="pointer-events-none absolute -right-20 -bottom-20 h-80 w-80 rounded-full bg-sage-mist/50 blur-3xl" />
+          <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-gold-blush/40 blur-3xl transform-gpu" />
+          <div className="pointer-events-none absolute -right-20 -bottom-20 h-80 w-80 rounded-full bg-sage-mist/50 blur-3xl transform-gpu" />
         </>
       )}
 
       {/* Bagian Atas */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="transform-gpu"
       >
         <span
           className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] ${theme.coverBadge}`}
@@ -64,10 +62,10 @@ export function CoverSection({
       {/* Bagian Tengah */}
       <div className="my-auto space-y-5 max-w-lg">
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.9, delay: 0.2 }}
-          className={`mx-auto flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full p-1 shadow-md ${theme.coverIconRing}`}
+          transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
+          className={`mx-auto flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full p-1 shadow-md transform-gpu ${theme.coverIconRing}`}
         >
           <div
             className={`flex h-full w-full items-center justify-center rounded-full shadow-inner ${theme.coverIconInner}`}
@@ -77,9 +75,10 @@ export function CoverSection({
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
+          transition={{ duration: 0.5, delay: 0.18, ease: 'easeOut' }}
+          className="transform-gpu"
         >
           <h1 className={`text-4xl sm:text-5xl leading-tight ${theme.coverTitle}`}>
             <span>{groomName}</span>
@@ -93,10 +92,10 @@ export function CoverSection({
 
         {/* Kepada Yth */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className={`px-6 py-4 ${theme.coverCard}`}
+          transition={{ duration: 0.5, delay: 0.28, ease: 'easeOut' }}
+          className={`px-6 py-4 transform-gpu ${theme.coverCard}`}
         >
           <p className={`text-xs ${theme.coverCardLabel}`}>Kepada Yth. Bapak/Ibu/Saudara/i:</p>
           <p className={`mt-1 text-xl sm:text-2xl ${theme.coverCardName}`}>{guestName}</p>
@@ -108,9 +107,10 @@ export function CoverSection({
 
       {/* Bagian Bawah */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.7 }}
+        transition={{ duration: 0.5, delay: 0.38, ease: 'easeOut' }}
+        className="transform-gpu"
       >
         <button
           type="button"

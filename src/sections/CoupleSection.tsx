@@ -37,7 +37,7 @@ function buildNickname(fullName: string | undefined): string {
 /**
  * Komponen Profil Kedua Mempelai Pengantin.
  * Menampilkan foto, nama lengkap, dan nama orang tua kedua mempelai
- * berdasarkan data asli dari backend.
+ * berdasarkan data asli dari backend dengan animasi GPU-accelerated.
  *
  * @param props - Properti CoupleSection (groom, bride)
  */
@@ -46,7 +46,7 @@ export function CoupleSection({ groom, bride }: CoupleSectionProps) {
   const brideParents = buildParentsText(bride, 'Putri')
 
   return (
-<section id="mempelai" className="py-20 px-6 bg-inv-page-alt relative overflow-hidden">
+    <section id="mempelai" className="py-20 px-6 bg-inv-page-alt relative overflow-hidden">
       <div className="mx-auto max-w-4xl space-y-12">
         <div className="text-center space-y-2">
           <span className="text-xs font-bold uppercase tracking-[0.25em] text-inv-accent">
@@ -60,11 +60,11 @@ export function CoupleSection({ groom, bride }: CoupleSectionProps) {
         <div className="grid gap-12 md:grid-cols-2 items-center">
           {/* Mempelai Pria */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="flex flex-col items-center text-center space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            className="flex flex-col items-center text-center space-y-4 transform-gpu"
           >
             <div className="relative h-44 w-44 sm:h-52 sm:w-52 rounded-full overflow-hidden p-1.5 bg-gradient-to-tr from-sage to-gold shadow-xl">
               <div className="h-full w-full rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
@@ -95,11 +95,11 @@ export function CoupleSection({ groom, bride }: CoupleSectionProps) {
 
           {/* Mempelai Wanita */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="flex flex-col items-center text-center space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
+            className="flex flex-col items-center text-center space-y-4 transform-gpu"
           >
             <div className="relative h-44 w-44 sm:h-52 sm:w-52 rounded-full overflow-hidden p-1.5 bg-gradient-to-tr from-gold to-rose-gold shadow-xl">
               <div className="h-full w-full rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
