@@ -1,8 +1,7 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, Package, TrendingUp } from 'lucide-react'
+import { Banknote, Gift, Wheat } from 'lucide-react'
 import { StatCard } from '@/components/dashboard/StatCard'
-import { Badge } from '@/components/ui/Badge'
 import { TableCard } from '@/components/ui/TableCard'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { Pagination } from '@/components/ui/Pagination'
@@ -10,7 +9,8 @@ import { QueryState } from '@/components/common/QueryState'
 import { useAllBuwuhan } from '@/hooks/useAllBuwuhan'
 import { useTableState } from '@/hooks/useTableState'
 import { formatDateId, formatNumber, formatRupiah } from '@/lib/format'
-import type { ApiOwnerBuwuhan } from '@/types/invitation-api'
+import { calculateBuwuhStats, getBuwuhanCategory } from '@/lib/buwuhHelper'
+import type { ApiOwnerBuwuhan, BuwuhanCategory } from '@/types/invitation-api'
 
 const thClass = 'px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500'
 const tdClass = 'px-5 py-4 align-middle'
@@ -20,12 +20,42 @@ function sumEstimatedValue(record: ApiOwnerBuwuhan): number {
   return record.items.reduce((total, item) => total + (item.estimatedValue ?? 0), 0)
 }
 
+/** Komponen badge penanda 3 jenis bantuan utama */
+function CategoryBadge({ category }: { category: BuwuhanCategory }) {
+  if (category === 'Uang') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 shadow-2xs">
+        <Banknote size={12} className="text-emerald-600" />
+        Uang
+      </span>
+    )
+  }
+
+  if (category === 'Beras') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 shadow-2xs">
+        <Wheat size={12} className="text-amber-600" />
+        Beras
+      </span>
+    )
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/80 bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 shadow-2xs">
+      <Gift size={12} className="text-indigo-600" />
+      Barang
+    </span>
+  )
+}
+
 /**
- * Halaman Catatan Buwuh tingkat dashboard: ikhtisar seluruh bantuan fisik
- * yang masuk dari semua undangan milik pengguna, lengkap dengan pencarian.
+ * Halaman Catatan Buwuh tingkat dashboard: ikhtisar seluruh bantuan fisik & finansial
+ * (Total Uang, Total Beras, Total Barang) yang masuk dari semua undangan.
  */
 export default function BuwuhPage() {
-  const { records, summary, isLoading, isError } = useAllBuwuhan()
+  const { records, isLoading, isError } = useAllBuwuhan()
+
+  const stats = useMemo(() => calculateBuwuhStats(records), [records])
 
   const getSearchText = useCallback(
     (record: ApiOwnerBuwuhan) =>
@@ -33,7 +63,9 @@ export default function BuwuhPage() {
         record.giverName,
         record.invitationTitle,
         record.note ?? '',
-        record.items.map((item) => `${item.itemName} ${item.category ?? ''}`).join(' '),
+        record.items
+          .map((item) => `${item.itemName} ${getBuwuhanCategory(item)} ${item.unit}`)
+          .join(' '),
       ].join(' '),
     [],
   )
@@ -42,26 +74,27 @@ export default function BuwuhPage() {
 
   return (
     <div className="animate-in fade-in space-y-6 duration-300">
+      {/* 3 Kartu Statistik Utama: Total Uang, Total Beras, dan Total Barang */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          label="Total Catatan Buwuh"
-          value={formatNumber(summary.totalTransactions)}
-          icon={<Package size={18} />}
-          hint={`${formatNumber(summary.totalItems)} item tercatat`}
+          label="Total Uang"
+          value={formatRupiah(stats.totalMoney)}
+          icon={<Banknote size={18} />}
+          hint={`${formatNumber(stats.moneyTransactions)} amplop / transaksi uang`}
           colorAccent="emerald"
         />
         <StatCard
-          label="Estimasi Nilai Bantuan"
-          value={formatRupiah(summary.totalEstimatedValue)}
-          icon={<TrendingUp size={18} />}
-          hint="Akumulasi seluruh undangan"
+          label="Total Beras"
+          value={`${formatNumber(stats.totalRiceKg)} kg`}
+          icon={<Wheat size={18} />}
+          hint={`${formatNumber(stats.riceTransactions)} pemberian beras tercatat`}
           colorAccent="amber"
         />
         <StatCard
-          label="Masuk Bulan Ini"
-          value={formatNumber(summary.totalThisMonth)}
-          icon={<Calendar size={18} />}
-          hint="Dihitung dari tanggal diterima"
+          label="Total Barang"
+          value={`${formatNumber(stats.totalGoodsCount)} Item`}
+          icon={<Gift size={18} />}
+          hint={`${formatNumber(stats.goodsTransactions)} jenis barang fisik tercatat`}
           colorAccent="violet"
         />
       </div>
@@ -73,8 +106,8 @@ export default function BuwuhPage() {
             <SearchInput
               value={table.query}
               onChange={table.setQuery}
-              placeholder="Cari pemberi, undangan, atau jenis bantuan..."
-              className="sm:w-72"
+              placeholder="Cari pemberi, undangan, atau jenis bantuan (uang, beras, barang)..."
+              className="sm:w-80"
             />
           }
           footerLeft={
@@ -105,46 +138,67 @@ export default function BuwuhPage() {
                   </td>
                 </tr>
               ) : (
-                table.pageRows.map((record) => (
-                  <tr key={record.id} className="transition-colors hover:bg-slate-50/80">
-                    <td className={tdClass}>
-                      <p className="font-bold text-ink">{record.giverName}</p>
-                      {record.note && (
-                        <p className="mt-0.5 max-w-xs truncate text-[11px] italic text-slate-500">
-                          "{record.note}"
-                        </p>
-                      )}
-                    </td>
-                    <td className={tdClass}>
-                      <Link
-                        to={`/dashboard/undangan/${record.invitationId}/catatan-buwuh`}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        {record.invitationTitle}
-                      </Link>
-                    </td>
-                    <td className={tdClass}>
-                      <div className="flex flex-wrap gap-1">
-                        {record.items.map((item) => (
-                          <Badge key={item.id} variant="default">
-                            {item.category ?? item.itemName}
-                          </Badge>
-                        ))}
-                      </div>
-                    </td>
-                    <td className={`${tdClass} text-slate-700`}>
-                      {record.items.map((item) => (
-                        <div key={item.id}>
-                          {item.itemName} — {item.quantity} {item.unit}
+                table.pageRows.map((record) => {
+                  // Ambil kategori unik dari tiap transaksi
+                  const categories = Array.from(
+                    new Set(record.items.map((item) => getBuwuhanCategory(item))),
+                  )
+
+                  return (
+                    <tr key={record.id} className="transition-colors hover:bg-slate-50/80">
+                      <td className={tdClass}>
+                        <p className="font-bold text-ink">{record.giverName}</p>
+                        {record.note && (
+                          <p className="mt-0.5 max-w-xs truncate text-[11px] italic text-slate-500">
+                            "{record.note}"
+                          </p>
+                        )}
+                      </td>
+                      <td className={tdClass}>
+                        <Link
+                          to={`/dashboard/undangan/${record.invitationId}/catatan-buwuh`}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          {record.invitationTitle}
+                        </Link>
+                      </td>
+                      <td className={tdClass}>
+                        <div className="flex flex-wrap gap-1.5">
+                          {categories.map((cat) => (
+                            <CategoryBadge key={cat} category={cat} />
+                          ))}
                         </div>
-                      ))}
-                    </td>
-                    <td className={`${tdClass} font-bold text-ink`}>
-                      {formatRupiah(sumEstimatedValue(record))}
-                    </td>
-                    <td className={`${tdClass} text-slate-500`}>{formatDateId(record.receivedAt)}</td>
-                  </tr>
-                ))
+                      </td>
+                      <td className={`${tdClass} text-slate-700`}>
+                        <div className="space-y-1">
+                          {record.items.map((item) => {
+                            const cat = getBuwuhanCategory(item)
+                            return (
+                              <div key={item.id} className="text-xs">
+                                <span className="font-semibold text-slate-800">
+                                  {item.itemName}
+                                </span>
+                                <span className="text-slate-500">
+                                  {' '}
+                                  —{' '}
+                                  {cat === 'Uang'
+                                    ? formatRupiah(item.estimatedValue ?? item.quantity)
+                                    : `${item.quantity} ${item.unit}`}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </td>
+                      <td className={`${tdClass} font-bold text-ink`}>
+                        {formatRupiah(sumEstimatedValue(record))}
+                      </td>
+                      <td className={`${tdClass} text-slate-500`}>
+                        {formatDateId(record.receivedAt)}
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>

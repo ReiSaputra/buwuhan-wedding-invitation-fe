@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Download, Package, Pencil, Plus, Trash2, TrendingUp, Wallet } from 'lucide-react'
+import { Banknote, Download, Gift, Pencil, Plus, Trash2, Wheat } from 'lucide-react'
 import { PanelPageHeader } from '@/components/panel/PanelPageHeader'
 import { StatCard } from '@/components/dashboard/StatCard'
 import { BuwuhanFormModal } from '@/components/panel/BuwuhanFormModal'
@@ -15,7 +15,8 @@ import { useBuwuhan } from '@/hooks/useBuwuhan'
 import { useTableState } from '@/hooks/useTableState'
 import { downloadCsv } from '@/lib/export'
 import { formatDateId, formatNumber, formatRupiah, getInitial } from '@/lib/format'
-import type { ApiBuwuhan, BuwuhanPayload } from '@/types/invitation-api'
+import { calculateBuwuhStats, getBuwuhanCategory } from '@/lib/buwuhHelper'
+import type { ApiBuwuhan, BuwuhanCategory, BuwuhanPayload } from '@/types/invitation-api'
 
 const thClass = 'px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500'
 const tdClass = 'px-6 py-4 align-middle'
@@ -25,23 +26,55 @@ function sumEstimatedValue(record: ApiBuwuhan): number {
   return record.items.reduce((total, item) => total + (item.estimatedValue ?? 0), 0)
 }
 
+/** Komponen badge penanda 3 jenis bantuan utama */
+function CategoryBadge({ category }: { category: BuwuhanCategory }) {
+  if (category === 'Uang') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 shadow-2xs">
+        <Banknote size={12} className="text-emerald-600" />
+        Uang
+      </span>
+    )
+  }
+
+  if (category === 'Beras') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 shadow-2xs">
+        <Wheat size={12} className="text-amber-600" />
+        Beras
+      </span>
+    )
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/80 bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 shadow-2xs">
+      <Gift size={12} className="text-indigo-600" />
+      Barang
+    </span>
+  )
+}
+
 /**
- * Halaman Catatan Buwuh: mencatat bantuan berupa barang dari tamu beserta
- * estimasi nilainya, tersambung penuh ke modul buwuhan di backend.
+ * Halaman Catatan Buwuh pada panel undangan: mencatat bantuan tamu yang diklasifikasikan
+ * ke dalam 3 jenis utama: Total Uang, Total Beras, dan Total Barang.
  */
 export default function PanelCatatanBuwuhPage() {
   const { id = '' } = useParams()
   const { invitation } = useInvitationDetail(id)
-  const { records, summary, addBuwuhan, updateBuwuhan, removeBuwuhan, isLoading, isError, isMutating } =
+  const { records, addBuwuhan, updateBuwuhan, removeBuwuhan, isLoading, isError, isMutating } =
     useBuwuhan(id)
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editing, setEditing] = useState<ApiBuwuhan | null>(null)
   const [deleting, setDeleting] = useState<ApiBuwuhan | null>(null)
 
+  const stats = useMemo(() => calculateBuwuhStats(records), [records])
+
   const getSearchText = useCallback(
     (record: ApiBuwuhan) =>
-      `${record.giverName} ${record.note ?? ''} ${record.items.map((i) => i.itemName).join(' ')}`,
+      `${record.giverName} ${record.note ?? ''} ${record.items
+        .map((i) => `${i.itemName} ${getBuwuhanCategory(i)} ${i.unit}`)
+        .join(' ')}`,
     [],
   )
 
@@ -60,7 +93,10 @@ export default function PanelCatatanBuwuhPage() {
       `catatan-buwuh-${invitation.slug || 'undangan'}.csv`,
       table.filteredRows.map((record) => ({
         'Nama Pemberi': record.giverName,
-        Bantuan: record.items.map((i) => `${i.itemName} ${i.quantity} ${i.unit}`).join(', '),
+        'Jenis Bantuan': Array.from(new Set(record.items.map((i) => getBuwuhanCategory(i)))).join(', '),
+        Rincian: record.items
+          .map((i) => `${i.itemName} (${i.quantity} ${i.unit})`)
+          .join('; '),
         'Estimasi Nilai': sumEstimatedValue(record),
         Tanggal: formatDateId(record.receivedAt),
         Catatan: record.note ?? '',
@@ -77,43 +113,81 @@ export default function PanelCatatanBuwuhPage() {
           { label: 'Catatan Buwuh' },
         ]}
         title="Catatan Buwuh"
-        subtitle="Pencatatan bantuan berupa barang dari tamu beserta estimasi nilainya."
+        subtitle="Pencatatan bantuan dari tamu: Uang, Beras, atau Barang beserta estimasi nilainya."
         actions={
           <>
-            <Button variant="outline" icon={<Download size={15} />} onClick={handleExport} disabled={table.filteredRows.length === 0}>
+            <Button
+              variant="outline"
+              icon={<Download size={15} />}
+              onClick={handleExport}
+              disabled={table.filteredRows.length === 0}
+            >
               Ekspor CSV
             </Button>
-            <Button variant="primary" icon={<Plus size={15} />} onClick={() => { setEditing(null); setIsFormOpen(true) }}>
+            <Button
+              variant="primary"
+              icon={<Plus size={15} />}
+              onClick={() => {
+                setEditing(null)
+                setIsFormOpen(true)
+              }}
+            >
               Tambah Catatan
             </Button>
           </>
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Transaksi" value={formatNumber(summary.totalTransactions)} icon={<Wallet size={18} />} colorAccent="indigo" />
-        <StatCard label="Estimasi Nilai" value={formatRupiah(summary.totalEstimatedValue)} icon={<TrendingUp size={18} />} variant="filled" />
-        <StatCard label="Total Item" value={formatNumber(summary.totalItems)} icon={<Package size={18} />} colorAccent="emerald" hint={`${formatNumber(summary.totalItemsThisMonth)} bulan ini`} />
-        <StatCard label="Item Terbanyak" value={summary.topItem?.itemName ?? '-'} icon={<Package size={18} />} colorAccent="amber" hint={summary.topItem ? `${summary.topItem.totalQuantity} ${summary.topItem.unit}` : 'Belum ada data'} />
+      {/* 3 Kartu Statistik Utama: Total Uang, Total Beras, Total Barang */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          label="Total Uang"
+          value={formatRupiah(stats.totalMoney)}
+          icon={<Banknote size={18} />}
+          hint={`${formatNumber(stats.moneyTransactions)} amplop / transaksi uang`}
+          colorAccent="emerald"
+        />
+        <StatCard
+          label="Total Beras"
+          value={`${formatNumber(stats.totalRiceKg)} kg`}
+          icon={<Wheat size={18} />}
+          hint={`${formatNumber(stats.riceTransactions)} pemberian beras tercatat`}
+          colorAccent="amber"
+        />
+        <StatCard
+          label="Total Barang"
+          value={`${formatNumber(stats.totalGoodsCount)} Item`}
+          icon={<Gift size={18} />}
+          hint={`${formatNumber(stats.goodsTransactions)} jenis barang fisik tercatat`}
+          colorAccent="violet"
+        />
       </div>
 
       <QueryState isLoading={isLoading} isError={isError}>
         <TableCard
           title="Daftar Catatan Buwuh"
           toolbar={
-            <SearchInput value={table.query} onChange={table.setQuery} placeholder="Cari pemberi atau nama barang..." className="sm:w-64" />
+            <SearchInput
+              value={table.query}
+              onChange={table.setQuery}
+              placeholder="Cari pemberi, barang, atau jenis (uang, beras, barang)..."
+              className="sm:w-72"
+            />
           }
           footerLeft={
             table.total === 0
               ? 'Belum ada catatan buwuh'
               : `Menampilkan ${table.from}-${table.to} dari ${formatNumber(table.total)} catatan`
           }
-          footerRight={<Pagination page={table.page} totalPages={table.totalPages} onPageChange={table.setPage} />}
+          footerRight={
+            <Pagination page={table.page} totalPages={table.totalPages} onPageChange={table.setPage} />
+          }
         >
           <table className="w-full min-w-3xl text-xs">
             <thead className="border-b border-slate-100 bg-slate-50/60">
               <tr>
                 <th className={thClass}>Pemberi</th>
+                <th className={thClass}>Jenis Bantuan</th>
                 <th className={thClass}>Rincian Bantuan</th>
                 <th className={thClass}>Estimasi Nilai</th>
                 <th className={thClass}>Tanggal</th>
@@ -123,47 +197,87 @@ export default function PanelCatatanBuwuhPage() {
             <tbody className="divide-y divide-slate-100">
               {table.pageRows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-16 text-center text-muted">
+                  <td colSpan={6} className="px-6 py-16 text-center text-muted">
                     Belum ada catatan buwuh yang tercatat.
                   </td>
                 </tr>
               )}
-              {table.pageRows.map((record) => (
-                <tr key={record.id} className="transition hover:bg-slate-50/70">
-                  <td className={tdClass}>
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-indigo-100/80 bg-indigo-50 text-xs font-bold text-primary">
-                        {getInitial(record.giverName)}
-                      </div>
-                      <div>
-                        <span className="block text-xs font-bold text-ink">{record.giverName}</span>
-                        {record.note && <span className="text-[11px] text-slate-400">{record.note}</span>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className={tdClass}>
-                    <div className="space-y-0.5">
-                      {record.items.map((item) => (
-                        <div key={item.id} className="text-slate-700">
-                          {item.itemName} — {item.quantity} {item.unit}
+              {table.pageRows.map((record) => {
+                const categories = Array.from(
+                  new Set(record.items.map((item) => getBuwuhanCategory(item))),
+                )
+
+                return (
+                  <tr key={record.id} className="transition hover:bg-slate-50/70">
+                    <td className={tdClass}>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-indigo-100/80 bg-indigo-50 text-xs font-bold text-primary">
+                          {getInitial(record.giverName)}
                         </div>
-                      ))}
-                    </div>
-                  </td>
-                  <td className={`${tdClass} font-bold text-ink`}>{formatRupiah(sumEstimatedValue(record))}</td>
-                  <td className={tdClass}>{formatDateId(record.receivedAt)}</td>
-                  <td className={tdClass}>
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button type="button" onClick={() => { setEditing(record); setIsFormOpen(true) }} className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-ink" aria-label={`Ubah catatan ${record.giverName}`}>
-                        <Pencil size={15} />
-                      </button>
-                      <button type="button" onClick={() => setDeleting(record)} className="rounded-xl p-2 text-slate-400 transition hover:bg-danger-light hover:text-danger" aria-label={`Hapus catatan ${record.giverName}`}>
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        <div>
+                          <span className="block text-xs font-bold text-ink">{record.giverName}</span>
+                          {record.note && (
+                            <span className="text-[11px] text-slate-400">"{record.note}"</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className={tdClass}>
+                      <div className="flex flex-wrap gap-1.5">
+                        {categories.map((cat) => (
+                          <CategoryBadge key={cat} category={cat} />
+                        ))}
+                      </div>
+                    </td>
+                    <td className={tdClass}>
+                      <div className="space-y-1">
+                        {record.items.map((item) => {
+                          const cat = getBuwuhanCategory(item)
+                          return (
+                            <div key={item.id} className="text-slate-700">
+                              <span className="font-semibold text-slate-800">{item.itemName}</span>
+                              <span className="text-slate-500">
+                                {' '}
+                                —{' '}
+                                {cat === 'Uang'
+                                  ? formatRupiah(item.estimatedValue ?? item.quantity)
+                                  : `${item.quantity} ${item.unit}`}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </td>
+                    <td className={`${tdClass} font-bold text-ink`}>
+                      {formatRupiah(sumEstimatedValue(record))}
+                    </td>
+                    <td className={tdClass}>{formatDateId(record.receivedAt)}</td>
+                    <td className={tdClass}>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditing(record)
+                            setIsFormOpen(true)
+                          }}
+                          className="cursor-pointer rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-ink"
+                          aria-label={`Ubah catatan ${record.giverName}`}
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleting(record)}
+                          className="cursor-pointer rounded-xl p-2 text-slate-400 transition hover:bg-rose-50 hover:text-danger"
+                          aria-label={`Hapus catatan ${record.giverName}`}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </TableCard>
@@ -172,24 +286,39 @@ export default function PanelCatatanBuwuhPage() {
       <BuwuhanFormModal
         key={`${isFormOpen}-${editing?.id ?? 'baru'}`}
         isOpen={isFormOpen}
-        onClose={() => { setIsFormOpen(false); setEditing(null) }}
+        onClose={() => {
+          setIsFormOpen(false)
+          setEditing(null)
+        }}
         onSubmit={handleSubmit}
         initialValue={editing}
         isSubmitting={isMutating}
       />
 
-      <Modal isOpen={deleting !== null} onClose={() => setDeleting(null)} title="Hapus Catatan Buwuh?" maxWidth="sm">
+      <Modal
+        isOpen={deleting !== null}
+        onClose={() => setDeleting(null)}
+        title="Hapus Catatan Buwuh?"
+        maxWidth="sm"
+      >
         <div className="space-y-4">
           <p className="text-xs leading-relaxed text-slate-600">
             Hapus catatan dari <strong>"{deleting?.giverName}"</strong>? Seluruh item di dalamnya ikut terhapus dan tidak dapat dipulihkan.
           </p>
           <div className="flex items-center justify-end gap-2 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setDeleting(null)}>Batal</Button>
+            <Button variant="outline" size="sm" onClick={() => setDeleting(null)}>
+              Batal
+            </Button>
             <Button
               variant="danger"
               size="sm"
               disabled={isMutating}
-              onClick={() => { if (deleting) { void removeBuwuhan(deleting.id); setDeleting(null) } }}
+              onClick={() => {
+                if (deleting) {
+                  void removeBuwuhan(deleting.id)
+                  setDeleting(null)
+                }
+              }}
             >
               {isMutating ? 'Menghapus…' : 'Ya, Hapus'}
             </Button>

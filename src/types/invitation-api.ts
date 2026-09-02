@@ -249,6 +249,10 @@ export interface CheckOutPayload {
   guestId?: string
 }
 
+/** 3 Kategori utama bantuan buwuh */
+export const BUWUHAN_CATEGORIES = ['Uang', 'Beras', 'Barang'] as const
+export type BuwuhanCategory = (typeof BUWUHAN_CATEGORIES)[number]
+
 /** Satuan item buwuh yang diizinkan backend (ALLOWED_UNITS). */
 export const BUWUHAN_UNITS = [
   'transaksi', 'kg', 'gram', 'liter', 'karung',

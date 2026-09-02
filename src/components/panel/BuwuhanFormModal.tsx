@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Banknote, Wheat, Gift } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import {
-  BUWUHAN_UNITS,
+  BUWUHAN_CATEGORIES,
   type ApiBuwuhan,
+  type BuwuhanCategory,
   type BuwuhanItemPayload,
   type BuwuhanPayload,
   type BuwuhanUnit,
 } from '@/types/invitation-api'
+import { CATEGORY_UNITS, getBuwuhanCategory } from '@/lib/buwuhHelper'
 
 export type BuwuhanFormModalProps = {
   isOpen: boolean
@@ -20,27 +22,27 @@ export type BuwuhanFormModalProps = {
 }
 
 type DraftItem = {
+  category: BuwuhanCategory
   itemName: string
   quantity: string
   unit: BuwuhanUnit
-  category: string
   estimatedValue: string
 }
 
 const EMPTY_ITEM: DraftItem = {
-  itemName: '',
+  category: 'Uang',
+  itemName: 'Uang Tunai / Amplop',
   quantity: '1',
-  unit: 'unit',
-  category: '',
+  unit: 'transaksi',
   estimatedValue: '',
 }
 
 const inputClass =
-  'w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-ink focus:border-primary focus:outline-none'
+  'w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-ink placeholder:text-slate-400 focus:border-primary focus:outline-none'
 
 /**
  * Modal formulir pencatatan buwuh: satu pemberi dengan satu atau lebih
- * item bantuan beserta estimasi nilainya.
+ * item bantuan khusus untuk 3 jenis bantuan utama: Uang, Beras, dan Barang.
  */
 export function BuwuhanFormModal({
   isOpen,
@@ -53,19 +55,43 @@ export function BuwuhanFormModal({
   const [note, setNote] = useState(initialValue?.note ?? '')
   const [items, setItems] = useState<DraftItem[]>(
     initialValue
-      ? initialValue.items.map((item) => ({
-          itemName: item.itemName,
-          quantity: String(item.quantity),
-          unit: item.unit,
-          category: item.category ?? '',
-          estimatedValue: item.estimatedValue === null ? '' : String(item.estimatedValue),
-        }))
+      ? initialValue.items.map((item) => {
+          const category = getBuwuhanCategory(item)
+          return {
+            category,
+            itemName: item.itemName,
+            quantity: String(item.quantity),
+            unit: item.unit,
+            estimatedValue: item.estimatedValue === null ? '' : String(item.estimatedValue),
+          }
+        })
       : [{ ...EMPTY_ITEM }],
   )
 
   /** Memperbarui satu kolom pada baris item tertentu. */
   function patchItem(index: number, patch: Partial<DraftItem>) {
-    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)))
+    setItems((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item
+
+        const updated = { ...item, ...patch }
+
+        // Jika kategori diubah, sesuaikan satuan default & placeholder
+        if (patch.category && patch.category !== item.category) {
+          const newCat = patch.category
+          const allowedUnits = CATEGORY_UNITS[newCat]
+          updated.unit = allowedUnits[0]
+
+          if (newCat === 'Uang' && (!item.itemName || item.itemName === 'Beras')) {
+            updated.itemName = 'Uang Tunai / Amplop'
+          } else if (newCat === 'Beras' && (!item.itemName || item.itemName === 'Uang Tunai / Amplop')) {
+            updated.itemName = 'Beras'
+          }
+        }
+
+        return updated
+      }),
+    )
   }
 
   /** Mengubah draft formulir menjadi body request yang diterima backend. */
@@ -74,13 +100,19 @@ export function BuwuhanFormModal({
 
     const payloadItems: BuwuhanItemPayload[] = items
       .filter((item) => item.itemName.trim())
-      .map((item) => ({
-        itemName: item.itemName.trim(),
-        quantity: Number(item.quantity) || 1,
-        unit: item.unit,
-        category: item.category.trim() || null,
-        estimatedValue: item.estimatedValue === '' ? null : Number(item.estimatedValue),
-      }))
+      .map((item) => {
+        const estNum = item.estimatedValue === '' ? null : Number(item.estimatedValue)
+        const qtyNum = Number(item.quantity) || 1
+
+        return {
+          category: item.category,
+          itemName: item.itemName.trim(),
+          quantity: qtyNum,
+          unit: item.unit,
+          // Jika Uang dan estimasi diisi, simpan nilainya; jika tidak, gunakan estimasi
+          estimatedValue: item.category === 'Uang' && estNum === null && qtyNum > 1000 ? qtyNum : estNum,
+        }
+      })
 
     if (!giverName.trim() || payloadItems.length === 0) return
 
@@ -97,7 +129,7 @@ export function BuwuhanFormModal({
       isOpen={isOpen}
       onClose={onClose}
       title={initialValue ? 'Ubah Catatan Buwuh' : 'Tambah Catatan Buwuh'}
-      description="Catat pemberi dan rincian barang bantuan beserta estimasi nilainya."
+      description="Pencatatan jenis bantuan dari tamu: Uang, Beras, atau Barang."
       maxWidth="2xl"
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
@@ -118,57 +150,138 @@ export function BuwuhanFormModal({
               className={inputClass}
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder="Opsional"
+              placeholder="Opsional, misal: titipan keluarga"
             />
           </label>
         </div>
 
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold text-slate-600">Rincian Bantuan *</span>
-          {items.map((item, index) => (
-            <div key={index} className="grid items-end gap-2 rounded-2xl bg-slate-50 p-3 sm:grid-cols-12">
-              <input
-                className={`${inputClass} sm:col-span-4`}
-                value={item.itemName}
-                onChange={(event) => patchItem(index, { itemName: event.target.value })}
-                placeholder="Nama barang, mis. Beras"
-              />
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                className={`${inputClass} sm:col-span-2`}
-                value={item.quantity}
-                onChange={(event) => patchItem(index, { quantity: event.target.value })}
-              />
-              <select
-                className={`${inputClass} sm:col-span-2`}
-                value={item.unit}
-                onChange={(event) => patchItem(index, { unit: event.target.value as BuwuhanUnit })}
+        <div className="space-y-2.5">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+            Rincian Bantuan *
+          </span>
+
+          {items.map((item, index) => {
+            const availableUnits = CATEGORY_UNITS[item.category]
+
+            return (
+              <div
+                key={index}
+                className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-3.5 space-y-3"
               >
-                {BUWUHAN_UNITS.map((unit) => (
-                  <option key={unit} value={unit}>{unit}</option>
-                ))}
-              </select>
-              <input
-                type="number"
-                min="0"
-                className={`${inputClass} sm:col-span-3`}
-                value={item.estimatedValue}
-                onChange={(event) => patchItem(index, { estimatedValue: event.target.value })}
-                placeholder="Estimasi Rp"
-              />
-              <button
-                type="button"
-                onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))}
-                disabled={items.length === 1}
-                className="rounded-xl p-2 text-slate-400 hover:bg-danger-light hover:text-danger disabled:opacity-30 sm:col-span-1"
-                aria-label="Hapus baris item"
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
-          ))}
+                {/* Pemilih 3 Kategori Utama */}
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/50 pb-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-semibold text-slate-500">Jenis:</span>
+                    <div className="inline-flex rounded-xl bg-slate-200/60 p-0.5">
+                      {BUWUHAN_CATEGORIES.map((cat) => {
+                        const isSelected = item.category === cat
+                        return (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => patchItem(index, { category: cat })}
+                            className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                              isSelected
+                                ? 'bg-white text-ink shadow-2xs'
+                                : 'text-slate-600 hover:text-ink'
+                            }`}
+                          >
+                            {cat === 'Uang' && <Banknote size={13} className="text-emerald-600" />}
+                            {cat === 'Beras' && <Wheat size={13} className="text-amber-600" />}
+                            {cat === 'Barang' && <Gift size={13} className="text-indigo-600" />}
+                            <span>{cat}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))}
+                    disabled={items.length === 1}
+                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-danger opacity-75 hover:bg-rose-50 hover:opacity-100 disabled:opacity-20"
+                    aria-label="Hapus baris item"
+                  >
+                    <Trash2 size={13} />
+                    <span>Hapus</span>
+                  </button>
+                </div>
+
+                {/* Kolom Input Item */}
+                <div className="grid items-end gap-2.5 sm:grid-cols-12">
+                  <div className="sm:col-span-4">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">
+                      Nama / Keterangan Item
+                    </label>
+                    <input
+                      className={inputClass}
+                      value={item.itemName}
+                      onChange={(event) => patchItem(index, { itemName: event.target.value })}
+                      placeholder={
+                        item.category === 'Uang'
+                          ? 'Uang Tunai / Amplop'
+                          : item.category === 'Beras'
+                          ? 'Beras Ramos / Rojolele'
+                          : 'Kulkas, Dispenser, Kipas, dll'
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">
+                      Jumlah
+                    </label>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      className={inputClass}
+                      value={item.quantity}
+                      onChange={(event) => patchItem(index, { quantity: event.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">
+                      Satuan
+                    </label>
+                    <select
+                      className={inputClass}
+                      value={item.unit}
+                      onChange={(event) =>
+                        patchItem(index, { unit: event.target.value as BuwuhanUnit })
+                      }
+                    >
+                      {availableUnits.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-4">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">
+                      {item.category === 'Uang' ? 'Nominal Uang (Rp)' : 'Estimasi Nilai (Rp)'}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      className={inputClass}
+                      value={item.estimatedValue}
+                      onChange={(event) =>
+                        patchItem(index, { estimatedValue: event.target.value })
+                      }
+                      placeholder={item.category === 'Uang' ? 'Contoh: 100000' : 'Estimasi Rp (opsional)'}
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          })}
 
           <Button
             type="button"
@@ -177,12 +290,14 @@ export function BuwuhanFormModal({
             icon={<Plus size={14} />}
             onClick={() => setItems((prev) => [...prev, { ...EMPTY_ITEM }])}
           >
-            Tambah Item
+            Tambah Baris Bantuan
           </Button>
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>Batal</Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            Batal
+          </Button>
           <Button type="submit" variant="primary" size="sm" disabled={isSubmitting}>
             {isSubmitting ? 'Menyimpan…' : 'Simpan Catatan'}
           </Button>

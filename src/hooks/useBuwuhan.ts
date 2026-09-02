@@ -41,9 +41,10 @@ export function useBuwuhan(invitationId: string) {
     enabled,
   })
 
-  /** Menyegarkan daftar buwuh, ringkasannya, dan ringkasan dashboard. */
+  /** Menyegarkan daftar buwuh per-undangan, daftar global buwuhan, ringkasannya, dan dashboard. */
   function invalidateAll() {
     void queryClient.invalidateQueries({ queryKey: ['invitation', invitationId] })
+    void queryClient.invalidateQueries({ queryKey: ['buwuhans'] })
     void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
   }
 
