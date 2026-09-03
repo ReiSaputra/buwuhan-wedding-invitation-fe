@@ -8,6 +8,7 @@ export type BackendValidationErrorIssue = {
 };
 
 export type ParsedApiError = {
+  status?: number;
   generalMessage: string | null;
   code: string | null;
   fieldErrors: Record<string, string[]>;
@@ -26,6 +27,7 @@ export type ParsedApiError = {
  */
 export function parseApiError(error: unknown): ParsedApiError {
   const result: ParsedApiError = {
+    status: isAxiosError(error) ? error.response?.status : undefined,
     generalMessage: null,
     code: null,
     fieldErrors: {},

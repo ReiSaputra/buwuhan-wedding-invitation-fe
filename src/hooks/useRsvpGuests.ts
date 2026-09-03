@@ -51,6 +51,7 @@ export function useRsvpGuests(invitationId: string) {
         id: guest.id,
         name: guest.name,
         phone: guest.phone ?? '',
+        email: guest.email ?? '',
         category: guest.category ?? 'Tanpa Kategori',
         // Jumlah pax hanya bermakna bila tamu menyatakan hadir
         headcount: rsvp && rsvp.status === 'CONFIRMED' ? rsvp.reservation : null,

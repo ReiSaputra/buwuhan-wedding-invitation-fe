@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Save, User, Phone, Tag, MessageSquare } from 'lucide-react'
+import { Save, User, Phone, Tag, MessageSquare, Mail } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { GUEST_CATEGORIES, type NewGuestInput } from '@/types/panel'
@@ -20,9 +20,10 @@ type FormErrors = {
   name?: string
   category?: string
   phone?: string
+  email?: string
 }
 
-const EMPTY_FORM: NewGuestInput = { name: '', category: '', phone: '', note: '' }
+const EMPTY_FORM: NewGuestInput = { name: '', category: '', phone: '', email: '', note: '' }
 
 const labelClass = 'flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600'
 const fieldClass =
@@ -31,12 +32,7 @@ const fieldClass =
 /**
  * Komponen Modal Formulir Data Tamu (GuestFormModal).
  * Digunakan secara fleksibel untuk menambah tamu baru maupun mengubah data tamu yang sudah ada.
- * Dilengkapi dengan pemilihan kategori tamu interaktif (chips), validasi input, dan pesan bantuan.
- * 
- * @param props - Properti GuestFormModal (isOpen, onClose, onSubmit, initialValue)
- * 
- * @example
- * <GuestFormModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} onSubmit={handleSave} />
+ * Dilengkapi dengan pemilihan kategori tamu interaktif (chips), nomor WhatsApp, email, validasi input, dan catatan.
  */
 export function GuestFormModal({
   isOpen,
@@ -45,15 +41,14 @@ export function GuestFormModal({
   initialValue = null,
 }: GuestFormModalProps) {
   const isEditMode = initialValue !== null
-  // Nilai awal dihitung sekali saat komponen dipasang. Komponen induk memberi
-  // prop `key` yang berubah setiap modal dibuka, sehingga React memasang ulang
-  // modal ini dan formulir otomatis ter-reset — tanpa setState di dalam effect.
+
   const [form, setForm] = useState<NewGuestInput>(() =>
     initialValue
       ? {
           name: initialValue.name,
           category: initialValue.category,
           phone: initialValue.phone ?? '',
+          email: initialValue.email ?? '',
           note: initialValue.note ?? '',
         }
       : EMPTY_FORM,
@@ -62,9 +57,6 @@ export function GuestFormModal({
 
   /**
    * Memperbarui satu ruas nilai formulir sekaligus menghapus pesan galat terkait.
-   * 
-   * @param field - Nama properti formulir
-   * @param value - Nilai teks baru
    */
   function updateField(field: keyof NewGuestInput, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -73,8 +65,6 @@ export function GuestFormModal({
 
   /**
    * Memeriksa validitas input formulir dan mengembalikan objek galat.
-   * 
-   * @returns Objek FormErrors berisi pesan error jika data tidak valid
    */
   function validate(): FormErrors {
     const nextErrors: FormErrors = {}
@@ -94,13 +84,16 @@ export function GuestFormModal({
       nextErrors.phone = 'Format nomor HP tidak valid (contoh: 08123456789)'
     }
 
+    const email = form.email?.trim()
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      nextErrors.email = 'Format alamat email tidak valid (contoh: nama@email.com)'
+    }
+
     return nextErrors
   }
 
   /**
    * Menangani pengiriman formulir saat tombol simpan diklik.
-   * 
-   * @param event - Event pengiriman form
    */
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -114,6 +107,7 @@ export function GuestFormModal({
       name: form.name.trim(),
       category: form.category,
       phone: form.phone?.trim() || undefined,
+      email: form.email?.trim() || undefined,
       note: form.note?.trim() || undefined,
     })
     onClose()
@@ -200,6 +194,26 @@ export function GuestFormModal({
           {errors.phone && <p className="mt-1 text-[11px] text-danger font-medium">{errors.phone}</p>}
         </div>
 
+        {/* Email Tamu */}
+        <div>
+          <div className="flex items-baseline justify-between gap-2">
+            <label htmlFor="guest-email" className={labelClass}>
+              <Mail size={13} className="text-primary" />
+              <span>Alamat Email</span>
+            </label>
+            <span className="text-[10px] text-slate-400 font-medium">Opsional untuk kirim email</span>
+          </div>
+          <input
+            id="guest-email"
+            type="email"
+            value={form.email}
+            onChange={(event) => updateField('email', event.target.value)}
+            placeholder="Contoh: nama.tamu@gmail.com"
+            className={fieldClass}
+          />
+          {errors.email && <p className="mt-1 text-[11px] text-danger font-medium">{errors.email}</p>}
+        </div>
+
         {/* Catatan / Keterangan Tambahan */}
         <div>
           <div className="flex items-baseline justify-between gap-2">
@@ -232,4 +246,3 @@ export function GuestFormModal({
     </Modal>
   )
 }
-

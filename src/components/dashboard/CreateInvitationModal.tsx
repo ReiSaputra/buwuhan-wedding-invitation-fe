@@ -14,8 +14,8 @@ export type CreateInvitationModalProps = {
 }
 
 /**
- * Modal dialog untuk membuat undangan pernikahan baru.
- * Membungkus InvitationForm dan menyimpan data lewat POST /invitations.
+ * Modal dialog untuk membuat undangan baru (Pernikahan, Khitanan/Rasulan, atau Undangan Lainnya).
+ * Menampilkan pemilihan jenis undangan terlebih dahulu sebelum mengisi formulir.
  *
  * @example
  * <CreateInvitationModal isOpen={open} onClose={() => setOpen(false)} />
@@ -30,8 +30,7 @@ export function CreateInvitationModal({
 
   /**
    * Mengirim data undangan baru ke backend.
-   * Error sengaja TIDAK ditangkap di sini agar dilempar kembali ke
-   * InvitationForm dan ditampilkan pada kolom yang bersangkutan.
+   * Error dilempar kembali ke InvitationForm untuk ditampilkan per kolom input.
    */
   async function handleSubmit(payload: InvitationPayload) {
     const created = await createInvitation.mutateAsync(payload)
@@ -46,11 +45,12 @@ export function CreateInvitationModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Buat Undangan Baru"
-      description="Isi data mempelai dan detail acara. Template tema dapat dipilih setelah undangan tersimpan."
+      description="Pilih jenis undangan, lengkapi detail acara, dan publikasikan undangan Anda."
       maxWidth="2xl"
     >
-      <div className="max-h-[70vh] overflow-y-auto pr-1">
+      <div className="max-h-[72vh] overflow-y-auto pr-1">
         <InvitationForm
+          key={String(isOpen)}
           onSubmit={handleSubmit}
           onCancel={onClose}
           isSubmitting={createInvitation.isPending}

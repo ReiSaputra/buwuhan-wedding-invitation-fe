@@ -33,11 +33,14 @@ export interface ApiLoveStory {
   order: number
 }
 
+export type ApiEventCategory = 'WEDDING' | 'KHITANAN' | 'RASULAN' | 'AQIQAH';
+
 /** GET /invitations/:id  →  data */
 export interface ApiInvitation {
   id: string;
   title: string;
   slug: string;
+  eventCategory?: ApiEventCategory | null;
   status: ApiInvitationStatus;
   publishedAt: string | null;
   eventDate: string | null;
@@ -87,7 +90,8 @@ export interface CoupleInputPayload {
 export interface InvitationPayload {
   title: string;
   slug: string;
-  couples: CoupleInputPayload[];
+  eventCategory?: ApiEventCategory;
+  couples?: CoupleInputPayload[];
   eventDate?: string;
   eventTime?: string;
   venue?: string;
@@ -196,6 +200,42 @@ export interface GuestPayload {
   email?: string | null
   notes?: string | null
   paxCount?: number
+}
+
+/** Response GET /invitations/:invitationId/guests/:guestId/share */
+export interface GuestShareData {
+  guestId: string
+  guestName: string
+  phone: string | null
+  email: string | null
+  qrCode: string
+  invitationUrl: string
+  shareMessage: string
+  whatsappShareUrl: string
+  whatsappUniversalShareUrl: string
+}
+
+/** Response POST /invitations/:invitationId/guests/:guestId/send-email */
+export interface SendEmailResponse {
+  guestId: string
+  guestName: string
+  email: string
+}
+
+export interface BulkSendEmailResult {
+  guestId: string
+  guestName: string
+  email: string
+  success: boolean
+  error?: string
+}
+
+/** Response POST /invitations/:invitationId/guests/send-email-bulk */
+export interface BulkSendEmailResponse {
+  totalTargeted: number
+  totalSent: number
+  totalFailed: number
+  results: BulkSendEmailResult[]
 }
 
 /** GET /invitations/:invitationId/rsvps  →  data[] */
