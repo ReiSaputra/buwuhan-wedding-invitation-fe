@@ -1,11 +1,28 @@
 import {
   Grid2x2, Mail, CreditCard, Gift, Settings,
   Users, LayoutTemplate, Sparkles, BookUser, ClipboardCheck, Wallet,
-  Scan,
+  Scan, LayoutDashboard,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 const ICON = 18
+
+/**
+ * Daftar menu navigasi khusus antarmuka Superadmin Buwuhan.
+ */
+export const adminNav: NavEntry[] = [
+  { type: 'item', to: '/admin/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={ICON} />, end: true },
+  { type: 'item', to: '/admin/users', label: 'Pengguna', icon: <Users size={ICON} /> },
+  { type: 'item', to: '/admin/invitations', label: 'Moderasi Undangan', icon: <Mail size={ICON} /> },
+  { type: 'item', to: '/admin/templates', label: 'Katalog Template', icon: <LayoutTemplate size={ICON} /> },
+]
+
+/**
+ * Daftar menu footer khusus panel Superadmin.
+ */
+export const adminNavFooter: NavEntry[] = [
+  { type: 'item', to: '/admin/pengaturan', label: 'Pengaturan Akun', icon: <Settings size={ICON} /> },
+]
 
 /**
  * Tipe entri navigasi daun (Leaf) tunggal yang mengarah ke URL rute tertentu.

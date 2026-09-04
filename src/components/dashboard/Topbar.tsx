@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Menu, User, Settings, CreditCard, LogOut, CheckCheck, Clock } from 'lucide-react'
+import { Bell, Menu, User, Settings, CreditCard, LogOut, CheckCheck, Clock, ShieldCheck } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useClock } from '@/hooks/useClock'
 import { useAuth } from '@/hooks/useAuth'
@@ -212,6 +212,17 @@ export function Topbar({ user, onMenuToggle }: TopbarProps) {
               </div>
 
               <div className="py-1 space-y-0.5">
+                {user.role === 'ADMIN' && (
+                  <Link
+                    to="/admin/dashboard"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-primary bg-indigo-50/70 hover:bg-indigo-100/80 transition"
+                  >
+                    <ShieldCheck size={14} className="text-primary" />
+                    <span>Panel Superadmin</span>
+                  </Link>
+                )}
+
                 <Link
                   to="/dashboard/pengaturan"
                   onClick={() => setIsProfileOpen(false)}

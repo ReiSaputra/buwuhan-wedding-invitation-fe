@@ -18,6 +18,27 @@ import type {
 } from '@/types/auth'
 
 /**
+ * Mendekode payload JWT untuk mengekstrak data klaim peran (role) dan tier langganan.
+ */
+function parseJwtClaims(token: string): { id?: string; role?: string; planTier?: ApiUserProfile['planTier'] } | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length < 2) return null
+    const base64Url = parts[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const jsonStr = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(''),
+    )
+    return JSON.parse(jsonStr)
+  } catch {
+    return null
+  }
+}
+
+/**
  * Mengambil profil pengguna yang sedang login dari endpoint GET /users/me.
  *
  * Pendekatan ini menggantikan pembacaan payload JWT secara manual dan
@@ -84,7 +105,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Profil diambil dari server agar nama, email, dan paket selalu terbaru
       const profile = await fetchCurrentUser()
-      if (profile) setUser(profile)
+      const claims = parseJwtClaims(token)
+
+      if (profile) {
+        setUser(profile)
+      } else if (claims) {
+        setUser({
+          id: claims.id || '',
+          fullName: 'Pengguna Buwuhan',
+          email: '',
+          role: claims.role || 'USER',
+          plan: (claims.planTier || 'FREE') as AuthUser['plan'],
+        })
+      }
 
       return true
     } catch {
@@ -141,13 +174,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       updateAccessToken(data.accessToken)
-      setUser({
-        id: data.id,
-        fullName: data.fullName,
-        email: data.email || input.email,
-        role: data.role,
-        plan: data.planTier,
-      })
+      const claims = parseJwtClaims(data.accessToken)
+
+      // Ambil profil lengkap dari endpoint /users/me
+      const profile = await fetchCurrentUser()
+
+      const userObj: AuthUser = {
+        id: profile?.id || data.id,
+        fullName: profile?.fullName || data.fullName,
+        email: profile?.email || data.email || input.email,
+        role: profile?.role || claims?.role || (data as { role?: string }).role || 'USER',
+        plan: (profile?.plan || claims?.planTier || (data as { planTier?: string }).planTier || 'FREE') as AuthUser['plan'],
+      }
+      setUser(userObj)
+      return userObj
     },
     [updateAccessToken],
   )

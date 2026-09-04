@@ -10,11 +10,7 @@ import {
   Sparkles,
   Phone,
   Check,
-  Mail,
-  Send,
   Loader2,
-  AlertTriangle,
-  MailCheck,
 } from 'lucide-react'
 import { PanelPageHeader } from '@/components/panel/PanelPageHeader'
 import { QueryState } from '@/components/common/QueryState'
@@ -30,12 +26,10 @@ import { AnimatedStatusIcon } from '@/components/ui/AnimatedStatusIcon'
 import { useInvitationDetail } from '@/hooks/useInvitationDetail'
 import { useRsvpGuests } from '@/hooks/useRsvpGuests'
 import { useGuestActions } from '@/hooks/useGuestActions'
-import { useGuestBook } from '@/hooks/useGuestBook'
 import { useTableState } from '@/hooks/useTableState'
 import { formatNumber, getInitial } from '@/lib/format'
 import { parseApiError } from '@/lib/errorHandler'
 import type { RsvpGuest, RsvpStatus } from '@/types/panel'
-import type { BulkSendEmailResponse } from '@/types/invitation-api'
 
 /** Label dan warna badge untuk setiap status konfirmasi kehadiran. */
 const statusMeta: Record<RsvpStatus, { label: string; variant: BadgeVariant }> = {
@@ -57,40 +51,17 @@ const tdClass = 'px-6 py-4 align-middle'
 /**
  * Halaman Konfirmasi Kehadiran pada Panel Pengelolaan Undangan.
  * Menampilkan ringkasan status kehadiran seluruh tamu, progres persentase hadir,
- * tabel pencarian tamu, filter status, dan fitur kirim undangan via WhatsApp & Email (Single & Bulk).
+ * tabel pencarian tamu, filter status, dan fitur kirim undangan via WhatsApp.
  */
 export default function PanelRsvpPage() {
   const { id = '' } = useParams()
   const { invitation } = useInvitationDetail(id)
   const { guests, stats, isLoading, isError } = useRsvpGuests(id)
-  const { getGuestShareData, sendEmail, sendEmailBulk, isSendingEmailBulk } = useGuestActions(id)
-  const { updateGuest } = useGuestBook(id)
+  const { getGuestShareData } = useGuestActions(id)
 
   const [statusFilter, setStatusFilter] = useState<RsvpStatus | 'ALL'>('ALL')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [activeGuestActionId, setActiveGuestActionId] = useState<string | null>(null)
-
-  // State untuk modal konfirmasi broadcast email
-  const [isBulkEmailConfirmOpen, setIsBulkEmailConfirmOpen] = useState(false)
-  // State untuk modal hasil laporan bulk email
-  const [bulkResult, setBulkResult] = useState<BulkSendEmailResponse | null>(null)
-
-  // State untuk modal input email jika tamu belum memiliki email
-  const [emailModalState, setEmailModalState] = useState<{
-    isOpen: boolean
-    guestId: string
-    guestName: string
-    guestCategory: string
-    guestPhone: string
-    emailInput: string
-  }>({
-    isOpen: false,
-    guestId: '',
-    guestName: '',
-    guestCategory: '',
-    guestPhone: '',
-    emailInput: '',
-  })
 
   // State untuk status modal pop-up hasil kirim
   const [popupState, setPopupState] = useState<{
@@ -106,7 +77,7 @@ export default function PanelRsvpPage() {
   })
 
   const getSearchText = useCallback(
-    (guest: RsvpGuest) => `${guest.name} ${guest.phone} ${guest.email ?? ''} ${guest.category}`,
+    (guest: RsvpGuest) => `${guest.name} ${guest.phone} ${guest.category}`,
     [],
   )
 
@@ -119,8 +90,6 @@ export default function PanelRsvpPage() {
 
   const hadirPercentage =
     stats.total > 0 ? Math.round((stats.hadir / stats.total) * 100) : 0
-
-  const guestsWithEmail = guests.filter((g) => Boolean(g.email?.trim()))
 
   function toWidth(value: number): string {
     return stats.total > 0 ? `${(value / stats.total) * 100}%` : '0%'
@@ -164,135 +133,6 @@ export default function PanelRsvpPage() {
     }
   }
 
-  /**
-   * Mengirim undangan ke email satu tamu (Single Send Email)
-   * Menangani 200 OK, 422 Unprocessable Entity, 502 Bad Gateway (SMTP), 404 Not Found.
-   */
-  async function handleSendEmail(guest: RsvpGuest) {
-    if (!guest.email) {
-      setEmailModalState({
-        isOpen: true,
-        guestId: guest.id,
-        guestName: guest.name,
-        guestCategory: guest.category,
-        guestPhone: guest.phone,
-        emailInput: '',
-      })
-      return
-    }
-
-    setActiveGuestActionId(guest.id)
-    try {
-      const res = await sendEmail(guest.id)
-      setPopupState({
-        isOpen: true,
-        status: 'success',
-        title: 'Undangan Email Terkirim',
-        message: res.email
-          ? `Undangan berhasil dikirim ke email ${res.email}`
-          : 'Undangan berhasil dikirim ke email tamu',
-      })
-    } catch (error) {
-      const parsed = parseApiError(error)
-
-      // 422: Tamu belum memiliki email
-      if (parsed.status === 422) {
-        setEmailModalState({
-          isOpen: true,
-          guestId: guest.id,
-          guestName: guest.name,
-          guestCategory: guest.category,
-          guestPhone: guest.phone,
-          emailInput: '',
-        })
-        return
-      }
-
-      // 502: Bad Gateway (Gagal SMTP / email invalid / server mail bermasalah)
-      // 404: Tamu tidak ditemukan
-      setPopupState({
-        isOpen: true,
-        status: 'error',
-        title: parsed.status === 502 ? 'Gagal Mengirim Email (SMTP)' : 'Gagal Mengirim Email',
-        message:
-          parsed.generalMessage ||
-          'Gagal mengirim email undangan. Pastikan alamat email tamu valid atau coba beberapa saat lagi.',
-      })
-    } finally {
-      setActiveGuestActionId(null)
-    }
-  }
-
-  /**
-   * Menyimpan email baru ke database tamu lalu langsung mengirimkan email undangan.
-   */
-  async function handleEmailModalSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const email = emailModalState.emailInput.trim()
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      alert('Masukkan format alamat email yang valid')
-      return
-    }
-
-    const { guestId, guestName, guestCategory, guestPhone } = emailModalState
-    setEmailModalState((prev) => ({ ...prev, isOpen: false }))
-    setActiveGuestActionId(guestId)
-
-    try {
-      // 1. Update data email tamu
-      updateGuest(guestId, {
-        name: guestName,
-        category: guestCategory,
-        phone: guestPhone || undefined,
-        email,
-      })
-
-      // 2. Kirim undangan via email
-      const res = await sendEmail(guestId)
-      setPopupState({
-        isOpen: true,
-        status: 'success',
-        title: 'Undangan Email Terkirim',
-        message: `Email tamu berhasil diperbarui dan undangan digital telah dikirimkan ke ${res.email || email}.`,
-      })
-    } catch (error) {
-      const parsed = parseApiError(error)
-      setPopupState({
-        isOpen: true,
-        status: 'error',
-        title: parsed.status === 502 ? 'Gagal Mengirim Email (SMTP)' : 'Gagal Mengirim Email',
-        message:
-          parsed.generalMessage ||
-          'Gagal mengirim email undangan. Pastikan alamat email tamu valid atau coba beberapa saat lagi.',
-      })
-    } finally {
-      setActiveGuestActionId(null)
-    }
-  }
-
-  /**
-   * Menjalankan pengiriman broadcast email massal
-   */
-  async function handleExecuteBulkEmail() {
-    setIsBulkEmailConfirmOpen(false)
-    try {
-      const res = await sendEmailBulk()
-      setBulkResult(res)
-    } catch (error) {
-      const parsed = parseApiError(error)
-      setPopupState({
-        isOpen: true,
-        status: 'error',
-        title: 'Gagal Memproses Broadcast Email',
-        message:
-          parsed.generalMessage ||
-          'Terjadi kesalahan saat memproses pengiriman email massal. Silakan coba lagi.',
-      })
-    }
-  }
-
-  const failedBulkResults = bulkResult ? bulkResult.results.filter((r) => !r.success) : []
-
   return (
     <div className="animate-in fade-in space-y-6 duration-300">
       {/* Header Halaman */}
@@ -304,24 +144,6 @@ export default function PanelRsvpPage() {
         ]}
         title="Konfirmasi Kehadiran"
         subtitle={`Pantau rekap kehadiran tamu untuk acara pernikahan ${invitation.coupleName}`}
-        actions={
-          <Button
-            variant="outline"
-            size="sm"
-            icon={
-              isSendingEmailBulk ? (
-                <Loader2 size={14} className="animate-spin text-primary" />
-              ) : (
-                <MailCheck size={14} className="text-primary" />
-              )
-            }
-            onClick={() => setIsBulkEmailConfirmOpen(true)}
-            disabled={isSendingEmailBulk || guests.length === 0}
-            title="Kirim email undangan massal ke seluruh tamu"
-          >
-            {isSendingEmailBulk ? 'Mengirim...' : 'Broadcast Email'}
-          </Button>
-        }
       />
 
       {/* Kartu Ringkasan Metrik Statistik */}
@@ -352,7 +174,7 @@ export default function PanelRsvpPage() {
           value={formatNumber(stats.belumKonfirmasi)}
           icon={<MoreHorizontal size={18} />}
           colorAccent="violet"
-          hint="Perlu pengingat via WhatsApp/Email"
+          hint="Perlu pengingat via WhatsApp"
         />
       </div>
 
@@ -412,7 +234,7 @@ export default function PanelRsvpPage() {
           toolbar={
             <div className="flex flex-wrap items-center gap-2">
               <SearchInput
-                placeholder="Cari nama, kontak, email..."
+                placeholder="Cari nama atau nomor kontak..."
                 value={table.query}
                 onChange={table.setQuery}
                 className="w-full sm:w-64"
@@ -483,25 +305,14 @@ export default function PanelRsvpPage() {
                     </td>
 
                     <td className={`${tdClass} text-slate-600`}>
-                      <div className="space-y-1">
-                        {guest.phone ? (
-                          <div className="flex items-center gap-1.5">
-                            <Phone size={12} className="text-slate-400" />
-                            <span className="tabular-nums font-mono text-xs">{guest.phone}</span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-300 text-[11px]">No HP: -</span>
-                        )}
-
-                        {guest.email ? (
-                          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                            <Mail size={11} className="text-primary" />
-                            <span className="truncate max-w-[140px]" title={guest.email}>
-                              {guest.email}
-                            </span>
-                          </div>
-                        ) : null}
-                      </div>
+                      {guest.phone ? (
+                        <div className="flex items-center gap-1.5">
+                          <Phone size={12} className="text-slate-400" />
+                          <span className="tabular-nums font-mono text-xs">{guest.phone}</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-300 text-[11px]">No HP: -</span>
+                      )}
                     </td>
 
                     <td className={tdClass}>
@@ -539,13 +350,6 @@ export default function PanelRsvpPage() {
                             },
                           },
                           {
-                            label: 'Kirim via Email',
-                            icon: <Mail size={14} className="text-indigo-600" />,
-                            onClick: () => {
-                              void handleSendEmail(guest)
-                            },
-                          },
-                          {
                             label: copiedId === guest.id ? 'Tersalin!' : 'Salin Nomor HP',
                             icon:
                               copiedId === guest.id ? (
@@ -568,164 +372,7 @@ export default function PanelRsvpPage() {
         </TableCard>
       </QueryState>
 
-      {/* Modal Input Email Tamu (Jika Tamu Belum Memiliki Email / Status 422) */}
-      <Modal
-        isOpen={emailModalState.isOpen}
-        onClose={() => setEmailModalState((prev) => ({ ...prev, isOpen: false }))}
-        title="Lengkapi Alamat Email Tamu"
-        description={`Tamu "${emailModalState.guestName}" belum memiliki alamat email yang terdaftar.`}
-        maxWidth="sm"
-      >
-        <form onSubmit={handleEmailModalSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="input-guest-email" className="block text-xs font-bold text-slate-700 mb-1.5">
-              Alamat Email Tamu
-            </label>
-            <input
-              id="input-guest-email"
-              type="email"
-              required
-              value={emailModalState.emailInput}
-              onChange={(e) =>
-                setEmailModalState((prev) => ({ ...prev, emailInput: e.target.value }))
-              }
-              placeholder="Contoh: nama.tamu@gmail.com"
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-ink placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 shadow-2xs"
-            />
-            <p className="mt-1 text-[11px] text-muted">
-              Alamat ini akan disimpan ke data tamu dan menerima undangan digital resmi.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setEmailModalState((prev) => ({ ...prev, isOpen: false }))}
-            >
-              Batal
-            </Button>
-            <Button type="submit" variant="primary" size="sm" icon={<Send size={13} />}>
-              Simpan &amp; Kirim Email
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Modal Konfirmasi Broadcast Email Massal */}
-      <Modal
-        isOpen={isBulkEmailConfirmOpen}
-        onClose={() => setIsBulkEmailConfirmOpen(false)}
-        title="Kirim Email Undangan Massal"
-        maxWidth="sm"
-      >
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-indigo-50/60 p-4 text-xs text-slate-700 space-y-2 border border-indigo-100">
-            <div className="flex items-center justify-between font-bold">
-              <span>Total Tamu Undangan:</span>
-              <span>{guests.length} Orang</span>
-            </div>
-            <div className="flex items-center justify-between font-bold text-primary">
-              <span>Tamu Memiliki Email:</span>
-              <span>{guestsWithEmail.length} Orang</span>
-            </div>
-            <p className="text-[11px] text-muted pt-1 border-t border-indigo-100">
-              Sistem akan mengirimkan undangan digital ke seluruh tamu yang telah memiliki alamat email terdaftar.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsBulkEmailConfirmOpen(false)}
-            >
-              Batal
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Send size={13} />}
-              onClick={handleExecuteBulkEmail}
-              disabled={isSendingEmailBulk || guestsWithEmail.length === 0}
-            >
-              {isSendingEmailBulk ? 'Memproses...' : 'Mulai Broadcast Email'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Modal Laporan Hasil Bulk Send Email */}
-      <Modal
-        isOpen={bulkResult !== null}
-        onClose={() => setBulkResult(null)}
-        title="Laporan Broadcast Email"
-        maxWidth="md"
-      >
-        {bulkResult && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
-              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-                <span className="text-[10px] text-muted block font-bold uppercase">Target</span>
-                <span className="font-display text-base font-bold text-ink">
-                  {bulkResult.totalTargeted}
-                </span>
-              </div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3">
-                <span className="text-[10px] text-emerald-600 block font-bold uppercase">Berhasil</span>
-                <span className="font-display text-base font-bold text-emerald-600">
-                  {bulkResult.totalSent}
-                </span>
-              </div>
-              <div className="rounded-2xl border border-red-100 bg-red-50/50 p-3">
-                <span className="text-[10px] text-danger block font-bold uppercase">Gagal</span>
-                <span className="font-display text-base font-bold text-danger">
-                  {bulkResult.totalFailed}
-                </span>
-              </div>
-            </div>
-
-            {failedBulkResults.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-danger">
-                  <AlertTriangle size={14} />
-                  <span>Daftar Email Tamu yang Gagal Terkirim:</span>
-                </div>
-                <div className="max-h-48 overflow-y-auto rounded-2xl border border-red-100 bg-red-50/40 p-3 space-y-2 text-xs">
-                  {failedBulkResults.map((item) => (
-                    <div key={item.guestId} className="border-b border-red-100/60 pb-1.5 last:border-b-0">
-                      <div className="flex items-center justify-between font-bold text-slate-800">
-                        <span>{item.guestName}</span>
-                        <span className="text-[11px] font-mono text-slate-500">{item.email}</span>
-                      </div>
-                      {item.error && (
-                        <p className="text-[11px] text-danger mt-0.5">{item.error}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {bulkResult.totalFailed === 0 && (
-              <div className="rounded-2xl bg-emerald-50 p-4 text-center space-y-1 border border-emerald-100">
-                <p className="text-xs font-bold text-emerald-700">
-                  Seluruh email undangan ({bulkResult.totalSent}) berhasil dikirimkan ke tamu.
-                </p>
-              </div>
-            )}
-
-            <div className="flex justify-end pt-2 border-t border-slate-100">
-              <Button variant="primary" size="sm" onClick={() => setBulkResult(null)}>
-                Tutup Laporan
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      {/* Modal Pop-up Status Notifikasi Hasil Kirim (Single Send) */}
+      {/* Modal Pop-up Status Notifikasi Hasil Kirim (WhatsApp error, dsb) */}
       <Modal
         isOpen={popupState.isOpen}
         onClose={() => setPopupState((prev) => ({ ...prev, isOpen: false }))}

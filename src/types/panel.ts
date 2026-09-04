@@ -11,7 +11,6 @@ export type RsvpGuest = {
   id: string
   name: string
   phone: string
-  email?: string
   category: string
   /** Jumlah orang yang dibawa. null bila tamu belum konfirmasi atau menyatakan tidak hadir. */
   headcount: number | null
@@ -46,8 +45,6 @@ export type GuestBookEntry = {
   recordedAt: string
   /** Nomor HP tamu. */
   phone?: string
-  /** Email tamu. */
-  email?: string
   /** Ucapan, doa restu, atau catatan khusus dari tamu */
   message?: string
 }
@@ -93,7 +90,6 @@ export type NewGuestInput = {
   name: string
   category: string
   phone?: string
-  email?: string
   note?: string
 }
 

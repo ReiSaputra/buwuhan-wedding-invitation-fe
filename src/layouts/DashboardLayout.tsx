@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, Navigate } from 'react-router-dom'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { Topbar } from '@/components/dashboard/Topbar'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { useAuth } from '@/hooks/useAuth'
 import { dashboardNav, dashboardNavFooter } from '@/config/navigation'
 
 /**
@@ -11,8 +12,14 @@ import { dashboardNav, dashboardNavFooter } from '@/config/navigation'
  * serta area konten dinamis `<Outlet />`.
  */
 export default function DashboardLayout() {
+  const { user: authUser } = useAuth()
   const user = useCurrentUser()
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+
+  // Pengguna dengan role ADMIN otomatis dialihkan langsung ke Portal Admin
+  if (authUser?.role === 'ADMIN') {
+    return <Navigate to="/admin/dashboard" replace />
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-surface">

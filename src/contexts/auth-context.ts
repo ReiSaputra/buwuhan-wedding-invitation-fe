@@ -13,8 +13,8 @@ export type AuthContextType = {
   isAuthenticated: boolean
   /** Status apakah pengecekan sesi awal (silent refresh) sedang berlangsung */
   isLoading: boolean
-  /** Fungsi untuk proses masuk (Sign In) */
-  login: (input: LoginInput) => Promise<void>
+  /** Fungsi untuk proses masuk (Sign In), mengembalikan data AuthUser */
+  login: (input: LoginInput) => Promise<AuthUser>
   /** Fungsi untuk proses pendaftaran akun (Sign Up) */
   register: (input: RegisterInput) => Promise<void>
   /** Fungsi untuk keluar (Sign Out) */

@@ -13,11 +13,7 @@ import {
   Clock,
   Calendar,
   MessageCircle,
-  Mail,
-  Send,
   Loader2,
-  AlertTriangle,
-  MailCheck,
 } from 'lucide-react'
 import { PanelPageHeader } from '@/components/panel/PanelPageHeader'
 import { StatCard } from '@/components/dashboard/StatCard'
@@ -37,7 +33,6 @@ import { downloadCsv } from '@/lib/export'
 import { formatDateId, formatNumber, formatTimeWib, getInitial } from '@/lib/format'
 import { parseApiError } from '@/lib/errorHandler'
 import type { AttendanceStatus, GuestBookEntry, NewGuestInput } from '@/types/panel'
-import type { BulkSendEmailResponse } from '@/types/invitation-api'
 import { QueryState } from '@/components/common/QueryState'
 
 const filterOptions: Array<{ value: AttendanceStatus | 'ALL'; label: string }> = [
@@ -54,14 +49,14 @@ const iconButtonClass =
 /**
  * Halaman Manajemen Buku Tamu pada Panel Pengelolaan Undangan Spesifik.
  * Mencatat kehadiran nyata di lokasi resepsi beserta ucapan/doa restu dari tamu,
- * waktu check-in, kategori tamu, dan fitur kirim undangan via WhatsApp & Email (Single & Bulk).
+ * waktu check-in, kategori tamu, dan fitur kirim undangan via WhatsApp.
  */
 export default function PanelBukuTamuPage() {
   const { id = '' } = useParams()
   const { invitation } = useInvitationDetail(id)
   const { entries, stats, addGuest, updateGuest, removeGuest, isLoading, isError, isMutating } =
     useGuestBook(id)
-  const { getGuestShareData, sendEmail, sendEmailBulk, isSendingEmailBulk } = useGuestActions(id)
+  const { getGuestShareData } = useGuestActions(id)
 
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | 'ALL'>('ALL')
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -69,28 +64,6 @@ export default function PanelBukuTamuPage() {
   const [viewedMessage, setViewedMessage] = useState<GuestBookEntry | null>(null)
   const [deletingEntry, setDeletingEntry] = useState<GuestBookEntry | null>(null)
   const [activeGuestActionId, setActiveGuestActionId] = useState<string | null>(null)
-
-  // State untuk modal konfirmasi bulk email
-  const [isBulkEmailConfirmOpen, setIsBulkEmailConfirmOpen] = useState(false)
-  // State untuk modal hasil laporan pengiriman bulk email
-  const [bulkResult, setBulkResult] = useState<BulkSendEmailResponse | null>(null)
-
-  // State untuk modal input email jika tamu belum punya email
-  const [emailModalState, setEmailModalState] = useState<{
-    isOpen: boolean
-    guestId: string
-    guestName: string
-    guestCategory: string
-    guestPhone?: string
-    emailInput: string
-  }>({
-    isOpen: false,
-    guestId: '',
-    guestName: '',
-    guestCategory: '',
-    guestPhone: '',
-    emailInput: '',
-  })
 
   // State pop-up status
   const [popupState, setPopupState] = useState<{
@@ -106,7 +79,7 @@ export default function PanelBukuTamuPage() {
   })
 
   const getSearchText = useCallback(
-    (entry: GuestBookEntry) => `${entry.name} ${entry.category} ${entry.phone ?? ''} ${entry.email ?? ''}`,
+    (entry: GuestBookEntry) => `${entry.name} ${entry.category} ${entry.phone ?? ''}`,
     [],
   )
 
@@ -121,7 +94,6 @@ export default function PanelBukuTamuPage() {
     stats.total > 0 ? Math.round((stats.hadir / stats.total) * 100) : 0
 
   const withMessageCount = entries.filter((e) => Boolean(e.message)).length
-  const guestsWithEmail = entries.filter((e) => Boolean(e.email?.trim()))
 
   function handleFormSubmit(input: NewGuestInput) {
     if (editingEntry) {
@@ -179,128 +151,6 @@ export default function PanelBukuTamuPage() {
     }
   }
 
-  /**
-   * Mengirim undangan ke email satu tamu (Single Send Email)
-   * Menangani respon 200 OK, 422 Unprocessable Entity, 502 Bad Gateway (SMTP), 404 Not Found.
-   */
-  async function handleSendEmail(entry: GuestBookEntry) {
-    if (!entry.email) {
-      setEmailModalState({
-        isOpen: true,
-        guestId: entry.id,
-        guestName: entry.name,
-        guestCategory: entry.category,
-        guestPhone: entry.phone,
-        emailInput: '',
-      })
-      return
-    }
-
-    setActiveGuestActionId(entry.id)
-    try {
-      const res = await sendEmail(entry.id)
-      setPopupState({
-        isOpen: true,
-        status: 'success',
-        title: 'Undangan Email Terkirim',
-        message: res.email
-          ? `Undangan berhasil dikirim ke email ${res.email}`
-          : 'Undangan berhasil dikirim ke email tamu',
-      })
-    } catch (error) {
-      const parsed = parseApiError(error)
-
-      // 422: Tamu belum memiliki alamat email yang terdaftar
-      if (parsed.status === 422) {
-        setEmailModalState({
-          isOpen: true,
-          guestId: entry.id,
-          guestName: entry.name,
-          guestCategory: entry.category,
-          guestPhone: entry.phone,
-          emailInput: '',
-        })
-        return
-      }
-
-      // 502: Bad Gateway (Gagal SMTP / email invalid / server mail bermasalah)
-      // 404: Tamu tidak ditemukan
-      setPopupState({
-        isOpen: true,
-        status: 'error',
-        title: parsed.status === 502 ? 'Gagal Mengirim Email (SMTP)' : 'Gagal Mengirim Email',
-        message:
-          parsed.generalMessage ||
-          'Gagal mengirim email undangan. Pastikan alamat email tamu valid atau coba beberapa saat lagi.',
-      })
-    } finally {
-      setActiveGuestActionId(null)
-    }
-  }
-
-  async function handleEmailModalSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const email = emailModalState.emailInput.trim()
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      alert('Masukkan format alamat email yang valid')
-      return
-    }
-
-    const { guestId, guestName, guestCategory, guestPhone } = emailModalState
-    setEmailModalState((prev) => ({ ...prev, isOpen: false }))
-    setActiveGuestActionId(guestId)
-
-    try {
-      updateGuest(guestId, {
-        name: guestName,
-        category: guestCategory,
-        phone: guestPhone || undefined,
-        email,
-      })
-
-      const res = await sendEmail(guestId)
-      setPopupState({
-        isOpen: true,
-        status: 'success',
-        title: 'Undangan Email Terkirim',
-        message: `Email tamu berhasil disimpan dan undangan telah dikirimkan ke ${res.email || email}.`,
-      })
-    } catch (error) {
-      const parsed = parseApiError(error)
-      setPopupState({
-        isOpen: true,
-        status: 'error',
-        title: parsed.status === 502 ? 'Gagal Mengirim Email (SMTP)' : 'Gagal Mengirim Email',
-        message:
-          parsed.generalMessage ||
-          'Gagal mengirim email undangan. Pastikan alamat email tamu valid atau coba beberapa saat lagi.',
-      })
-    } finally {
-      setActiveGuestActionId(null)
-    }
-  }
-
-  /**
-   * Menjalankan pengiriman email massal ke seluruh tamu (Bulk Send Email)
-   */
-  async function handleExecuteBulkEmail() {
-    setIsBulkEmailConfirmOpen(false)
-    try {
-      const res = await sendEmailBulk()
-      setBulkResult(res)
-    } catch (error) {
-      const parsed = parseApiError(error)
-      setPopupState({
-        isOpen: true,
-        status: 'error',
-        title: 'Gagal Memproses Broadcast Email',
-        message:
-          parsed.generalMessage ||
-          'Terjadi kesalahan saat memproses pengiriman email massal. Silakan coba lagi.',
-      })
-    }
-  }
-
   function handleExport() {
     downloadCsv(
       `buku-tamu-${invitation.slug || 'undangan'}.csv`,
@@ -311,13 +161,10 @@ export default function PanelBukuTamuPage() {
         Tanggal: formatDateId(entry.recordedAt),
         Waktu: formatTimeWib(entry.recordedAt),
         'Nomor HP': entry.phone ?? '',
-        Email: entry.email ?? '',
         Ucapan: entry.message ?? '',
       })),
     )
   }
-
-  const failedBulkResults = bulkResult ? bulkResult.results.filter((r) => !r.success) : []
 
   return (
     <div className="animate-in fade-in space-y-6 duration-300">
@@ -340,22 +187,6 @@ export default function PanelBukuTamuPage() {
               disabled={entries.length === 0}
             >
               Export CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={
-                isSendingEmailBulk ? (
-                  <Loader2 size={14} className="animate-spin text-primary" />
-                ) : (
-                  <MailCheck size={14} className="text-primary" />
-                )
-              }
-              onClick={() => setIsBulkEmailConfirmOpen(true)}
-              disabled={isSendingEmailBulk || entries.length === 0}
-              title="Kirim email undangan massal ke seluruh tamu"
-            >
-              {isSendingEmailBulk ? 'Mengirim...' : 'Broadcast Email'}
             </Button>
             <Button
               variant="primary"
@@ -414,7 +245,7 @@ export default function PanelBukuTamuPage() {
           toolbar={
             <div className="flex flex-wrap items-center gap-2">
               <SearchInput
-                placeholder="Cari nama, kontak, email..."
+                placeholder="Cari nama atau nomor kontak..."
                 value={table.query}
                 onChange={table.setQuery}
                 className="w-full sm:w-64"
@@ -479,14 +310,7 @@ export default function PanelBukuTamuPage() {
                         <div>
                           <span className="font-bold text-ink block text-xs">{entry.name}</span>
                           <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                            {entry.phone && <span>{entry.phone}</span>}
-                            {entry.phone && entry.email && <span>•</span>}
-                            {entry.email && (
-                              <span className="text-primary truncate max-w-[140px]" title={entry.email}>
-                                {entry.email}
-                              </span>
-                            )}
-                            {!entry.phone && !entry.email && <span>ID: {entry.id}</span>}
+                            {entry.phone ? <span>{entry.phone}</span> : <span>ID: {entry.id}</span>}
                           </div>
                         </div>
                       </div>
@@ -527,18 +351,6 @@ export default function PanelBukuTamuPage() {
                           title="Kirim Undangan via WhatsApp"
                         >
                           {isOperating ? <Loader2 size={15} className="animate-spin text-emerald-600" /> : <MessageCircle size={15} className="text-emerald-600" />}
-                        </button>
-
-                        {/* Tombol Kirim Email */}
-                        <button
-                          type="button"
-                          onClick={() => handleSendEmail(entry)}
-                          disabled={isOperating}
-                          className={`${iconButtonClass} hover:text-indigo-600 hover:bg-indigo-50`}
-                          aria-label={`Kirim Email ke ${entry.name}`}
-                          title={entry.email ? `Kirim ke ${entry.email}` : 'Lengkapi email & kirim'}
-                        >
-                          <Mail size={15} className="text-indigo-600" />
                         </button>
 
                         {/* Tombol Lihat Ucapan */}
@@ -599,169 +411,11 @@ export default function PanelBukuTamuPage() {
                 name: editingEntry.name,
                 category: editingEntry.category,
                 phone: editingEntry.phone,
-                email: editingEntry.email,
                 note: editingEntry.message,
               }
             : null
         }
       />
-
-      {/* Modal Input Email Tamu (Untuk status 422 atau saat email belum ada) */}
-      <Modal
-        isOpen={emailModalState.isOpen}
-        onClose={() => setEmailModalState((prev) => ({ ...prev, isOpen: false }))}
-        title="Lengkapi Alamat Email Tamu"
-        description={`Tamu "${emailModalState.guestName}" belum memiliki alamat email yang terdaftar.`}
-        maxWidth="sm"
-      >
-        <form onSubmit={handleEmailModalSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="buku-guest-email" className="block text-xs font-bold text-slate-700 mb-1.5">
-              Alamat Email Tamu
-            </label>
-            <input
-              id="buku-guest-email"
-              type="email"
-              required
-              value={emailModalState.emailInput}
-              onChange={(e) =>
-                setEmailModalState((prev) => ({ ...prev, emailInput: e.target.value }))
-              }
-              placeholder="Contoh: nama.tamu@gmail.com"
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-ink placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 shadow-2xs"
-            />
-            <p className="mt-1 text-[11px] text-muted">
-              Alamat email akan disimpan ke profil tamu lalu sistem langsung mengirimkan undangan resmi.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setEmailModalState((prev) => ({ ...prev, isOpen: false }))}
-            >
-              Batal
-            </Button>
-            <Button type="submit" variant="primary" size="sm" icon={<Send size={13} />}>
-              Simpan &amp; Kirim Email
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Modal Konfirmasi Broadcast Email Massal */}
-      <Modal
-        isOpen={isBulkEmailConfirmOpen}
-        onClose={() => setIsBulkEmailConfirmOpen(false)}
-        title="Kirim Email Undangan Massal"
-        maxWidth="sm"
-      >
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-indigo-50/60 p-4 text-xs text-slate-700 space-y-2 border border-indigo-100">
-            <div className="flex items-center justify-between font-bold">
-              <span>Total Tamu Terdaftar:</span>
-              <span>{entries.length} Orang</span>
-            </div>
-            <div className="flex items-center justify-between font-bold text-primary">
-              <span>Tamu Memiliki Email:</span>
-              <span>{guestsWithEmail.length} Orang</span>
-            </div>
-            <p className="text-[11px] text-muted pt-1 border-t border-indigo-100">
-              Sistem akan mengirimkan email undangan secara otomatis ke seluruh tamu yang memiliki alamat email terdaftar.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsBulkEmailConfirmOpen(false)}
-            >
-              Batal
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Send size={13} />}
-              onClick={handleExecuteBulkEmail}
-              disabled={isSendingEmailBulk || guestsWithEmail.length === 0}
-            >
-              {isSendingEmailBulk ? 'Memproses...' : 'Mulai Broadcast Email'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Modal Laporan Hasil Bulk Send Email */}
-      <Modal
-        isOpen={bulkResult !== null}
-        onClose={() => setBulkResult(null)}
-        title="Laporan Broadcast Email"
-        maxWidth="md"
-      >
-        {bulkResult && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
-              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-                <span className="text-[10px] text-muted block font-bold uppercase">Target</span>
-                <span className="font-display text-base font-bold text-ink">
-                  {bulkResult.totalTargeted}
-                </span>
-              </div>
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3">
-                <span className="text-[10px] text-emerald-600 block font-bold uppercase">Berhasil</span>
-                <span className="font-display text-base font-bold text-emerald-600">
-                  {bulkResult.totalSent}
-                </span>
-              </div>
-              <div className="rounded-2xl border border-red-100 bg-red-50/50 p-3">
-                <span className="text-[10px] text-danger block font-bold uppercase">Gagal</span>
-                <span className="font-display text-base font-bold text-danger">
-                  {bulkResult.totalFailed}
-                </span>
-              </div>
-            </div>
-
-            {failedBulkResults.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-danger">
-                  <AlertTriangle size={14} />
-                  <span>Daftar Email Tamu yang Gagal Terkirim:</span>
-                </div>
-                <div className="max-h-48 overflow-y-auto rounded-2xl border border-red-100 bg-red-50/40 p-3 space-y-2 text-xs">
-                  {failedBulkResults.map((item) => (
-                    <div key={item.guestId} className="border-b border-red-100/60 pb-1.5 last:border-b-0">
-                      <div className="flex items-center justify-between font-bold text-slate-800">
-                        <span>{item.guestName}</span>
-                        <span className="text-[11px] font-mono text-slate-500">{item.email}</span>
-                      </div>
-                      {item.error && (
-                        <p className="text-[11px] text-danger mt-0.5">{item.error}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {bulkResult.totalFailed === 0 && (
-              <div className="rounded-2xl bg-emerald-50 p-4 text-center space-y-1 border border-emerald-100">
-                <p className="text-xs font-bold text-emerald-700">
-                  Seluruh email undangan ({bulkResult.totalSent}) berhasil dikirimkan ke tamu.
-                </p>
-              </div>
-            )}
-
-            <div className="flex justify-end pt-2 border-t border-slate-100">
-              <Button variant="primary" size="sm" onClick={() => setBulkResult(null)}>
-                Tutup Laporan
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       {/* Modal Dialog Lihat Ucapan Tamu */}
       <Modal

@@ -12,12 +12,15 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { PageLoader } from '@/components/common/PageLoader'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { GuestRoute } from '@/components/auth/GuestRoute'
+import { AdminRoute } from '@/components/auth/AdminRoute'
+import { useAuth } from '@/hooks/useAuth'
 
 // Layout tetap dimuat langsung karena ukurannya kecil dan selalu dipakai
 import AuthLayout from '@/layouts/AuthLayout'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import PanelLayout from '@/layouts/PanelLayout'
 import PlainLayout from '@/layouts/PlainLayout'
+import AdminLayout from '@/layouts/AdminLayout'
 
 // Halaman dipecah menjadi bundle terpisah (code splitting) agar bundle awal ringan
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
@@ -39,6 +42,14 @@ const InvitationPage = lazy(() => import('@/pages/InvitationPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const PanelCatatanBuwuhPage = lazy(() => import('@/pages/panel/PanelCatatanBuwuhPage'))
 
+// Halaman Admin Platform Buwuhan
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'))
+const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'))
+const AdminUserDetailPage = lazy(() => import('@/pages/admin/AdminUserDetailPage'))
+const AdminInvitationsPage = lazy(() => import('@/pages/admin/AdminInvitationsPage'))
+const AdminTemplatesPage = lazy(() => import('@/pages/admin/AdminTemplatesPage'))
+const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'))
+
 /**
  * Layout Akar (RootLayout).
  * Membungkus seluruh aplikasi dengan ErrorBoundary, AuthProvider, dan Suspense.
@@ -56,6 +67,18 @@ function RootLayout() {
 }
 
 /**
+ * Pengalihan cerdas rute akar (/) berdasarkan peran pengguna.
+ * Jika pengguna memiliki peran ADMIN, diarahkan langsung ke Portal Superadmin.
+ */
+function RootRedirect() {
+  const { user, isAuthenticated } = useAuth()
+  if (isAuthenticated && user?.role === 'ADMIN') {
+    return <Navigate to="/admin/dashboard" replace />
+  }
+  return <Navigate to="/dashboard" replace />
+}
+
+/**
  * Konfigurasi Router Data Aplikasi.
  * Menggunakan createBrowserRouter agar mendukung hook useBlocker untuk
  * pencegahan kehilangan data saat berpindah rute (unsaved changes guard).
@@ -63,7 +86,7 @@ function RootLayout() {
 export const router = createBrowserRouter(
   createRoutesFromElements(
     <Route element={<RootLayout />}>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<RootRedirect />} />
 
       {/* Rute Khusus Tamu / Belum Login (Sign In & Sign Up) */}
       <Route element={<GuestRoute />}>
@@ -99,6 +122,19 @@ export const router = createBrowserRouter(
           <Route path="hadiah" element={<PanelHadiahPage />} />
           <Route path="catatan-buwuh" element={<PanelCatatanBuwuhPage />} />
           <Route path="scan-qr" element={<PanelScanQrPage />} />
+        </Route>
+      </Route>
+
+      {/* Rute Khusus Superadmin Platform (Dilindungi AdminRoute role === ADMIN) */}
+      <Route element={<AdminRoute />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="users/:id" element={<AdminUserDetailPage />} />
+          <Route path="invitations" element={<AdminInvitationsPage />} />
+          <Route path="templates" element={<AdminTemplatesPage />} />
+          <Route path="pengaturan" element={<AdminSettingsPage />} />
         </Route>
       </Route>
 

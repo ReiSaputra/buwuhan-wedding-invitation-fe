@@ -78,8 +78,14 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      await login({ email, password })
-      navigate(from, { replace: true })
+      const loggedUser = await login({ email, password })
+      const requestedPath = (location.state as { from?: { pathname?: string } })?.from?.pathname
+      if (loggedUser.role === 'ADMIN') {
+        const isToAdminRoute = requestedPath && requestedPath.startsWith('/admin')
+        navigate(isToAdminRoute ? requestedPath : '/admin/dashboard', { replace: true })
+      } else {
+        navigate(from, { replace: true })
+      }
     } catch (err: unknown) {
       const parsed: ParsedApiError = parseApiError(err)
       setIsRateLimited(parsed.isRateLimited)
