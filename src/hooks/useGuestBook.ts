@@ -1,8 +1,13 @@
-import { useMemo } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { deleteData, fetchData, patchData, postData } from '@/lib/api'
-import type { ApiGuestItem, GuestPayload } from '@/types/invitation-api'
-import type { GuestBookEntry, NewGuestInput } from '@/types/panel'
+import { useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deleteData, fetchData, patchData, postData } from "@/lib/api";
+import type {
+  ApiGuestItem,
+  BulkCreateGuestResult,
+  BulkGuestPayload,
+  GuestPayload,
+} from "@/types/invitation-api";
+import type { GuestBookEntry, NewGuestInput } from "@/types/panel";
 
 /**
  * Menerjemahkan input formulir UI menjadi body request backend.
@@ -14,7 +19,7 @@ function toGuestPayload(input: NewGuestInput): GuestPayload {
     category: input.category || null,
     phone: input.phone?.trim() || null,
     notes: input.note?.trim() || null,
-  }
+  };
 }
 
 /**
@@ -26,12 +31,12 @@ function toGuestBookEntry(guest: ApiGuestItem): GuestBookEntry {
   return {
     id: guest.id,
     name: guest.name,
-    category: guest.category ?? 'Tanpa Kategori',
-    status: guest.isAttended ? 'HADIR' : 'TIDAK_HADIR',
+    category: guest.category ?? "Tanpa Kategori",
+    status: guest.isAttended ? "HADIR" : "TIDAK_HADIR",
     recordedAt: guest.checkedInAt ?? guest.createdAt,
     phone: guest.phone ?? undefined,
     message: guest.notes ?? undefined,
-  }
+  };
 }
 
 /**
@@ -48,22 +53,25 @@ function toGuestBookEntry(guest: ApiGuestItem): GuestBookEntry {
  * @returns Daftar `entries`, rekap `stats`, aksi mutasi, dan flag status
  */
 export function useGuestBook(invitationId: string) {
-  const queryClient = useQueryClient()
-  const enabled = Boolean(invitationId)
+  const queryClient = useQueryClient();
+  const enabled = Boolean(invitationId);
 
   const listQuery = useQuery({
-    queryKey: ['invitation', invitationId, 'guests'],
-    queryFn: () => fetchData<ApiGuestItem[]>(`/invitations/${invitationId}/guests`),
+    queryKey: ["invitation", invitationId, "guests"],
+    queryFn: () =>
+      fetchData<ApiGuestItem[]>(`/invitations/${invitationId}/guests`),
     enabled,
-  })
+  });
 
   /**
    * Menyegarkan semua data turunan undangan ini (daftar tamu, statistik tamu,
    * statistik RSVP) sekaligus ringkasan dashboard.
    */
   function invalidateAll() {
-    void queryClient.invalidateQueries({ queryKey: ['invitation', invitationId] })
-    void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    void queryClient.invalidateQueries({
+      queryKey: ["invitation", invitationId],
+    });
+    void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
   }
 
   const createMutation = useMutation({
@@ -71,6 +79,15 @@ export function useGuestBook(invitationId: string) {
       postData<ApiGuestItem, GuestPayload>(
         `/invitations/${invitationId}/guests`,
         toGuestPayload(input),
+      ),
+    onSuccess: invalidateAll,
+  });
+
+    const bulkCreateMutation = useMutation({
+    mutationFn: (guests: GuestPayload[]) =>
+      postData<BulkCreateGuestResult, BulkGuestPayload>(
+        `/invitations/${invitationId}/guests/bulk`,
+        { guests },
       ),
     onSuccess: invalidateAll,
   })
@@ -82,26 +99,28 @@ export function useGuestBook(invitationId: string) {
         toGuestPayload(input),
       ),
     onSuccess: invalidateAll,
-  })
+  });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteData(`/invitations/${invitationId}/guests/${id}`),
+    mutationFn: (id: string) =>
+      deleteData(`/invitations/${invitationId}/guests/${id}`),
     onSuccess: invalidateAll,
-  })
+  });
 
   const entries = useMemo<GuestBookEntry[]>(
     () => (listQuery.data ?? []).map(toGuestBookEntry),
     [listQuery.data],
-  )
+  );
 
   const stats = useMemo(
     () => ({
       total: entries.length,
-      hadir: entries.filter((entry) => entry.status === 'HADIR').length,
-      tidakHadir: entries.filter((entry) => entry.status === 'TIDAK_HADIR').length,
+      hadir: entries.filter((entry) => entry.status === "HADIR").length,
+      tidakHadir: entries.filter((entry) => entry.status === "TIDAK_HADIR")
+        .length,
     }),
     [entries],
-  )
+  );
 
   return {
     entries,
@@ -109,16 +128,26 @@ export function useGuestBook(invitationId: string) {
 
     /** Menambahkan tamu baru ke undangan ini. */
     addGuest: (input: NewGuestInput) => createMutation.mutate(input),
+        /** Mengimport banyak tamu sekaligus (maks 500 per request). */
+    importGuests: (guests: GuestPayload[]) => bulkCreateMutation.mutateAsync(guests),
     /** Memperbarui data satu tamu. */
-    updateGuest: (id: string, input: NewGuestInput) => updateMutation.mutate({ id, input }),
+    updateGuest: (id: string, input: NewGuestInput) =>
+      updateMutation.mutate({ id, input }),
     /** Menghapus satu tamu beserta RSVP-nya (cascade di backend). */
     removeGuest: (id: string) => deleteMutation.mutate(id),
 
     isLoading: enabled && listQuery.isLoading,
     isError: listQuery.isError,
     isMutating:
-      createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+      createMutation.isPending ||
+      bulkCreateMutation.isPending ||
+      updateMutation.isPending ||
+      deleteMutation.isPending,
     mutationError:
-      createMutation.error ?? updateMutation.error ?? deleteMutation.error ?? null,
-  }
+      createMutation.error ??
+      bulkCreateMutation.error ??
+      updateMutation.error ??
+      deleteMutation.error ??
+      null,
+  };
 }

@@ -11,6 +11,7 @@ import {
   Phone,
   Check,
   Loader2,
+  Trash2,
 } from 'lucide-react'
 import { PanelPageHeader } from '@/components/panel/PanelPageHeader'
 import { QueryState } from '@/components/common/QueryState'
@@ -56,12 +57,13 @@ const tdClass = 'px-6 py-4 align-middle'
 export default function PanelRsvpPage() {
   const { id = '' } = useParams()
   const { invitation } = useInvitationDetail(id)
-  const { guests, stats, isLoading, isError } = useRsvpGuests(id)
+  const { guests, stats, removeRsvp, isLoading, isError, isMutating } = useRsvpGuests(id)
   const { getGuestShareData } = useGuestActions(id)
 
   const [statusFilter, setStatusFilter] = useState<RsvpStatus | 'ALL'>('ALL')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [activeGuestActionId, setActiveGuestActionId] = useState<string | null>(null)
+  const [deletingGuest, setDeletingGuest] = useState<RsvpGuest | null>(null)
 
   // State untuk status modal pop-up hasil kirim
   const [popupState, setPopupState] = useState<{
@@ -130,6 +132,33 @@ export default function PanelRsvpPage() {
       })
     } finally {
       setActiveGuestActionId(null)
+    }
+  }
+
+  /**
+   * Menghapus data konfirmasi kehadiran & ucapan seorang tamu.
+   * Tamu tetap ada di Buku Tamu, statusnya kembali "Belum Konfirmasi".
+   */
+  async function handleConfirmDelete() {
+    if (!deletingGuest?.rsvpId) return
+    try {
+      await removeRsvp(deletingGuest.rsvpId)
+      const name = deletingGuest.name
+      setDeletingGuest(null)
+      setPopupState({
+        isOpen: true,
+        status: 'success',
+        title: 'Data RSVP Dihapus',
+        message: `Konfirmasi kehadiran ${name} berhasil dihapus. Tamu kembali ke status Belum Konfirmasi.`,
+      })
+    } catch (error) {
+      const parsed = parseApiError(error)
+      setPopupState({
+        isOpen: true,
+        status: 'error',
+        title: 'Gagal Menghapus RSVP',
+        message: parsed.generalMessage || 'Terjadi kesalahan saat menghapus data konfirmasi.',
+      })
     }
   }
 
@@ -361,6 +390,17 @@ export default function PanelRsvpPage() {
                               if (guest.phone) void handleCopyPhone(guest.id, guest.phone)
                             },
                           },
+                          // Hanya tamu yang sudah merespons punya baris RSVP untuk dihapus
+                          ...(guest.rsvpId
+                            ? [
+                                {
+                                  label: 'Hapus Data RSVP',
+                                  icon: <Trash2 size={14} />,
+                                  onClick: () => setDeletingGuest(guest),
+                                  isDanger: true,
+                                },
+                              ]
+                            : []),
                         ]}
                       />
                     </td>
@@ -399,6 +439,42 @@ export default function PanelRsvpPage() {
               onClick={() => setPopupState((prev) => ({ ...prev, isOpen: false }))}
             >
               {popupState.status === 'success' ? 'Selesai' : 'Tutup'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Konfirmasi Hapus Data RSVP */}
+      <Modal
+        isOpen={deletingGuest !== null}
+        onClose={() => setDeletingGuest(null)}
+        title="Hapus Data Konfirmasi?"
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Hapus konfirmasi kehadiran dan ucapan dari{' '}
+            <strong>"{deletingGuest?.name}"</strong>? Data tamu tidak ikut terhapus &mdash;
+            statusnya akan kembali menjadi <strong>Belum Konfirmasi</strong> dan tamu bisa
+            mengisi ulang formulir RSVP.
+          </p>
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeletingGuest(null)}
+              disabled={isMutating}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => void handleConfirmDelete()}
+              disabled={isMutating}
+            >
+              {isMutating ? 'Menghapus…' : 'Ya, Hapus RSVP'}
             </Button>
           </div>
         </div>

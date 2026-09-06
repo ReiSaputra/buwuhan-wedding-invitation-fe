@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Banknote, Download, Gift, Pencil, Plus, Trash2, Wheat } from 'lucide-react'
+import { Banknote, Download, Eye, Gift, Pencil, Plus, Trash2, Wheat } from 'lucide-react'
 import { PanelPageHeader } from '@/components/panel/PanelPageHeader'
 import { StatCard } from '@/components/dashboard/StatCard'
 import { BuwuhanFormModal } from '@/components/panel/BuwuhanFormModal'
+import { BuwuhanDetailModal } from '@/components/panel/BuwuhanDetailModal'
 import { QueryState } from '@/components/common/QueryState'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -67,6 +68,8 @@ export default function PanelCatatanBuwuhPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editing, setEditing] = useState<ApiBuwuhan | null>(null)
   const [deleting, setDeleting] = useState<ApiBuwuhan | null>(null)
+  // ID catatan yang detailnya sedang dibuka (GET /buwuhans/:id)
+  const [detailId, setDetailId] = useState<string | null>(null)
 
   const stats = useMemo(() => calculateBuwuhStats(records), [records])
 
@@ -256,6 +259,15 @@ export default function PanelCatatanBuwuhPage() {
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           type="button"
+                          onClick={() => setDetailId(record.id)}
+                          className="cursor-pointer rounded-xl p-2 text-slate-400 transition hover:bg-indigo-50 hover:text-primary"
+                          aria-label={`Lihat detail catatan ${record.giverName}`}
+                          title="Lihat rincian per item"
+                        >
+                          <Eye size={15} />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => {
                             setEditing(record)
                             setIsFormOpen(true)
@@ -282,6 +294,20 @@ export default function PanelCatatanBuwuhPage() {
           </table>
         </TableCard>
       </QueryState>
+
+      {/* Modal Detail Rincian Catatan Buwuh */}
+      {detailId && (
+        <BuwuhanDetailModal
+          invitationId={id}
+          buwuhanId={detailId}
+          onClose={() => setDetailId(null)}
+          onEdit={(record) => {
+            setDetailId(null)
+            setEditing(record)
+            setIsFormOpen(true)
+          }}
+        />
+      )}
 
       <BuwuhanFormModal
         key={`${isFormOpen}-${editing?.id ?? 'baru'}`}

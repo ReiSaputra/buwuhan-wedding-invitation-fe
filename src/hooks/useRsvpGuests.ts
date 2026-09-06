@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { fetchData } from '@/lib/api'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { deleteData, fetchData } from '@/lib/api'
 import type { ApiGuestItem, ApiRsvpItem } from '@/types/invitation-api'
 import type { RsvpGuest, RsvpStats, RsvpStatus } from '@/types/panel'
 
@@ -12,13 +12,15 @@ import type { RsvpGuest, RsvpStats, RsvpStatus } from '@/types/panel'
  * tamu yang SUDAH merespons. Status 'BELUM_KONFIRMASI' diturunkan dari tamu
  * yang ada di daftar tamu tetapi belum punya baris RSVP:
  * - GET /invitations/:id/guests
- * - GET /invitations/:id/rsvps
+ * - GET    /invitations/:id/rsvps
+ * - DELETE /invitations/:id/rsvps/:rsvpId
  *
  * @param invitationId - ID undangan yang sedang dikelola
  * @returns Daftar `guests`, rekap `stats`, dan flag status permintaan
  */
 export function useRsvpGuests(invitationId: string) {
   const enabled = Boolean(invitationId)
+  const queryClient = useQueryClient()
 
   const guestsQuery = useQuery({
     queryKey: ['invitation', invitationId, 'guests'],
@@ -30,6 +32,19 @@ export function useRsvpGuests(invitationId: string) {
     queryKey: ['invitation', invitationId, 'rsvps'],
     queryFn: () => fetchData<ApiRsvpItem[]>(`/invitations/${invitationId}/rsvps`),
     enabled,
+  })
+
+    /**
+   * Menghapus satu baris RSVP. Tamu tetap ada di daftar tamu, hanya
+   * konfirmasi kehadiran & ucapannya yang dibuang.
+   */
+  const deleteMutation = useMutation({
+    mutationFn: (rsvpId: string) =>
+      deleteData(`/invitations/${invitationId}/rsvps/${rsvpId}`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['invitation', invitationId] })
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
   })
 
   const guests = useMemo<RsvpGuest[]>(() => {
@@ -55,6 +70,7 @@ export function useRsvpGuests(invitationId: string) {
         // Jumlah pax hanya bermakna bila tamu menyatakan hadir
         headcount: rsvp && rsvp.status === 'CONFIRMED' ? rsvp.reservation : null,
         status,
+        rsvpId: rsvp?.id ?? null,
       }
     })
   }, [guestsQuery.data, rsvpsQuery.data])
@@ -74,7 +90,13 @@ export function useRsvpGuests(invitationId: string) {
   return {
     guests,
     stats,
+
+    /** Menghapus satu baris RSVP berdasarkan ID-nya. */
+    removeRsvp: (rsvpId: string) => deleteMutation.mutateAsync(rsvpId),
+
     isLoading: enabled && (guestsQuery.isLoading || rsvpsQuery.isLoading),
     isError: guestsQuery.isError || rsvpsQuery.isError,
+    isMutating: deleteMutation.isPending,
+    mutationError: deleteMutation.error ?? null,
   }
 }

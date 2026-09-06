@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   FileText,
   ExternalLink,
+  Eye,
   Users,
   CheckCircle2,
   AlertTriangle,
@@ -17,6 +18,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { QueryState } from '@/components/common/QueryState'
+import { AdminInvitationDetailModal } from '@/components/admin/AdminInvitationDetailModal'
 import { formatDateId } from '@/lib/format'
 import { parseApiError } from '@/lib/errorHandler'
 import type {
@@ -49,6 +51,9 @@ export default function AdminInvitationsPage() {
   // State Modal Moderasi
   const [moderationModalInv, setModerationModalInv] = useState<AdminInvitation | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<InvitationStatus>('ACTIVE')
+
+  // ID undangan yang detail kontennya sedang diperiksa (GET /admin/invitations/:id)
+  const [detailInvId, setDetailInvId] = useState<string | null>(null)
 
   // State Notifikasi Feedback
   const [feedback, setFeedback] = useState<{
@@ -330,6 +335,15 @@ export default function AdminInvitationsPage() {
                     {/* Aksi */}
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setDetailInvId(inv.id)}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-indigo-700 bg-slate-100 hover:bg-indigo-50 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                          title="Periksa isi konten undangan tanpa membuka halaman publik"
+                        >
+                          <Eye className="w-3 h-3" />
+                          Detail
+                        </button>
                         <a
                           href={`/undangan/${inv.slug}`}
                           target="_blank"
@@ -359,6 +373,16 @@ export default function AdminInvitationsPage() {
           )}
         </QueryState>
       </TableCard>
+
+      {/* ========================================================================= */}
+      {/* MODAL DETAIL & PEMERIKSAAN KONTEN UNDANGAN */}
+      {/* ========================================================================= */}
+      {detailInvId && (
+        <AdminInvitationDetailModal
+          invitationId={detailInvId}
+          onClose={() => setDetailInvId(null)}
+        />
+      )}
 
       {/* ========================================================================= */}
       {/* MODAL MODERASI STATUS UNDANGAN */}

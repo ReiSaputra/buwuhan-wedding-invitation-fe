@@ -14,10 +14,14 @@ import {
   Calendar,
   MessageCircle,
   Loader2,
+  Upload,
+  Eye,
 } from 'lucide-react'
 import { PanelPageHeader } from '@/components/panel/PanelPageHeader'
 import { StatCard } from '@/components/dashboard/StatCard'
 import { GuestFormModal } from '@/components/panel/GuestFormModal'
+import { GuestDetailModal } from '@/components/panel/GuestDetailModal'
+import { ImportGuestsModal } from '@/components/panel/ImportGuestsModal'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -33,6 +37,7 @@ import { downloadCsv } from '@/lib/export'
 import { formatDateId, formatNumber, formatTimeWib, getInitial } from '@/lib/format'
 import { parseApiError } from '@/lib/errorHandler'
 import type { AttendanceStatus, GuestBookEntry, NewGuestInput } from '@/types/panel'
+import type { GuestPayload } from '@/types/invitation-api'
 import { QueryState } from '@/components/common/QueryState'
 
 const filterOptions: Array<{ value: AttendanceStatus | 'ALL'; label: string }> = [
@@ -54,16 +59,28 @@ const iconButtonClass =
 export default function PanelBukuTamuPage() {
   const { id = '' } = useParams()
   const { invitation } = useInvitationDetail(id)
-  const { entries, stats, addGuest, updateGuest, removeGuest, isLoading, isError, isMutating } =
-    useGuestBook(id)
+  const {
+    entries,
+    stats,
+    addGuest,
+    updateGuest,
+    removeGuest,
+    importGuests,
+    isLoading,
+    isError,
+    isMutating,
+  } = useGuestBook(id)
   const { getGuestShareData } = useGuestActions(id)
 
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | 'ALL'>('ALL')
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isImportOpen, setIsImportOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<GuestBookEntry | null>(null)
   const [viewedMessage, setViewedMessage] = useState<GuestBookEntry | null>(null)
   const [deletingEntry, setDeletingEntry] = useState<GuestBookEntry | null>(null)
   const [activeGuestActionId, setActiveGuestActionId] = useState<string | null>(null)
+  // ID tamu yang detailnya sedang dibuka (GET /invitations/:id/guests/:guestId)
+  const [detailGuestId, setDetailGuestId] = useState<string | null>(null)
 
   // State pop-up status
   const [popupState, setPopupState] = useState<{
@@ -102,6 +119,31 @@ export default function PanelBukuTamuPage() {
       addGuest(input)
     }
     setEditingEntry(null)
+  }
+
+    /**
+   * Mengirim daftar tamu hasil parsing ke endpoint bulk import,
+   * lalu menampilkan pop-up hasilnya.
+   */
+  async function handleImport(guests: GuestPayload[]) {
+    try {
+      await importGuests(guests)
+      setIsImportOpen(false)
+      setPopupState({
+        isOpen: true,
+        status: 'success',
+        title: 'Import Berhasil',
+        message: `${guests.length} tamu berhasil ditambahkan beserta QR code masing-masing.`,
+      })
+    } catch (error) {
+      const parsed = parseApiError(error)
+      setPopupState({
+        isOpen: true,
+        status: 'error',
+        title: 'Import Gagal',
+        message: parsed.generalMessage || 'Terjadi kesalahan saat mengimport daftar tamu.',
+      })
+    }
   }
 
   function handleEdit(entry: GuestBookEntry) {
@@ -187,6 +229,14 @@ export default function PanelBukuTamuPage() {
               disabled={entries.length === 0}
             >
               Export CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={<Upload size={14} />}
+              onClick={() => setIsImportOpen(true)}
+            >
+              Import Tamu
             </Button>
             <Button
               variant="primary"
@@ -341,6 +391,17 @@ export default function PanelBukuTamuPage() {
 
                     <td className={tdClass}>
                       <div className="flex items-center justify-end gap-1.5">
+                        {/* Tombol Lihat Detail Tamu */}
+                        <button
+                          type="button"
+                          onClick={() => setDetailGuestId(entry.id)}
+                          className={`${iconButtonClass} hover:text-primary hover:bg-indigo-50`}
+                          aria-label={`Lihat detail ${entry.name}`}
+                          title="Lihat detail lengkap tamu"
+                        >
+                          <Eye size={15} />
+                        </button>
+
                         {/* Tombol Kirim WhatsApp */}
                         <button
                           type="button"
@@ -416,6 +477,24 @@ export default function PanelBukuTamuPage() {
             : null
         }
       />
+
+      {/* Modal Import Tamu Massal */}
+      <ImportGuestsModal
+        key={String(isImportOpen)}
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        isSubmitting={isMutating}
+        onSubmit={(guests) => void handleImport(guests)}
+      />
+
+      {/* Modal Detail Lengkap Data Tamu */}
+      {detailGuestId && (
+        <GuestDetailModal
+          invitationId={id}
+          guestId={detailGuestId}
+          onClose={() => setDetailGuestId(null)}
+        />
+      )}
 
       {/* Modal Dialog Lihat Ucapan Tamu */}
       <Modal

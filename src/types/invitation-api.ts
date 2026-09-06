@@ -188,6 +188,8 @@ export interface ApiGuestItem {
   invitationId: string
   invitationUrl: string
   whatsappShareUrl: string | null
+  /** Link wa.me tanpa nomor tujuan; selalu ada meski tamu tak punya nomor HP */
+  whatsappUniversalShareUrl: string
   createdAt: string
   updatedAt: string
 }
@@ -200,6 +202,17 @@ export interface GuestPayload {
   email?: string | null
   notes?: string | null
   paxCount?: number
+}
+
+/** Body untuk POST /invitations/:invitationId/guests/bulk (maks 500 tamu) */
+export interface BulkGuestPayload {
+  guests: GuestPayload[]
+}
+
+/** Response POST /invitations/:invitationId/guests/bulk */
+export interface BulkCreateGuestResult {
+  count?: number
+  guests?: ApiGuestItem[]
 }
 
 /** Response GET /invitations/:invitationId/guests/:guestId/share */
@@ -254,12 +267,14 @@ export interface ApiRsvpItem {
   updatedAt: string
 }
 
-/** GET /templates  →  data[] */
+/** GET /templates  dan  GET /templates/:slug  →  data */
 export interface ApiTemplateItem {
   id: string
   name: string
   slug: string
   tier: ApiPlanTier
+  /** Kategori acara; backend memberi default WEDDING */
+  eventCategory: ApiEventCategory
   previewImageUrl: string
   isActive: boolean
   /** true bila paket langganan user cukup untuk memakai template ini */

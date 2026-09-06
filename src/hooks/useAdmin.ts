@@ -2,10 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { deleteData, fetchData, patchData, postData } from '@/lib/api'
 import type {
   AdminDashboardStats,
+  AdminInvitationDetail,
   AdminInvitationsResponse,
   AdminInvitationQueryParams,
+  AdminTemplate,
   AdminTemplateQueryParams,
   AdminTemplatesResponse,
+  CreateTemplatePayload,
+  UpdateTemplatePayload,
   AdminUser,
   AdminUserDetail,
   AdminUserQueryParams,
@@ -141,6 +145,22 @@ export function useAdminInvitations(params: AdminInvitationQueryParams = {}) {
 }
 
 /**
+ * Mengambil detail lengkap satu undangan untuk keperluan moderasi konten.
+ * Berbeda dengan daftar, respons ini menyertakan data mempelai, galeri foto,
+ * kisah cinta, dan informasi tambahan.
+ *
+ * @param invitationId - ID undangan; null membuat query tidak dijalankan
+ */
+export function useAdminInvitationDetail(invitationId: string | null) {
+  return useQuery({
+    queryKey: ['admin', 'invitations', 'detail', invitationId],
+    queryFn: () => fetchData<AdminInvitationDetail>(`/admin/invitations/${invitationId}`),
+    enabled: Boolean(invitationId),
+    retry: false, // 404/403 tidak perlu diulang
+  })
+}
+
+/**
  * Mutasi untuk mengubah status moderasi undangan (misal takedown ke DRAFT).
  */
 export function useUpdateInvitationStatus() {
@@ -182,6 +202,38 @@ export function useAdminTemplates(params: AdminTemplateQueryParams = {}) {
     queryKey: ['admin', 'templates', { page, limit, isActive, tier, eventCategory, search }],
     queryFn: () =>
       fetchData<AdminTemplatesResponse>(`/admin/templates?${queryParams.toString()}`),
+  })
+}
+
+/**
+ * Mutasi untuk menambah template baru ke katalog (POST /templates, admin-only).
+ */
+export function useCreateTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateTemplatePayload) =>
+      postData<AdminTemplate, CreateTemplatePayload>('/templates', payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'templates'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] })
+      // Katalog yang dilihat pengguna biasa juga ikut berubah
+      queryClient.invalidateQueries({ queryKey: ['templates'] })
+    },
+  })
+}
+
+/**
+ * Mutasi untuk mengubah data template yang sudah ada (PATCH /templates/:id).
+ */
+export function useUpdateTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateTemplatePayload }) =>
+      patchData<AdminTemplate, UpdateTemplatePayload>(`/templates/${id}`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'templates'] })
+      queryClient.invalidateQueries({ queryKey: ['templates'] })
+    },
   })
 }
 

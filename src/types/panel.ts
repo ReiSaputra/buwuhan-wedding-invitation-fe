@@ -15,6 +15,8 @@ export type RsvpGuest = {
   /** Jumlah orang yang dibawa. null bila tamu belum konfirmasi atau menyatakan tidak hadir. */
   headcount: number | null
   status: RsvpStatus
+  /** ID baris RSVP di backend. null bila tamu belum pernah merespons (tidak bisa dihapus). */
+  rsvpId: string | null
 }
 
 /**

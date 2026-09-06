@@ -7,19 +7,29 @@ import {
   RefreshCw,
   Flame,
   Loader2,
+  Pencil,
+  Plus,
 } from 'lucide-react'
 import {
   useAdminTemplates,
+  useCreateTemplate,
   useRestoreTemplate,
   useDeactivateTemplate,
+  useUpdateTemplate,
 } from '@/hooks/useAdmin'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { Pagination } from '@/components/ui/Pagination'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import { TemplateFormModal } from '@/components/admin/TemplateFormModal'
 import { QueryState } from '@/components/common/QueryState'
 import { parseApiError } from '@/lib/errorHandler'
-import type { AdminTemplate, PlanTier } from '@/types/admin'
+import type {
+  AdminTemplate,
+  CreateTemplatePayload,
+  PlanTier,
+  UpdateTemplatePayload,
+} from '@/types/admin'
 
 export default function AdminTemplatesPage() {
   // State filter & pencarian
@@ -43,10 +53,17 @@ export default function AdminTemplatesPage() {
   // Mutasi
   const restoreMutation = useRestoreTemplate()
   const deactivateMutation = useDeactivateTemplate()
+  const createMutation = useCreateTemplate()
+  const updateMutation = useUpdateTemplate()
 
   // State Modal Konfirmasi
   const [targetTemplate, setTargetTemplate] = useState<AdminTemplate | null>(null)
   const [actionType, setActionType] = useState<'DEACTIVATE' | 'RESTORE'>('DEACTIVATE')
+
+  // State Modal Formulir (tambah / ubah)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<AdminTemplate | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
 
   // State Notifikasi Feedback
   const [feedback, setFeedback] = useState<{
@@ -65,6 +82,66 @@ export default function AdminTemplatesPage() {
   function openActionModal(template: AdminTemplate, type: 'DEACTIVATE' | 'RESTORE') {
     setTargetTemplate(template)
     setActionType(type)
+  }
+
+  /** Membuka formulir dalam mode tambah baru. */
+  function openCreateForm() {
+    setEditingTemplate(null)
+    setFormError(null)
+    setIsFormOpen(true)
+  }
+
+  /** Membuka formulir dalam mode ubah untuk satu template. */
+  function openEditForm(template: AdminTemplate) {
+    setEditingTemplate(template)
+    setFormError(null)
+    setIsFormOpen(true)
+  }
+
+  function closeForm() {
+    setIsFormOpen(false)
+    setEditingTemplate(null)
+    setFormError(null)
+  }
+
+  async function handleCreateTemplate(payload: CreateTemplatePayload) {
+    setFormError(null)
+    try {
+      await createMutation.mutateAsync(payload)
+      closeForm()
+      setFeedback({
+        isOpen: true,
+        type: 'success',
+        title: 'Template Ditambahkan',
+        message: `Template "${payload.name}" berhasil dibuat dan langsung tersedia di katalog.`,
+      })
+    } catch (err) {
+      const parsed = parseApiError(err)
+      setFormError(
+        parsed.generalMessage ||
+          'Gagal menambahkan template. Pastikan slug belum dipakai template lain.',
+      )
+    }
+  }
+
+  async function handleUpdateTemplate(id: string, payload: UpdateTemplatePayload) {
+    setFormError(null)
+    try {
+      await updateMutation.mutateAsync({ id, payload })
+      closeForm()
+      setFeedback({
+        isOpen: true,
+        type: 'success',
+        title: 'Template Diperbarui',
+        message: 'Perubahan data template berhasil disimpan.',
+      })
+    } catch (err) {
+      const parsed = parseApiError(err)
+      setFormError(
+        parsed.generalMessage ||
+          'Gagal menyimpan perubahan. Pastikan slug belum dipakai template lain.',
+      )
+    }
   }
 
   async function handleConfirmAction() {
@@ -155,6 +232,16 @@ export default function AdminTemplatesPage() {
             Kelola status publikasi template, pantau popularitas penggunaan, dan pulihkan tema terarsip.
           </p>
         </div>
+
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={openCreateForm}
+          className="bg-slate-900 text-white hover:bg-slate-800 inline-flex items-center gap-1.5 self-start"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Tambah Template
+        </Button>
       </div>
 
       {/* Filter & Toolbar */}
@@ -316,9 +403,16 @@ export default function AdminTemplatesPage() {
 
                   {/* Actions Footer */}
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-slate-400">
-                      ID: {template.id.slice(0, 8)}...
-                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditForm(template)}
+                      disabled={isProcessing}
+                      className="text-xs text-slate-600 hover:text-slate-900 hover:border-slate-300 inline-flex items-center gap-1"
+                    >
+                      <Pencil className="w-3 h-3 text-slate-400" />
+                      Ubah
+                    </Button>
 
                     {template.isActive ? (
                       <Button
@@ -365,6 +459,19 @@ export default function AdminTemplatesPage() {
           />
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* MODAL FORMULIR TAMBAH / UBAH TEMPLATE */}
+      {/* ========================================================================= */}
+      <TemplateFormModal
+        isOpen={isFormOpen}
+        template={editingTemplate}
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
+        serverError={formError}
+        onClose={closeForm}
+        onCreate={(payload) => void handleCreateTemplate(payload)}
+        onUpdate={(id, payload) => void handleUpdateTemplate(id, payload)}
+      />
 
       {/* ========================================================================= */}
       {/* MODAL KONFIRMASI AKSI (DEACTIVATE / RESTORE) */}

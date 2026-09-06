@@ -2,6 +2,8 @@
  * Definisi Tipe Data Modul Admin Platform Buwuhan
  */
 
+import type { ApiInvitation } from './invitation-api'
+
 export type UserRole = 'USER' | 'ADMIN'
 export type PlanTier = 'FREE' | 'PRO' | 'MAX'
 export type InvitationStatus = 'DRAFT' | 'ACTIVE' | 'COMPLETED'
@@ -154,6 +156,28 @@ export interface AdminInvitationsResponse {
 }
 
 /**
+ * Detail lengkap satu undangan untuk keperluan moderasi
+ * (GET /admin/invitations/:id).
+ *
+ * Bentuknya = ApiInvitation (data undangan penuh: mempelai, galeri, kisah)
+ * ditambah data pemilik dan statistik tamu.
+ */
+export interface AdminInvitationDetail extends ApiInvitation {
+  /** Backend mengisi true hanya untuk eventCategory WEDDING */
+  showCouples?: boolean
+  owner: {
+    id: string
+    fullName: string
+    email: string
+    planTier: PlanTier
+  }
+  stats: {
+    totalGuests: number
+    totalRsvps: number
+  }
+}
+
+/**
  * Entri template katalog admin (GET /admin/templates)
  */
 export interface AdminTemplate {
@@ -168,6 +192,23 @@ export interface AdminTemplate {
   createdAt: string
   updatedAt: string
 }
+
+/**
+ * Body POST /templates — seluruh field wajib kecuali yang bertanda opsional.
+ */
+export interface CreateTemplatePayload {
+  name: string
+  slug: string
+  tier: PlanTier
+  eventCategory?: EventCategory
+  previewImageUrl: string
+  isActive?: boolean
+}
+
+/**
+ * Body PATCH /templates/:id — semua opsional, minimal satu field terisi.
+ */
+export type UpdateTemplatePayload = Partial<CreateTemplatePayload>
 
 /**
  * Respon daftar template admin (GET /admin/templates)

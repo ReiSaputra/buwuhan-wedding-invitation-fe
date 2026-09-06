@@ -911,9 +911,9 @@ export const InvitationForm = forwardRef<InvitationFormHandle, InvitationFormPro
                   )}
                 >
                   <div className="mb-2 aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-100 relative group">
-                    {tpl.thumbnailUrl ? (
+                    {tpl.previewImageUrl ? (
                       <img
-                        src={tpl.thumbnailUrl}
+                        src={tpl.previewImageUrl}
                         alt={tpl.name}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
@@ -929,14 +929,15 @@ export const InvitationForm = forwardRef<InvitationFormHandle, InvitationFormPro
                     <span className="block truncate text-xs font-bold text-ink" title={tpl.name}>
                       {tpl.name}
                     </span>
-                    {tpl.description && (
-                      <span
-                        className="mt-0.5 block truncate text-[10px] text-muted"
-                        title={tpl.description}
-                      >
-                        {tpl.description}
-                      </span>
-                    )}
+                    <span
+                      className={cn(
+                        'mt-0.5 block truncate text-[10px]',
+                        tpl.isAccessible ? 'text-muted' : 'font-semibold text-amber-600',
+                      )}
+                    >
+                      {tpl.tier === 'FREE' ? 'Gratis' : `Paket ${tpl.tier}`}
+                      {!tpl.isAccessible && ' — terkunci'}
+                    </span>
                   </div>
                   {form.templateId === tpl.id && (
                     <div className="absolute right-2 top-2 rounded-full bg-primary p-1 text-white shadow-sm ring-2 ring-white">

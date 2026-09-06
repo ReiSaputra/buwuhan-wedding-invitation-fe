@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { deleteData, postData } from '@/lib/api'
+import { deleteData, patchData, postData } from '@/lib/api'
 import type { ApiGalleryPhoto } from '@/types/invitation-api'
 
 export type GalleryPhotoPayload = {
@@ -8,15 +8,23 @@ export type GalleryPhotoPayload = {
   order?: number
 }
 
+/** Body PATCH /invitations/:invitationId/gallery/:photoId — minimal satu field terisi. */
+export type UpdateGalleryPhotoPayload = {
+  imageUrl?: string
+  caption?: string | null
+  order?: number
+}
+
 /**
  * Hook aksi untuk mengelola foto galeri sebuah undangan.
  *
  * Daftar fotonya sendiri sudah ikut terbawa pada respon GET /invitations/:id
- * (properti `galleryPhotos`), sehingga hook ini hanya menyediakan aksi tambah
- * dan hapus, lalu menyegarkan cache detail undangan setelah berhasil.
+ * (properti `galleryPhotos`), sehingga hook ini hanya menyediakan aksi mutasi,
+ * lalu menyegarkan cache detail undangan setelah berhasil.
  *
  * Endpoint:
  * - POST   /invitations/:invitationId/gallery
+ * - PATCH  /invitations/:invitationId/gallery/:photoId
  * - DELETE /invitations/:invitationId/gallery/:photoId
  *
  * @param invitationId - ID undangan yang sedang dikelola
@@ -43,9 +51,44 @@ export function useGallery(invitationId: string) {
     onSuccess: invalidate,
   })
 
+  /** Mengubah satu foto: keterangan, URL, atau posisi urutannya. */
+  const updatePhoto = useMutation({
+    mutationFn: ({ photoId, payload }: { photoId: string; payload: UpdateGalleryPhotoPayload }) =>
+      patchData<ApiGalleryPhoto, UpdateGalleryPhotoPayload>(
+        `/invitations/${invitationId}/gallery/${photoId}`,
+        payload,
+      ),
+    onSuccess: invalidate,
+  })
+
+  /**
+   * Menyusun ulang seluruh galeri. Backend belum punya endpoint reorder massal,
+   * jadi urutan baru dikirim sebagai beberapa PATCH `order` sekaligus.
+   *
+   * @param orderedIds - ID foto sesuai urutan tampil yang diinginkan
+   */
+  const reorderPhotos = useMutation({
+    mutationFn: (orderedIds: string[]) =>
+      Promise.all(
+        orderedIds.map((photoId, index) =>
+          patchData<ApiGalleryPhoto, UpdateGalleryPhotoPayload>(
+            `/invitations/${invitationId}/gallery/${photoId}`,
+            { order: index },
+          ),
+        ),
+      ),
+    onSuccess: invalidate,
+  })
+
   return {
     addPhoto,
     removePhoto,
-    isMutating: addPhoto.isPending || removePhoto.isPending,
+    updatePhoto,
+    reorderPhotos,
+    isMutating:
+      addPhoto.isPending ||
+      removePhoto.isPending ||
+      updatePhoto.isPending ||
+      reorderPhotos.isPending,
   }
 }
