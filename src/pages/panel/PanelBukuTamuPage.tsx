@@ -33,7 +33,7 @@ import { useInvitationDetail } from '@/hooks/useInvitationDetail'
 import { useGuestBook } from '@/hooks/useGuestBook'
 import { useGuestActions } from '@/hooks/useGuestActions'
 import { useTableState } from '@/hooks/useTableState'
-import { downloadCsv } from '@/lib/export'
+import { exportGuestsData } from '@/lib/export'
 import { formatDateId, formatNumber, formatTimeWib, getInitial } from '@/lib/format'
 import { parseApiError } from '@/lib/errorHandler'
 import type { AttendanceStatus, GuestBookEntry, NewGuestInput } from '@/types/panel'
@@ -193,19 +193,21 @@ export default function PanelBukuTamuPage() {
     }
   }
 
-  function handleExport() {
-    downloadCsv(
-      `buku-tamu-${invitation.slug || 'undangan'}.csv`,
-      table.filteredRows.map((entry) => ({
-        'Nama Tamu': entry.name,
-        Kategori: entry.category,
-        Status: entry.status === 'HADIR' ? 'Hadir' : 'Tidak Hadir',
-        Tanggal: formatDateId(entry.recordedAt),
-        Waktu: formatTimeWib(entry.recordedAt),
-        'Nomor HP': entry.phone ?? '',
-        Ucapan: entry.message ?? '',
-      })),
-    )
+  async function handleExport() {
+    const fallbackRows = table.filteredRows.map((entry) => ({
+      'Nama Tamu': entry.name,
+      Kategori: entry.category,
+      Status: entry.status === 'HADIR' ? 'Hadir' : 'Tidak Hadir',
+      Tanggal: formatDateId(entry.recordedAt),
+      Waktu: formatTimeWib(entry.recordedAt),
+      'Nomor HP': entry.phone ?? '',
+      Ucapan: entry.message ?? '',
+    }))
+    try {
+      await exportGuestsData(id, 'xlsx', fallbackRows)
+    } catch {
+      alert('Gagal mengekspor data tamu')
+    }
   }
 
   return (

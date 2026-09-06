@@ -96,6 +96,8 @@ export function usePublicInvitation() {
     address: invitation?.address ?? '',
     galleryPhotos: invitation?.galleryPhotos ?? [],
     loveStories: invitation?.loveStories ?? [],
+    giftAccounts: invitation?.giftAccounts ?? [],
+    giftAddress: invitation?.giftAddress ?? null,
     templateId: invitation?.template?.id ?? '',
     templateSlug: invitation?.template?.slug ?? '',
   }

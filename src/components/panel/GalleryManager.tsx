@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { ArrowLeft, ArrowRight, ImagePlus, Pencil, Trash2 } from 'lucide-react'
+import { useState, useEffect, useMemo, useRef, type ChangeEvent } from 'react'
+import { ArrowLeft, ArrowRight, ImagePlus, Pencil, Trash2, UploadCloud, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { AnimatedStatusIcon } from '@/components/ui/AnimatedStatusIcon'
@@ -19,15 +19,21 @@ export type GalleryManagerProps = {
 
 /**
  * Panel pengelola foto galeri undangan.
- * Dilengkapi input pratinjau gambar, modal konfirmasi hapus foto dengan animasi,
- * serta pop-up hasil status.
+ * Dilengkapi input pratinjau gambar, unggah berkas tunggal & massal,
+ * modal konfirmasi hapus foto dengan animasi, serta pop-up hasil status.
  */
 export function GalleryManager({ invitationId, photos, onDirtyChange }: GalleryManagerProps) {
-  const { addPhoto, removePhoto, updatePhoto, reorderPhotos, isMutating } =
+  const { addPhoto, addBulkPhotos, removePhoto, updatePhoto, reorderPhotos, isMutating } =
     useGallery(invitationId)
   const [imageUrl, setImageUrl] = useState('')
   const [caption, setCaption] = useState('')
   const [error, setError] = useState<string | undefined>(undefined)
+
+  // State untuk bulk upload
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false)
+  const [bulkFiles, setBulkFiles] = useState<File[]>([])
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false)
+  const bulkFileInputRef = useRef<HTMLInputElement | null>(null)
 
   const isDirty = Boolean(imageUrl.trim() || caption.trim())
 
@@ -42,8 +48,7 @@ export function GalleryManager({ invitationId, photos, onDirtyChange }: GalleryM
   const [editTarget, setEditTarget] = useState<ApiGalleryPhoto | null>(null)
   const [editCaption, setEditCaption] = useState('')
 
-  // Backend menyimpan kolom `order`; urutkan agar tampilan panel sama persis
-  // dengan urutan foto di halaman undangan publik.
+  // Urutkan foto sesuai order
   const sortedPhotos = useMemo(
     () => [...photos].sort((a, b) => a.order - b.order),
     [photos],
@@ -67,11 +72,7 @@ export function GalleryManager({ invitationId, photos, onDirtyChange }: GalleryM
     const trimmed = imageUrl.trim()
 
     if (!trimmed) {
-      setError('URL gambar wajib diisi')
-      return
-    }
-    if (!/^https?:\/\/.+/i.test(trimmed)) {
-      setError('URL harus diawali http:// atau https://')
+      setError('Foto wajib diunggah atau diisi URL gambar')
       return
     }
 
@@ -104,91 +105,67 @@ export function GalleryManager({ invitationId, photos, onDirtyChange }: GalleryM
     )
   }
 
-  /** Menghapus foto galeri setelah dikonfirmasi via modal */
-  function handleConfirmDelete() {
-    if (!deleteConfirmTarget) return
-
-    removePhoto.mutate(deleteConfirmTarget.id, {
-      onSuccess: () => {
-        setDeleteConfirmTarget(null)
-        setPopupState({
-          isOpen: true,
-          status: 'success',
-          title: 'Foto Berhasil Dihapus',
-          message: 'Foto galeri telah berhasil dihapus dari album undangan.',
-        })
-      },
-      onError: (err) => {
-        setDeleteConfirmTarget(null)
-        const parsed = parseApiError(err)
-        const msg = parsed.generalMessage ?? parsed.allMessages[0] ?? 'Gagal menghapus foto. Coba lagi.'
-        setPopupState({
-          isOpen: true,
-          status: 'error',
-          title: 'Gagal Menghapus Foto',
-          message: msg,
-        })
-      },
-    })
-  }
-
-  /** Membuka modal ubah keterangan untuk satu foto. */
-  function handleOpenEdit(photo: ApiGalleryPhoto) {
-    setEditTarget(photo)
-    setEditCaption(photo.caption ?? '')
-  }
-
-  /** Menyimpan keterangan baru lewat PATCH. Tidak mengirim apa pun bila tidak berubah. */
-  function handleSaveCaption() {
-    if (!editTarget) return
-
-    const nextCaption = editCaption.trim() || null
-
-    if (nextCaption === (editTarget.caption ?? null)) {
-      setEditTarget(null)
-      return
+  function handleBulkFilesSelected(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    if (files.length > 0) {
+      setBulkFiles(files)
     }
-
-    updatePhoto.mutate(
-      { photoId: editTarget.id, payload: { caption: nextCaption } },
-      {
-        onSuccess: () => {
-          setEditTarget(null)
-          setPopupState({
-            isOpen: true,
-            status: 'success',
-            title: 'Keterangan Diperbarui',
-            message: 'Keterangan foto galeri berhasil disimpan.',
-          })
-        },
-        onError: (err) => {
-          const parsed = parseApiError(err)
-          setPopupState({
-            isOpen: true,
-            status: 'error',
-            title: 'Gagal Menyimpan Keterangan',
-            message:
-              parsed.generalMessage ?? parsed.allMessages[0] ?? 'Gagal menyimpan keterangan.',
-          })
-        },
-      },
-    )
   }
 
-  /**
-   * Menggeser posisi satu foto ke kiri atau kanan, lalu menulis ulang
-   * kolom `order` seluruh galeri agar tetap rapat (0, 1, 2, ...).
-   */
-  function handleMove(index: number, direction: -1 | 1) {
-    const targetIndex = index + direction
+  async function handleExecuteBulkUpload() {
+    if (bulkFiles.length === 0) return
+    setIsBulkProcessing(true)
+
+    try {
+      // Baca seluruh file menjadi DataURL
+      const readPromises = bulkFiles.map((file) => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = (e) => resolve(e.target?.result as string)
+          reader.readAsDataURL(file)
+        })
+      })
+
+      const dataUrls = await Promise.all(readPromises)
+      const currentCount = photos.length
+      const payloads = dataUrls.map((url, idx) => ({
+        imageUrl: url,
+        caption: null,
+        order: currentCount + idx,
+      }))
+
+      await addBulkPhotos.mutateAsync(payloads)
+      setIsBulkModalOpen(false)
+      setBulkFiles([])
+      setPopupState({
+        isOpen: true,
+        status: 'success',
+        title: 'Galeri Berhasil Diperbarui',
+        message: `${payloads.length} foto baru telah ditambahkan ke album pernikahan Anda.`,
+      })
+    } catch {
+      setPopupState({
+        isOpen: true,
+        status: 'error',
+        title: 'Gagal Mengunggah Foto Massal',
+        message: 'Terjadi kendala saat menyimpan foto-foto galeri.',
+      })
+    } finally {
+      setIsBulkProcessing(false)
+    }
+  }
+
+  /** Mengubah urutan foto di galeri. */
+  function handleMove(currentIndex: number, direction: -1 | 1) {
+    const targetIndex = currentIndex + direction
     if (targetIndex < 0 || targetIndex >= sortedPhotos.length) return
 
-    const next = [...sortedPhotos]
-    const [moved] = next.splice(index, 1)
-    next.splice(targetIndex, 0, moved)
+    const reordered = [...sortedPhotos]
+    const [moved] = reordered.splice(currentIndex, 1)
+    reordered.splice(targetIndex, 0, moved)
 
     reorderPhotos.mutate(
-      next.map((photo) => photo.id),
+      reordered.map((photo) => photo.id),
       {
         onError: (err) => {
           const parsed = parseApiError(err)
@@ -204,11 +181,84 @@ export function GalleryManager({ invitationId, photos, onDirtyChange }: GalleryM
     )
   }
 
+  function handleOpenEdit(photo: ApiGalleryPhoto) {
+    setEditTarget(photo)
+    setEditCaption(photo.caption ?? '')
+  }
+
+  function handleSaveCaption() {
+    if (!editTarget) return
+    updatePhoto.mutate(
+      {
+        photoId: editTarget.id,
+        payload: { caption: editCaption.trim() || null },
+      },
+      {
+        onSuccess: () => {
+          setEditTarget(null)
+          setPopupState({
+            isOpen: true,
+            status: 'success',
+            title: 'Keterangan Disimpan',
+            message: 'Keterangan foto berhasil diperbarui.',
+          })
+        },
+        onError: (err) => {
+          const parsed = parseApiError(err)
+          setPopupState({
+            isOpen: true,
+            status: 'error',
+            title: 'Gagal Menyimpan Keterangan',
+            message:
+              parsed.generalMessage ?? parsed.allMessages[0] ?? 'Gagal memperbarui keterangan foto.',
+          })
+        },
+      },
+    )
+  }
+
+  function handleConfirmDelete() {
+    if (!deleteConfirmTarget) return
+    removePhoto.mutate(deleteConfirmTarget.id, {
+      onSuccess: () => {
+        setDeleteConfirmTarget(null)
+        setPopupState({
+          isOpen: true,
+          status: 'success',
+          title: 'Foto Dihapus',
+          message: 'Foto berhasil dihapus dari galeri undangan.',
+        })
+      },
+      onError: (err) => {
+        const parsed = parseApiError(err)
+        setPopupState({
+          isOpen: true,
+          status: 'error',
+          title: 'Gagal Menghapus Foto',
+          message:
+            parsed.generalMessage ?? parsed.allMessages[0] ?? 'Foto tidak dapat dihapus. Coba lagi.',
+        })
+      },
+    })
+  }
+
   return (
-    <div className="rounded-2xl border border-border bg-white p-4 shadow-xs sm:p-6">
-      <p className="text-[11px] font-bold tracking-wider text-slate-600 uppercase">
-        Galeri Foto ({photos.length})
-      </p>
+    <div className="rounded-2xl border border-border bg-white p-4 shadow-xs sm:p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+          Galeri Foto ({photos.length})
+        </p>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          icon={<UploadCloud size={14} />}
+          onClick={() => setIsBulkModalOpen(true)}
+        >
+          Unggah Banyak Sekaligus
+        </Button>
+      </div>
 
       {/* Daftar foto yang sudah tersimpan */}
       {sortedPhotos.length > 0 && (
@@ -253,8 +303,8 @@ export function GalleryManager({ invitationId, photos, onDirtyChange }: GalleryM
                 </button>
               </div>
 
-              {/* Keterangan + tombol geser urutan */}
-              <div className="absolute inset-x-0 bottom-0 flex items-center gap-1 bg-gradient-to-t from-black/70 to-transparent p-2">
+              {/* Tombol geser urutan */}
+              <div className="absolute inset-x-2 bottom-2 flex items-center justify-between rounded-xl bg-black/45 p-1 backdrop-blur-xs">
                 <button
                   type="button"
                   disabled={isMutating || index === 0}
@@ -284,13 +334,14 @@ export function GalleryManager({ invitationId, photos, onDirtyChange }: GalleryM
         </div>
       )}
 
-      {/* Formulir tambah foto */}
+      {/* Formulir tambah foto tunggal */}
       <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
         <ImageUrlInput
-          label="URL Foto Baru"
+          label="Foto Baru"
           value={imageUrl}
           onChange={setImageUrl}
           error={error}
+          folder="gallery"
         />
 
         <div>
@@ -317,9 +368,95 @@ export function GalleryManager({ invitationId, photos, onDirtyChange }: GalleryM
           onClick={handleAdd}
           isLoading={addPhoto.isPending}
         >
-          Tambah Foto
+          Tambah Foto ke Galeri
         </Button>
       </div>
+
+      {/* Modal Bulk Upload Foto */}
+      <Modal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        title="Unggah Banyak Foto Galeri Sekaligus"
+        description="Pilih beberapa file gambar (PNG, JPG, WebP) untuk dimasukkan ke album pernikahan"
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          <input
+            ref={bulkFileInputRef}
+            type="file"
+            accept=".png,.jpg,.jpeg,.webp"
+            multiple
+            onChange={handleBulkFilesSelected}
+            className="hidden"
+          />
+
+          <div
+            onClick={() => bulkFileInputRef.current?.click()}
+            className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-8 text-center hover:border-primary hover:bg-indigo-50/50 transition cursor-pointer"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-2xs text-primary border border-slate-100">
+              <UploadCloud size={24} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-slate-700">
+                Klik untuk memilih beberapa foto sekaligus
+              </p>
+              <p className="text-[11px] text-slate-400">
+                Pilih hingga 20 foto per upload (PNG, JPG, WebP)
+              </p>
+            </div>
+          </div>
+
+          {bulkFiles.length > 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-ink">
+                <span>{bulkFiles.length} file terpilih:</span>
+                <button
+                  type="button"
+                  onClick={() => setBulkFiles([])}
+                  className="text-danger text-[11px] hover:underline cursor-pointer"
+                >
+                  Hapus Semua
+                </button>
+              </div>
+
+              <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
+                {bulkFiles.map((file, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between text-[11px] text-slate-600 bg-slate-50 p-2 rounded-xl"
+                  >
+                    <span className="truncate max-w-[240px]">{file.name}</span>
+                    <span className="text-[10px] text-slate-400">
+                      {(file.size / (1024 * 1024)).toFixed(2)} MB
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsBulkModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={bulkFiles.length === 0 || isBulkProcessing}
+              isLoading={isBulkProcessing}
+              onClick={handleExecuteBulkUpload}
+              icon={isBulkProcessing ? <Loader2 className="animate-spin" size={14} /> : <UploadCloud size={14} />}
+            >
+              Unggah {bulkFiles.length > 0 ? `(${bulkFiles.length} Foto)` : ''}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Modal Ubah Keterangan Foto */}
       <Modal

@@ -52,6 +52,15 @@ export interface ApiInvitation {
   template: { id: string; name: string; slug: string } | null;
   galleryPhotos: ApiGalleryPhoto[];
   loveStories: ApiLoveStory[];
+  giftAccounts?: {
+    id: string;
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+    type: string;
+    qrCodeUrl?: string | null;
+  }[];
+  giftAddress?: string | null;
 }
 
 /**
@@ -75,6 +84,15 @@ export interface PublicInvitationViewModel {
   address: string;
   galleryPhotos: ApiGalleryPhoto[];
   loveStories: ApiLoveStory[];
+  giftAccounts?: {
+    id: string;
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+    type: string;
+    qrCodeUrl?: string | null;
+  }[];
+  giftAddress?: string | null;
   templateId: string;
   templateSlug: string;
 }

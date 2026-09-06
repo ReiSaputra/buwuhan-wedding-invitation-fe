@@ -268,3 +268,56 @@ export function useDeactivateTemplate() {
     },
   })
 }
+
+/**
+ * Mengambil konfigurasi platform global (GET /admin/settings).
+ */
+export function useAdminSettings() {
+  return useQuery({
+    queryKey: ['admin', 'settings'],
+    queryFn: () => fetchData<import('@/types/admin').AdminPlatformSettings>('/admin/settings'),
+    staleTime: 60000,
+  })
+}
+
+/**
+ * Mutasi untuk memperbarui pengaturan platform (PATCH /admin/settings).
+ */
+export function useUpdateAdminSettings() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: Partial<import('@/types/admin').AdminPlatformSettings>) =>
+      patchData<import('@/types/admin').AdminPlatformSettings, Partial<import('@/types/admin').AdminPlatformSettings>>(
+        '/admin/settings',
+        payload,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'settings'] })
+    },
+  })
+}
+
+/**
+ * Mengambil log audit aktivitas sistem (GET /admin/settings/audit-logs).
+ */
+export function useAdminAuditLogs() {
+  return useQuery({
+    queryKey: ['admin', 'audit-logs'],
+    queryFn: () => fetchData<import('@/types/admin').AdminAuditLog[]>('/admin/settings/audit-logs'),
+    staleTime: 30000,
+  })
+}
+
+/**
+ * Menguji konfigurasi pengiriman email SMTP (POST /admin/settings/test-email).
+ */
+export function useTestAdminEmail() {
+  return useMutation({
+    mutationFn: (payload: { recipientEmail: string }) =>
+      postData<{ success: boolean; message: string }, { recipientEmail: string }>(
+        '/admin/settings/test-email',
+        payload,
+      ),
+  })
+}
+

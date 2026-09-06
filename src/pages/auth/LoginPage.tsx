@@ -220,13 +220,12 @@ export default function LoginPage() {
 
           {/* Lupa Password */}
           <div className="pt-0.5">
-            <button
-              type="button"
-              onClick={() => alert('Fitur pemulihan kata sandi sedang dalam pengembangan.')}
+            <Link
+              to="/forgot-password"
               className="text-xs font-medium text-violet-600 hover:text-violet-700 transition cursor-pointer"
             >
               Lupa password?
-            </button>
+            </Link>
           </div>
         </div>
 

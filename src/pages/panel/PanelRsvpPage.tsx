@@ -2,16 +2,17 @@ import { useCallback, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   CheckCircle2,
-  Copy,
-  MessageCircle,
-  MoreHorizontal,
-  UsersRound,
   XCircle,
+  Trash2,
+  MessageCircle,
+  Copy,
+  Check,
+  Download,
+  UsersRound,
+  MoreHorizontal,
   Sparkles,
   Phone,
-  Check,
   Loader2,
-  Trash2,
 } from 'lucide-react'
 import { PanelPageHeader } from '@/components/panel/PanelPageHeader'
 import { QueryState } from '@/components/common/QueryState'
@@ -28,6 +29,7 @@ import { useInvitationDetail } from '@/hooks/useInvitationDetail'
 import { useRsvpGuests } from '@/hooks/useRsvpGuests'
 import { useGuestActions } from '@/hooks/useGuestActions'
 import { useTableState } from '@/hooks/useTableState'
+import { exportRsvpData } from '@/lib/export'
 import { formatNumber, getInitial } from '@/lib/format'
 import { parseApiError } from '@/lib/errorHandler'
 import type { RsvpGuest, RsvpStatus } from '@/types/panel'
@@ -162,6 +164,24 @@ export default function PanelRsvpPage() {
     }
   }
 
+  /**
+   * Mengunduh rekap konfirmasi kehadiran tamu sebagai XLSX/CSV
+   */
+  async function handleExportRsvp() {
+    const fallbackRows = table.filteredRows.map((guest) => ({
+      'Nama Tamu': guest.name,
+      'Kategori Tamu': guest.category,
+      'Nomor HP': guest.phone ?? '',
+      'Status Kehadiran': statusMeta[guest.status]?.label || guest.status,
+      'Jumlah Pax': guest.headcount ?? (guest.status === 'HADIR' ? 1 : 0),
+    }))
+    try {
+      await exportRsvpData(id, 'xlsx', fallbackRows)
+    } catch {
+      alert('Gagal mengekspor data konfirmasi kehadiran')
+    }
+  }
+
   return (
     <div className="animate-in fade-in space-y-6 duration-300">
       {/* Header Halaman */}
@@ -173,6 +193,17 @@ export default function PanelRsvpPage() {
         ]}
         title="Konfirmasi Kehadiran"
         subtitle={`Pantau rekap kehadiran tamu untuk acara pernikahan ${invitation.coupleName}`}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<Download size={14} />}
+            onClick={handleExportRsvp}
+            disabled={guests.length === 0}
+          >
+            Export Excel
+          </Button>
+        }
       />
 
       {/* Kartu Ringkasan Metrik Statistik */}

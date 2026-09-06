@@ -25,13 +25,16 @@ import AdminLayout from '@/layouts/AdminLayout'
 // Halaman dipecah menjadi bundle terpisah (code splitting) agar bundle awal ringan
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'))
+const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'))
+const VerifyEmailPage = lazy(() => import('@/pages/auth/VerifyEmailPage'))
 const BerandaPage = lazy(() => import('@/pages/dashboard/BerandaPage'))
 const UndanganPage = lazy(() => import('@/pages/dashboard/UndanganPage'))
 const LanggananPage = lazy(() => import('@/pages/dashboard/LanggananPage'))
 const BuwuhPage = lazy(() => import('@/pages/dashboard/BuwuhPage'))
 const PengaturanPage = lazy(() => import('@/pages/dashboard/PengaturanPage'))
 const PanelBerandaPage = lazy(() => import('@/pages/panel/PanelBerandaPage'))
-const PanelPlaceholderPage = lazy(() => import('@/pages/panel/PanelPlaceholderPage'))
+const PanelPetugasPage = lazy(() => import('@/pages/panel/PanelPetugasPage'))
 const PanelEditPage = lazy(() => import('@/pages/panel/PanelEditPage'))
 const PanelRsvpPage = lazy(() => import('@/pages/panel/PanelRsvpPage'))
 const PanelBukuTamuPage = lazy(() => import('@/pages/panel/PanelBukuTamuPage'))
@@ -88,11 +91,14 @@ export const router = createBrowserRouter(
     <Route element={<RootLayout />}>
       <Route path="/" element={<RootRedirect />} />
 
-      {/* Rute Khusus Tamu / Belum Login (Sign In & Sign Up) */}
+      {/* Rute Khusus Tamu / Belum Login (Sign In, Sign Up, Lupa Password, Reset, Verifikasi) */}
       <Route element={<GuestRoute />}>
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
         </Route>
       </Route>
 
@@ -115,7 +121,7 @@ export const router = createBrowserRouter(
         <Route path="/dashboard/undangan/:id" element={<PanelLayout />}>
           <Route index element={<PanelBerandaPage />} />
           <Route path="edit" element={<PanelEditPage />} />
-          <Route path="petugas" element={<PanelPlaceholderPage title="Petugas" />} />
+          <Route path="petugas" element={<PanelPetugasPage />} />
           <Route path="template" element={<PanelTemplatePage />} />
           <Route path="buku-tamu" element={<PanelBukuTamuPage />} />
           <Route path="rsvp" element={<PanelRsvpPage />} />

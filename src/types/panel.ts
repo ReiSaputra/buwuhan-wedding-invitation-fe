@@ -52,6 +52,39 @@ export type GuestBookEntry = {
 }
 
 /**
+ * Rekening bank / dompet digital penerima amplop digital.
+ */
+export type GiftAccount = {
+  id: string
+  invitationId?: string
+  bankName: string
+  accountNumber: string
+  accountHolder: string
+  type: string
+  qrCodeUrl?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+/**
+ * Payload untuk membuat atau mengubah rekening hadiah.
+ */
+export type GiftAccountPayload = {
+  bankName: string
+  accountNumber: string
+  accountHolder: string
+  type: string
+  qrCodeUrl?: string | null
+}
+
+/**
+ * Payload untuk memperbarui alamat fisik pengiriman kado.
+ */
+export type GiftAddressPayload = {
+  giftAddress: string
+}
+
+/**
  * Jenis pemberian tamu: uang (buwuh/amplop) atau barang/kado.
  */
 export type GiftKind = 'UANG' | 'BARANG'
@@ -61,6 +94,7 @@ export type GiftKind = 'UANG' | 'BARANG'
  */
 export type GiftRecord = {
   id: string
+  invitationId?: string
   guestName: string
   kind: GiftKind
   /** Nominal rupiah. Diisi hanya bila kind === 'UANG'. */
@@ -73,6 +107,19 @@ export type GiftRecord = {
   isDigital: boolean
   /** Waktu pencatatan dalam format ISO-8601 */
   createdAt: string
+  updatedAt?: string
+}
+
+/**
+ * Payload untuk membuat atau memperbarui catatan hadiah.
+ */
+export type GiftPayload = {
+  guestName: string
+  kind: GiftKind
+  amount?: number | null
+  itemName?: string | null
+  methodLabel: string
+  isDigital?: boolean
 }
 
 /**
@@ -83,6 +130,8 @@ export type GiftStats = {
   totalAmount: number
   /** Jumlah tamu unik yang memberi (uang maupun barang) */
   participantCount: number
+  /** Jumlah kado fisik/barang yang diterima */
+  physicalCount?: number
 }
 
 /**

@@ -40,6 +40,8 @@ export function TemplateShell({ data, theme }: TemplateShellProps) {
     address,
     galleryPhotos,
     loveStories,
+    giftAccounts,
+    giftAddress,
     slug,
   } = data
 
@@ -137,7 +139,11 @@ export function TemplateShell({ data, theme }: TemplateShellProps) {
 
           <WishesSection slug={slug} guestNameDefault={guestName} />
 
-          <GiftSection />
+          <GiftSection
+            slug={slug}
+            initialAccounts={giftAccounts}
+            initialGiftAddress={giftAddress}
+          />
 
           <footer className={`py-16 px-6 text-center space-y-4 ${theme.footer}`}>
             <p className={`text-xs ${theme.footerText}`}>

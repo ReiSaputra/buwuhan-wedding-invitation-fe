@@ -14,7 +14,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { useInvitationDetail } from '@/hooks/useInvitationDetail'
 import { useBuwuhan } from '@/hooks/useBuwuhan'
 import { useTableState } from '@/hooks/useTableState'
-import { downloadCsv } from '@/lib/export'
+import { exportBuwuhanData } from '@/lib/export'
 import { formatDateId, formatNumber, formatRupiah, getInitial } from '@/lib/format'
 import { calculateBuwuhStats, getBuwuhanCategory } from '@/lib/buwuhHelper'
 import type { ApiBuwuhan, BuwuhanCategory, BuwuhanPayload } from '@/types/invitation-api'
@@ -90,21 +90,23 @@ export default function PanelCatatanBuwuhPage() {
     setEditing(null)
   }
 
-  /** Mengunduh seluruh baris hasil pencarian sebagai berkas CSV. */
-  function handleExport() {
-    downloadCsv(
-      `catatan-buwuh-${invitation.slug || 'undangan'}.csv`,
-      table.filteredRows.map((record) => ({
-        'Nama Pemberi': record.giverName,
-        'Jenis Bantuan': Array.from(new Set(record.items.map((i) => getBuwuhanCategory(i)))).join(', '),
-        Rincian: record.items
-          .map((i) => `${i.itemName} (${i.quantity} ${i.unit})`)
-          .join('; '),
-        'Estimasi Nilai': sumEstimatedValue(record),
-        Tanggal: formatDateId(record.receivedAt),
-        Catatan: record.note ?? '',
-      })),
-    )
+  /** Mengunduh seluruh baris hasil pencarian sebagai berkas XLSX/CSV. */
+  async function handleExport() {
+    const fallbackRows = table.filteredRows.map((record) => ({
+      'Nama Pemberi': record.giverName,
+      'Jenis Bantuan': Array.from(new Set(record.items.map((i) => getBuwuhanCategory(i)))).join(', '),
+      Rincian: record.items
+        .map((i) => `${i.itemName} (${i.quantity} ${i.unit})`)
+        .join('; '),
+      'Estimasi Nilai': sumEstimatedValue(record),
+      Tanggal: formatDateId(record.receivedAt),
+      Catatan: record.note ?? '',
+    }))
+    try {
+      await exportBuwuhanData(id, 'xlsx', fallbackRows)
+    } catch {
+      alert('Gagal mengekspor catatan buwuh')
+    }
   }
 
   return (

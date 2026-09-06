@@ -240,9 +240,6 @@ export interface AdminInvitationQueryParams {
   eventCategory?: EventCategory | 'ALL'
 }
 
-/**
- * Parameter query pencarian & filter template
- */
 export interface AdminTemplateQueryParams {
   page?: number
   limit?: number
@@ -250,4 +247,32 @@ export interface AdminTemplateQueryParams {
   tier?: PlanTier | 'ALL'
   eventCategory?: string | 'ALL'
   search?: string
+}
+
+export interface AdminPlatformSettings {
+  appName: string
+  maintenanceMode: boolean
+  registrationOpen: boolean
+  freeTierLimit: number
+  smtpHost?: string
+  smtpPort?: number
+  smtpUser?: string
+  notifyNewUser: boolean
+  notifyNewInvitation: boolean
+  notifyCriticalTakedown: boolean
+  notifyQuotaExceeded: boolean
+  weeklyReportEmail: boolean
+  auditLogging: boolean
+}
+
+export interface AdminAuditLog {
+  id: string
+  action: string
+  actorId: string
+  actorName: string
+  actorRole: string
+  targetResource: string
+  ipAddress: string
+  details?: Record<string, unknown>
+  createdAt: string
 }

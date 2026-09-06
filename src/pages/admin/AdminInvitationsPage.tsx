@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Loader2,
   SlidersHorizontal,
+  Download,
 } from 'lucide-react'
 import { useAdminInvitations, useUpdateInvitationStatus } from '@/hooks/useAdmin'
 import { TableCard } from '@/components/ui/TableCard'
@@ -21,6 +22,7 @@ import { QueryState } from '@/components/common/QueryState'
 import { AdminInvitationDetailModal } from '@/components/admin/AdminInvitationDetailModal'
 import { formatDateId } from '@/lib/format'
 import { parseApiError } from '@/lib/errorHandler'
+import { exportAdminInvitationsData } from '@/lib/export'
 import type {
   AdminInvitation,
   InvitationStatus,
@@ -155,6 +157,24 @@ export default function AdminInvitationsPage() {
   const invitations = data?.invitations || []
   const pagination = data?.pagination || { page: 1, limit: 10, total: 0, totalPages: 1 }
 
+  async function handleExportInvitations() {
+    const fallbackRows = invitations.map((inv) => ({
+      ID: inv.id,
+      Judul: inv.title,
+      Slug: inv.slug,
+      Kategori: inv.eventCategory,
+      Status: inv.status,
+      'Pemilik (Email)': inv.owner?.email || '',
+      'Paket': inv.owner?.planTier || 'FREE',
+      'Dibuat Pada': formatDateId(inv.createdAt),
+    }))
+    try {
+      await exportAdminInvitationsData('xlsx', fallbackRows)
+    } catch {
+      alert('Gagal mengekspor data undangan')
+    }
+  }
+
   return (
     <div className="space-y-6 pb-12">
       {/* Page Header */}
@@ -168,6 +188,16 @@ export default function AdminInvitationsPage() {
             Pantau seluruh undangan yang beredar di platform, periksa kepatuhan konten, dan kelola status publikasi.
           </p>
         </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          icon={<Download size={15} />}
+          onClick={handleExportInvitations}
+          disabled={invitations.length === 0}
+        >
+          Ekspor XLSX / CSV
+        </Button>
       </div>
 
       {/* Main Table Card */}

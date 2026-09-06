@@ -18,12 +18,9 @@ export type UpdateGalleryPhotoPayload = {
 /**
  * Hook aksi untuk mengelola foto galeri sebuah undangan.
  *
- * Daftar fotonya sendiri sudah ikut terbawa pada respon GET /invitations/:id
- * (properti `galleryPhotos`), sehingga hook ini hanya menyediakan aksi mutasi,
- * lalu menyegarkan cache detail undangan setelah berhasil.
- *
  * Endpoint:
  * - POST   /invitations/:invitationId/gallery
+ * - POST   /invitations/:invitationId/gallery/bulk
  * - PATCH  /invitations/:invitationId/gallery/:photoId
  * - DELETE /invitations/:invitationId/gallery/:photoId
  *
@@ -45,6 +42,29 @@ export function useGallery(invitationId: string) {
     onSuccess: invalidate,
   })
 
+  const addBulkPhotos = useMutation({
+    mutationFn: async (photos: GalleryPhotoPayload[]) => {
+      try {
+        return await postData<{ count: number; photos: ApiGalleryPhoto[] }, { photos: GalleryPhotoPayload[] }>(
+          `/invitations/${invitationId}/gallery/bulk`,
+          { photos },
+        )
+      } catch {
+        // Fallback simpan satu per satu jika backend belum ada endpoint bulk
+        const results = await Promise.all(
+          photos.map((p) =>
+            postData<ApiGalleryPhoto, GalleryPhotoPayload>(
+              `/invitations/${invitationId}/gallery`,
+              p,
+            ),
+          ),
+        )
+        return { count: results.length, photos: results }
+      }
+    },
+    onSuccess: invalidate,
+  })
+
   const removePhoto = useMutation({
     mutationFn: (photoId: string) =>
       deleteData(`/invitations/${invitationId}/gallery/${photoId}`),
@@ -62,8 +82,7 @@ export function useGallery(invitationId: string) {
   })
 
   /**
-   * Menyusun ulang seluruh galeri. Backend belum punya endpoint reorder massal,
-   * jadi urutan baru dikirim sebagai beberapa PATCH `order` sekaligus.
+   * Menyusun ulang seluruh galeri.
    *
    * @param orderedIds - ID foto sesuai urutan tampil yang diinginkan
    */
@@ -82,11 +101,13 @@ export function useGallery(invitationId: string) {
 
   return {
     addPhoto,
+    addBulkPhotos,
     removePhoto,
     updatePhoto,
     reorderPhotos,
     isMutating:
       addPhoto.isPending ||
+      addBulkPhotos.isPending ||
       removePhoto.isPending ||
       updatePhoto.isPending ||
       reorderPhotos.isPending,

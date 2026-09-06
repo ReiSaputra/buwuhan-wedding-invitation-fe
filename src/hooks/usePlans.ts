@@ -1,9 +1,11 @@
+import { useQuery } from '@tanstack/react-query'
+import { fetchData } from '@/lib/api'
 import type { PlanTier } from '@/types/dashboard'
 
 /**
- * Daftar konfigurasi paket langganan platform Buwuhan.
+ * Daftar konfigurasi bawaan paket langganan platform Buwuhan (fallback saat offline / pending backend).
  */
-const PLANS: PlanTier[] = [
+const DEFAULT_PLANS: PlanTier[] = [
   {
     code: 'FREE',
     name: 'Free',
@@ -15,7 +17,6 @@ const PLANS: PlanTier[] = [
       '10 foto galeri',
       'Kehadiran & buku ucapan dasar',
       'Watermark Buwuh Panel',
-
     ],
     ctaLabel: 'Mulai Gratis',
   },
@@ -55,10 +56,34 @@ const PLANS: PlanTier[] = [
 ]
 
 /**
- * Custom React Hook untuk mengambil data paket harga langganan yang tersedia.
- * 
- * @returns Objek berisi daftar `plans` dan flag `isLoading`
+ * Custom React Hook untuk mengambil data paket harga langganan dari backend.
+ *
+ * Endpoint:
+ * - GET /plans
+ *
+ * @returns Objek berisi daftar `plans`, status `isLoading`, dan `isError`
  */
 export function usePlans() {
-  return { plans: PLANS, isLoading: false }
+  const query = useQuery({
+    queryKey: ['plans'],
+    queryFn: async () => {
+      try {
+        const data = await fetchData<PlanTier[]>('/plans')
+        if (Array.isArray(data) && data.length > 0) {
+          return data
+        }
+        return DEFAULT_PLANS
+      } catch (err) {
+        console.warn('Gagal memuat katalog paket dari backend, menggunakan data default:', err)
+        return DEFAULT_PLANS
+      }
+    },
+    staleTime: 1000 * 60 * 15, // 15 menit
+  })
+
+  return {
+    plans: query.data ?? DEFAULT_PLANS,
+    isLoading: query.isLoading,
+    isError: query.isError,
+  }
 }
