@@ -4,7 +4,7 @@ import { StatCard } from '@/components/dashboard/StatCard'
 import { InvitationList } from '@/components/dashboard/InvitationList'
 import { Button } from '@/components/ui/Button'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { useInvitations } from '@/hooks/useInvitations'
+import { useDashboard } from '@/hooks/useDashboard'
 import { formatNumber } from '@/lib/format'
 
 /**
@@ -14,7 +14,7 @@ import { formatNumber } from '@/lib/format'
  */
 export default function BerandaPage() {
   const user = useCurrentUser()
-  const { invitations, stats, isLoading, isError } = useInvitations()
+  const { invitations, stats, isLoading, isError } = useDashboard()
 
   // Undangan pertama yang berstatus aktif — dipakai untuk tombol Preview.
   const previewTarget = invitations.find((item) => item.status === 'ACTIVE') ?? invitations[0]
