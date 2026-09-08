@@ -14,7 +14,8 @@ export const adminNav: NavEntry[] = [
   { type: 'item', to: '/admin/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={ICON} />, end: true },
   { type: 'item', to: '/admin/users', label: 'Pengguna', icon: <Users size={ICON} /> },
   { type: 'item', to: '/admin/invitations', label: 'Moderasi Undangan', icon: <Mail size={ICON} /> },
-  { type: 'item', to: '/admin/templates', label: 'Katalog Template', icon: <LayoutTemplate size={ICON} /> },
+{ type: 'item', to: '/admin/templates', label: 'Katalog Template', icon: <LayoutTemplate size={ICON} /> },
+{ type: 'item', to: '/admin/langganan', label: 'Langganan', icon: <CreditCard size={ICON} /> },
 ]
 
 /**

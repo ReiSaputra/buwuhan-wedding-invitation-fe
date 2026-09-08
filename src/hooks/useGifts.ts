@@ -8,7 +8,7 @@ import type { GiftPayload, GiftRecord, GiftStats } from '@/types/panel'
  *
  * Endpoint yang tersambung:
  * - GET    /invitations/:invitationId/gifts
- * - GET    /invitations/:invitationId/gifts/stats
+ * - GET    /invitations/:invitationId/gifts/summary
  * - POST   /invitations/:invitationId/gifts
  * - PATCH  /gifts/:id
  * - DELETE /gifts/:id
@@ -38,7 +38,7 @@ export function useGifts(invitationId: string) {
     queryKey: ['invitation', invitationId, 'gifts', 'stats'],
     queryFn: async () => {
       try {
-        const data = await fetchData<GiftStats>(`/invitations/${invitationId}/gifts/stats`)
+        const data = await fetchData<GiftStats>(`/invitations/${invitationId}/gifts/summary`)
         return data
       } catch {
         return null

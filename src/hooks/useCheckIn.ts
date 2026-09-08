@@ -1,13 +1,13 @@
-import { useMemo } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchData, postData } from '@/lib/api'
-import { parseApiError } from '@/lib/errorHandler'
+import { useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchData, postData } from "@/lib/api";
+import { parseApiError } from "@/lib/errorHandler";
 import type {
   ApiGuestItem,
   CheckInPayload,
   CheckOutPayload,
   GuestStatsApiData,
-} from '@/types/invitation-api'
+} from "@/types/invitation-api";
 
 const EMPTY_STATS: GuestStatsApiData = {
   totalGuests: 0,
@@ -16,7 +16,7 @@ const EMPTY_STATS: GuestStatsApiData = {
   totalPaxExpected: 0,
   totalPaxActual: 0,
   byCategory: {},
-}
+};
 
 /**
  * Hook presensi tamu (Scan QR): daftar tamu, statistik kehadiran,
@@ -26,31 +26,51 @@ const EMPTY_STATS: GuestStatsApiData = {
  * - GET  /invitations/:id/guests
  * - GET  /invitations/:id/guests/stats
  * - POST /invitations/:id/guests/check-in
- * - POST /invitations/:id/guests/check-out
+ * - GET  /public/invitations/:slug/guests/verify/:qrCode
  *
  * @param invitationId - ID undangan yang sedang dikelola
  */
-export function useCheckIn(invitationId: string) {
-  const queryClient = useQueryClient()
-  const enabled = Boolean(invitationId)
+export function useCheckIn(invitationId: string, invitationSlug?: string) {
+  const queryClient = useQueryClient();
+  const enabled = Boolean(invitationId);
 
   const guestsQuery = useQuery({
-    queryKey: ['invitation', invitationId, 'guests'],
-    queryFn: () => fetchData<ApiGuestItem[]>(`/invitations/${invitationId}/guests`),
+    queryKey: ["invitation", invitationId, "guests"],
+    queryFn: () =>
+      fetchData<ApiGuestItem[]>(`/invitations/${invitationId}/guests`),
     enabled,
-  })
+  });
 
   const statsQuery = useQuery({
-    queryKey: ['invitation', invitationId, 'guest-stats'],
+    queryKey: ["invitation", invitationId, "guest-stats"],
     queryFn: () =>
       fetchData<GuestStatsApiData>(`/invitations/${invitationId}/guests/stats`),
     enabled,
-  })
+  });
 
   /** Menyegarkan daftar tamu, statistik, dan ringkasan dashboard. */
   function invalidateAll() {
-    void queryClient.invalidateQueries({ queryKey: ['invitation', invitationId] })
-    void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    void queryClient.invalidateQueries({
+      queryKey: ["invitation", invitationId],
+    });
+    void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+  }
+
+  /**
+   * Memverifikasi token QR ke backend TANPA mengubah status kehadiran.
+   * Dipakai untuk menampilkan pratinjau tamu sebelum petugas menekan konfirmasi.
+   *
+   * @param qrCode - Token QR bersih hasil extractQrCode()
+   * @returns Data tamu bila valid
+   * @throws Error 404 bila QR tidak dikenali pada undangan ini
+   */
+  async function verifyQr(qrCode: string): Promise<ApiGuestItem> {
+    if (!invitationSlug) {
+      throw new Error("Slug undangan belum tersedia");
+    }
+    return fetchData<ApiGuestItem>(
+      `/public/invitations/${encodeURIComponent(invitationSlug)}/guests/verify/${encodeURIComponent(qrCode)}`,
+    );
   }
 
   const checkInMutation = useMutation({
@@ -60,7 +80,7 @@ export function useCheckIn(invitationId: string) {
         payload,
       ),
     onSuccess: invalidateAll,
-  })
+  });
 
   const checkOutMutation = useMutation({
     mutationFn: (payload: CheckOutPayload) =>
@@ -69,9 +89,9 @@ export function useCheckIn(invitationId: string) {
         payload,
       ),
     onSuccess: invalidateAll,
-  })
+  });
 
-  const guests = useMemo(() => guestsQuery.data ?? [], [guestsQuery.data])
+  const guests = useMemo(() => guestsQuery.data ?? [], [guestsQuery.data]);
 
   const recentCheckIns = useMemo(
     () =>
@@ -80,21 +100,30 @@ export function useCheckIn(invitationId: string) {
         .sort((a, b) => (a.checkedInAt! < b.checkedInAt! ? 1 : -1))
         .slice(0, 8),
     [guests],
-  )
+  );
 
   return {
     guests,
     recentCheckIns,
     stats: statsQuery.data ?? EMPTY_STATS,
+    /** Pratinjau tamu dari token QR, tanpa mencatat kehadiran. */
+    verifyQr,
 
     /** Check-in memakai token QR hasil pemindaian. */
     checkInByQr: (qrCode: string, paxActual?: number) =>
-      checkInMutation.mutateAsync({ qrCode, ...(paxActual ? { paxActual } : {}) }),
+      checkInMutation.mutateAsync({
+        qrCode,
+        ...(paxActual ? { paxActual } : {}),
+      }),
     /** Check-in manual memakai ID tamu dari tabel. */
     checkInByGuestId: (guestId: string, paxActual?: number) =>
-      checkInMutation.mutateAsync({ guestId, ...(paxActual ? { paxActual } : {}) }),
+      checkInMutation.mutateAsync({
+        guestId,
+        ...(paxActual ? { paxActual } : {}),
+      }),
     /** Membatalkan kehadiran / check-out tamu. */
-    checkOutByGuestId: (guestId: string) => checkOutMutation.mutateAsync({ guestId }),
+    checkOutByGuestId: (guestId: string) =>
+      checkOutMutation.mutateAsync({ guestId }),
 
     isLoading: enabled && (guestsQuery.isLoading || statsQuery.isLoading),
     isError: guestsQuery.isError || statsQuery.isError,
@@ -102,7 +131,8 @@ export function useCheckIn(invitationId: string) {
     /** Pesan galat siap tampil dari backend (mis. "Tamu sudah check-in"). */
     mutationMessage:
       checkInMutation.error || checkOutMutation.error
-        ? parseApiError(checkInMutation.error ?? checkOutMutation.error).generalMessage
+        ? parseApiError(checkInMutation.error ?? checkOutMutation.error)
+            .generalMessage
         : null,
-  }
+  };
 }

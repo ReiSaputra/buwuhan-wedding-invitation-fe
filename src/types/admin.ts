@@ -276,3 +276,48 @@ export interface AdminAuditLog {
   details?: Record<string, unknown>
   createdAt: string
 }
+
+// ── Langganan (Admin) ────────────────────────────────────────────────
+
+/** Sama dengan enum SubscriptionStatus di backend. */
+export type SubscriptionStatus = 'PENDING' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED'
+export type BillingPeriod = 'MONTHLY' | 'YEARLY'
+
+export interface AdminSubscriptionPlan {
+  code: string
+  name: string
+  price: number
+  currency: string
+  period: BillingPeriod
+  features: string[]
+  isActive: boolean
+  tier: PlanTier
+}
+
+/** Bentuk AdminSubscriptionData dari backend (subscription.types.ts:99). */
+export interface AdminSubscription {
+  id: string
+  userId: string
+  user: { id: string; fullName: string; email: string }
+  planCode: string
+  plan: AdminSubscriptionPlan
+  status: SubscriptionStatus
+  startedAt: string | null
+  expiresAt: string | null
+  provider: 'MIDTRANS' | null
+  providerRef: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdminSubscriptionsResponse {
+  subscriptions: AdminSubscription[]
+  pagination: AdminPagination
+}
+
+export interface AdminSubscriptionQueryParams {
+  page?: number
+  limit?: number
+  status?: SubscriptionStatus | 'ALL'
+  userId?: string
+}

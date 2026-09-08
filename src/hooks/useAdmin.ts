@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { deleteData, fetchData, patchData, postData } from '@/lib/api'
+import { api, deleteData, fetchData, patchData, postData } from '@/lib/api'
 import type {
   AdminDashboardStats,
   AdminInvitationDetail,
@@ -17,6 +17,10 @@ import type {
   InvitationStatus,
   PlanTier,
   UserRole,
+  AdminSubscription,
+  AdminSubscriptionQueryParams,
+  AdminSubscriptionsResponse,
+  SubscriptionStatus,
 } from '@/types/admin'
 
 /**
@@ -321,3 +325,60 @@ export function useTestAdminEmail() {
   })
 }
 
+/**
+ * GET /admin/subscriptions — daftar seluruh langganan platform.
+ *
+ * Sengaja memakai `api.get` alih-alih `fetchData`, karena backend menaruh
+ * `pagination` sebagai saudara dari `data` (bukan di dalamnya), sedangkan
+ * `fetchData` hanya mengembalikan `res.data.data` sehingga pagination hilang.
+ */
+export function useAdminSubscriptions(params: AdminSubscriptionQueryParams = {}) {
+  const { page = 1, limit = 20, status = 'ALL', userId = '' } = params
+
+  const queryParams = new URLSearchParams()
+  queryParams.set('page', String(page))
+  queryParams.set('limit', String(limit))
+  if (status !== 'ALL') queryParams.set('status', status)
+  if (userId.trim()) queryParams.set('userId', userId.trim())
+
+  return useQuery({
+    queryKey: ['admin', 'subscriptions', { page, limit, status, userId }],
+    queryFn: async (): Promise<AdminSubscriptionsResponse> => {
+      const res = await api.get<{
+        message: string
+        status: number
+        data: AdminSubscription[]
+        pagination: AdminSubscriptionsResponse['pagination']
+      }>(`/admin/subscriptions?${queryParams.toString()}`)
+
+      return {
+        subscriptions: res.data.data,
+        pagination: res.data.pagination,
+      }
+    },
+  })
+}
+
+/**
+ * PATCH /admin/subscriptions/:id/status — override status langganan manual.
+ */
+export function useOverrideSubscriptionStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      subscriptionId,
+      status,
+    }: {
+      subscriptionId: string
+      status: SubscriptionStatus
+    }) =>
+      patchData<AdminSubscription, { status: SubscriptionStatus }>(
+        `/admin/subscriptions/${subscriptionId}/status`,
+        { status },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'subscriptions'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] })
+    },
+  })
+}

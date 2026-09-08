@@ -1,10 +1,12 @@
 import { useDashboard } from '@/hooks/useDashboard'
 
 /**
- * Custom React Hook untuk mengambil daftar undangan digital pengguna dan ringkasan metrik statistik.
+ * Alias dari `useDashboard()`.
  *
- * Hook ini sekarang hanya pembungkus tipis dari `useDashboard()` agar
- * komponen lama yang sudah memakai `useInvitations()` tidak perlu diubah.
+ * Endpoint `GET /invitations` sengaja TIDAK dipakai karena tidak mengirim
+ * jumlah tamu, jumlah check-in, maupun thumbnail template — tiga data yang
+ * dibutuhkan `InvitationCard`. Semua kebutuhan daftar undangan dilayani
+ * oleh `GET /dashboard`.
  *
  * @example
  * const { invitations, stats, isLoading } = useInvitations()

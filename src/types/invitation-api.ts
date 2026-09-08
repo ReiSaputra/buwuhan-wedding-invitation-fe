@@ -114,6 +114,7 @@ export interface InvitationPayload {
   eventTime?: string;
   venue?: string;
   address?: string;
+  additionalInfo?: { note?: string; dressCode?: string; healthProtocol?: string };
   templateId?: string;
 }
 

@@ -15,6 +15,7 @@ export const TEMPLATE_SLUGS = [
   'javanese-classic',
   'khitanan-ceria-blue',
   'rasulan-syukuran-gold',
+  'aqiqah-lembut-mint',
 ] as const
 
 export type TemplateSlug = (typeof TEMPLATE_SLUGS)[number]

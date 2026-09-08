@@ -5,28 +5,22 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { useInvitationDetail } from '@/hooks/useInvitationDetail'
 import {
-  useStaffs,
-  useAddStaff,
-  useUpdateStaff,
-  useDeleteStaff,
-} from '@/hooks/useStaffs'
-import type {
-  StaffMember,
-  StaffRole,
-  StaffPermission,
-  CreateStaffPayload,
-} from '@/types/staff'
+  useMembers,
+  useInviteMember,
+  useUpdateMemberRole,
+  useRemoveMember,
+  useResendMemberInvite,
+} from '@/hooks/useMembers'
+import { getMemberStatus } from '@/types/member'
+import type { Member, InvitationRole, CreateMemberPayload } from '@/types/member'
 import {
   Users,
   UserPlus,
   QrCode,
-  BookOpen,
   DollarSign,
   ShieldCheck,
   Trash2,
   Edit2,
-  Copy,
-  Check,
   Search,
   CheckCircle2,
   Clock,
@@ -35,111 +29,78 @@ import {
   Loader2,
 } from 'lucide-react'
 
-const ROLE_LABELS: Record<StaffRole, { label: string; desc: string; icon: typeof Users; color: string }> = {
-  SCANNER: {
-    label: 'Petugas Scan QR',
-    desc: 'Memindai barcode/QR tiket tamu di pintu masuk & check-in instan',
-    icon: QrCode,
-    color: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  },
-  RECEPTIONIST: {
-    label: 'Penerima Tamu (Buku Tamu)',
-    desc: 'Mencari tamu manual, cek kehadiran, dan catat status souvenir',
-    icon: BookOpen,
-    color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  },
-  CASHIER: {
-    label: 'Pencatat Buwuhan & Kasir',
-    desc: 'Mencatat amplop uang/barang dan cetak tanda terima buwuh',
-    icon: DollarSign,
+/**
+ * Peran anggota undangan. Nilainya HARUS sama dengan enum InvitationRole
+ * di backend (OWNER | ADMIN | USER) — backend tidak mengenal SCANNER,
+ * RECEPTIONIST, CASHIER, maupun COORDINATOR.
+ */
+const ROLE_LABELS: Record<InvitationRole, { label: string; desc: string; icon: typeof Users; color: string }> = {
+  OWNER: {
+    label: 'Pemilik Undangan',
+    desc: 'Akses penuh, termasuk mengundang petugas dan menghapus undangan',
+    icon: ShieldCheck,
     color: 'bg-amber-50 text-amber-700 border-amber-200',
   },
-  COORDINATOR: {
-    label: 'Koordinator Acara',
-    desc: 'Akses penuh ke monitoring tamu, RSVP, dan rekap real-time',
+  ADMIN: {
+    label: 'Co-host',
+    desc: 'Mengelola tamu, RSVP, buwuh, galeri, dan pengaturan undangan',
     icon: ShieldCheck,
     color: 'bg-purple-50 text-purple-700 border-purple-200',
   },
-  ADMIN: {
-    label: 'Admin Undangan',
-    desc: 'Akses penuh ke seluruh pengaturan undangan',
-    icon: ShieldCheck,
-    color: 'bg-rose-50 text-rose-700 border-rose-200',
+  USER: {
+    label: 'Petugas Penerima Tamu',
+    desc: 'Scan QR tiket tamu dan mencatat kehadiran di lokasi acara',
+    icon: QrCode,
+    color: 'bg-indigo-50 text-indigo-700 border-indigo-200',
   },
 }
 
-const PERMISSION_OPTIONS: Array<{ key: StaffPermission; label: string; desc: string }> = [
-  { key: 'SCAN_QR', label: 'Scan QR Tiket Tamu', desc: 'Dapat memindai QR code tamu di meja resepsi' },
-  { key: 'MANAGE_GUESTS', label: 'Kelola Buku Tamu', desc: 'Mencari dan mengubah status kehadiran tamu' },
-  { key: 'RECORD_BUWUH', label: 'Catat Buwuh & Hadiah', desc: 'Input sumbangan uang, beras, atau kado fisik' },
-  { key: 'VIEW_STATS', label: 'Lihat Statistik & Laporan', desc: 'Melihat ringkasan total tamu dan perolehan buwuh' },
-  { key: 'MANAGE_SETTINGS', label: 'Ubah Pengaturan Acara', desc: 'Mengedit detail acara dan template' },
-]
+/** Peran yang boleh diberikan lewat UI. OWNER tidak bisa dialihkan. */
+const ASSIGNABLE_ROLES: InvitationRole[] = ['ADMIN', 'USER']
 
 /**
  * Halaman Manajemen Petugas & Hak Akses Undangan (PanelPetugasPage).
- * Memungkinkan pemilik undangan menugaskan panitia/petugas meja tamu,
- * scanner QR, dan pencatat buwuhan dengan hak akses terbatas.
+ * Terhubung ke modul `member` di backend melalui hook useMembers.
  */
 export default function PanelPetugasPage() {
   const { id = '' } = useParams()
   const { invitation } = useInvitationDetail(id)
-  const { data: staffs = [] } = useStaffs(id)
-  const { mutateAsync: addStaff, isPending: isAdding } = useAddStaff(id)
-  const { mutateAsync: updateStaff, isPending: isUpdating } = useUpdateStaff(id)
-  const { mutateAsync: deleteStaff } = useDeleteStaff(id)
+  const { data: staffs = [], isLoading, isError } = useMembers(id)
+  const { mutateAsync: addStaff, isPending: isAdding } = useInviteMember(id)
+  const { mutateAsync: updateStaff, isPending: isUpdating } = useUpdateMemberRole(id)
+  const { mutateAsync: deleteStaff } = useRemoveMember(id)
+  const { mutateAsync: resendInvite, isPending: isResending } = useResendMemberInvite(id)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<string>('ALL')
-  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null)
+  const [editingStaff, setEditingStaff] = useState<Member | null>(null)
   const [modalError, setModalError] = useState<string | null>(null)
 
-  // Form State
+  // Form State — backend member tidak menyimpan nomor telepon
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [role, setRole] = useState<StaffRole>('SCANNER')
-  const [permissions, setPermissions] = useState<StaffPermission[]>(['SCAN_QR'])
+  const [role, setRole] = useState<InvitationRole>('USER')
 
   function openAddModal() {
     setEditingStaff(null)
     setName('')
     setEmail('')
-    setPhone('')
-    setRole('SCANNER')
-    setPermissions(['SCAN_QR'])
+    setRole('USER')
     setModalError(null)
     setIsModalOpen(true)
   }
 
-  function openEditModal(staff: StaffMember) {
+  function openEditModal(staff: Member) {
     setEditingStaff(staff)
     setName(staff.name)
     setEmail(staff.email)
-    setPhone(staff.phone || '')
     setRole(staff.role)
-    setPermissions(staff.permissions)
     setModalError(null)
     setIsModalOpen(true)
-  }
-
-  function handleRoleChange(newRole: StaffRole) {
-    setRole(newRole)
-    if (newRole === 'SCANNER') setPermissions(['SCAN_QR'])
-    else if (newRole === 'RECEPTIONIST') setPermissions(['SCAN_QR', 'MANAGE_GUESTS'])
-    else if (newRole === 'CASHIER') setPermissions(['RECORD_BUWUH', 'VIEW_STATS'])
-    else if (newRole === 'COORDINATOR') setPermissions(['SCAN_QR', 'MANAGE_GUESTS', 'RECORD_BUWUH', 'VIEW_STATS'])
-    else if (newRole === 'ADMIN') setPermissions(['SCAN_QR', 'MANAGE_GUESTS', 'RECORD_BUWUH', 'VIEW_STATS', 'MANAGE_SETTINGS'])
-  }
-
-  function togglePermission(perm: StaffPermission) {
-    setPermissions((prev) =>
-      prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm],
-    )
   }
 
   async function handleFormSubmit(e: React.FormEvent) {
@@ -157,24 +118,17 @@ export default function PanelPetugasPage() {
 
     try {
       if (editingStaff) {
-        await updateStaff({
-          id: editingStaff.id,
-          payload: {
-            name: name.trim(),
-            phone: phone.trim() || undefined,
-            role,
-            permissions,
-          },
-        })
+        // Backend hanya mendukung perubahan peran (PATCH .../members/:id)
+        await updateStaff({ memberId: editingStaff.id, role })
       } else {
-        const payload: CreateStaffPayload = {
+        const payload: CreateMemberPayload = {
           name: name.trim(),
           email: email.trim(),
-          phone: phone.trim() || undefined,
           role,
-          permissions,
         }
         await addStaff(payload)
+        setToast(`Email undangan telah dikirim ke ${email.trim()}`)
+        setTimeout(() => setToast(null), 5000)
       }
       setIsModalOpen(false)
     } catch (err: unknown) {
@@ -191,36 +145,42 @@ export default function PanelPetugasPage() {
     }
   }
 
-  function copyInviteLink(staff: StaffMember) {
-    const inviteUrl = `${window.location.origin}/staff/join?token=${staff.inviteToken || staff.id}&invitationId=${id}`
-    void navigator.clipboard.writeText(inviteUrl)
-    setCopiedId(staff.id)
-    setTimeout(() => setCopiedId(null), 2500)
-  }
-
-  function shareViaWhatsApp(staff: StaffMember) {
-    const inviteUrl = `${window.location.origin}/staff/join?token=${staff.inviteToken || staff.id}&invitationId=${id}`
-    const text = encodeURIComponent(
-      `Halo ${staff.name},\n\nAnda telah ditugaskan sebagai *${ROLE_LABELS[staff.role]?.label}* untuk acara pernikahan *${invitation.coupleName}*.\n\nSilakan klik tautan berikut untuk membuka panel petugas:\n${inviteUrl}\n\nTerima kasih!`,
-    )
-    window.open(`https://wa.me/${staff.phone?.replace(/[^0-9]/g, '') || ''}?text=${text}`, '_blank')
+  /**
+   * Backend tidak pernah mengirim token undangan ke frontend (token hanya
+   * disimpan dalam bentuk hash dan dikirim lewat email), sehingga tautan
+   * undangan tidak mungkin dibentuk di sisi klien. Satu-satunya cara adalah
+   * meminta backend mengirim ulang emailnya.
+   */
+  async function handleResend(staff: Member) {
+    try {
+      await resendInvite(staff.id)
+      setToast(`Email undangan berhasil dikirim ulang ke ${staff.email}`)
+      setTimeout(() => setToast(null), 5000)
+    } catch (err: unknown) {
+      alert((err as Error)?.message || 'Gagal mengirim ulang undangan')
+    }
   }
 
   const filteredStaffs = staffs.filter((s) => {
     const matchQuery =
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (s.phone && s.phone.includes(searchQuery))
+      s.email.toLowerCase().includes(searchQuery.toLowerCase())
     const matchRole = roleFilter === 'ALL' || s.role === roleFilter
     return matchQuery && matchRole
   })
 
-  const totalScanners = staffs.filter((s) => s.role === 'SCANNER' || s.role === 'RECEPTIONIST').length
-  const totalCashiers = staffs.filter((s) => s.role === 'CASHIER').length
-  const totalActive = staffs.filter((s) => s.status === 'ACTIVE').length
+  const totalScanners = staffs.filter((s) => s.role === 'USER').length
+  const totalCashiers = staffs.filter((s) => s.role === 'ADMIN').length
+  const totalActive = staffs.filter((s) => getMemberStatus(s) === 'ACTIVE').length
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
+      {toast && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">
+          {toast}
+        </div>
+      )}
+
       {/* Breadcrumb Navigasi */}
       <Breadcrumb
         items={[
@@ -238,7 +198,7 @@ export default function PanelPetugasPage() {
             <span>Petugas & Hak Akses Panitia</span>
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted">
-            Tugaskan panitia resepsi (Scanner QR, Penerima Tamu, dan Kasir Buwuh) dengan akses terbatas untuk acara {invitation.coupleName}.
+            Undang co-host dan petugas penerima tamu lewat email untuk acara {invitation.coupleName}.
           </p>
         </div>
 
@@ -266,7 +226,7 @@ export default function PanelPetugasPage() {
 
         <div className="rounded-2xl bg-white p-4 border border-border shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Petugas Aktif</span>
+            <span className="text-xs font-semibold text-slate-500">Sudah Aktif</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
               <CheckCircle2 size={16} />
             </div>
@@ -276,7 +236,7 @@ export default function PanelPetugasPage() {
 
         <div className="rounded-2xl bg-white p-4 border border-border shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Meja Tamu / QR</span>
+            <span className="text-xs font-semibold text-slate-500">Petugas Lapangan</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
               <QrCode size={16} />
             </div>
@@ -286,7 +246,7 @@ export default function PanelPetugasPage() {
 
         <div className="rounded-2xl bg-white p-4 border border-border shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Kasir / Buwuhan</span>
+            <span className="text-xs font-semibold text-slate-500">Co-host</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
               <DollarSign size={16} />
             </div>
@@ -304,7 +264,7 @@ export default function PanelPetugasPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari nama, email, atau no. HP..."
+              placeholder="Cari nama atau email petugas..."
               className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-4 py-2.5 text-xs sm:text-sm text-ink focus:border-primary focus:outline-none"
             />
           </div>
@@ -321,7 +281,7 @@ export default function PanelPetugasPage() {
             >
               Semua ({staffs.length})
             </button>
-            {(['SCANNER', 'RECEPTIONIST', 'CASHIER', 'COORDINATOR'] as StaffRole[]).map((r) => (
+            {ASSIGNABLE_ROLES.map((r) => (
               <button
                 key={r}
                 type="button"
@@ -338,20 +298,32 @@ export default function PanelPetugasPage() {
           </div>
         </div>
 
-        {/* Tabel / Kartu Petugas */}
+        {/* Tabel Petugas */}
         <div className="overflow-x-auto rounded-xl border border-slate-100">
           <table className="w-full text-left text-xs sm:text-sm">
             <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-slate-100">
               <tr>
                 <th className="px-4 py-3.5">Petugas</th>
                 <th className="px-4 py-3.5">Peran & Tanggung Jawab</th>
-                <th className="px-4 py-3.5">Izin Akses</th>
+                <th className="px-4 py-3.5">Diundang</th>
                 <th className="px-4 py-3.5">Status</th>
                 <th className="px-4 py-3.5 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredStaffs.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-muted text-xs">
+                    <Loader2 size={18} className="mx-auto animate-spin text-primary" />
+                  </td>
+                </tr>
+              ) : isError ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-red-600 text-xs">
+                    Gagal memuat daftar petugas dari server.
+                  </td>
+                </tr>
+              ) : filteredStaffs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-muted text-xs">
                     Belum ada petugas yang sesuai dengan pencarian atau filter.
@@ -359,13 +331,13 @@ export default function PanelPetugasPage() {
                 </tr>
               ) : (
                 filteredStaffs.map((staff) => {
-                  const roleConfig = ROLE_LABELS[staff.role] || ROLE_LABELS.SCANNER
+                  const roleConfig = ROLE_LABELS[staff.role] || ROLE_LABELS.USER
+                  const memberStatus = getMemberStatus(staff)
                   return (
                     <tr key={staff.id} className="hover:bg-slate-50/60 transition">
                       <td className="px-4 py-3.5">
                         <div className="font-bold text-ink">{staff.name}</div>
                         <div className="text-xs text-muted">{staff.email}</div>
-                        {staff.phone && <div className="text-[11px] text-slate-400">WA: {staff.phone}</div>}
                       </td>
 
                       <td className="px-4 py-3.5">
@@ -376,24 +348,21 @@ export default function PanelPetugasPage() {
                       </td>
 
                       <td className="px-4 py-3.5">
-                        <div className="flex flex-wrap gap-1 max-w-xs">
-                          {staff.permissions.map((perm) => (
-                            <span
-                              key={perm}
-                              className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700"
-                            >
-                              {PERMISSION_OPTIONS.find((p) => p.key === perm)?.label || perm}
-                            </span>
-                          ))}
+                        <div className="text-xs text-muted">
+                          {new Date(staff.invitedAt).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
                         </div>
                       </td>
 
                       <td className="px-4 py-3.5">
-                        {staff.status === 'ACTIVE' ? (
+                        {memberStatus === 'ACTIVE' ? (
                           <Badge variant="primary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
                             <CheckCircle2 size={11} className="mr-1 inline" /> Aktif
                           </Badge>
-                        ) : staff.status === 'PENDING' ? (
+                        ) : memberStatus === 'PENDING' ? (
                           <Badge variant="default" className="bg-amber-50 text-amber-700 border-amber-200">
                             <Clock size={11} className="mr-1 inline" /> Menunggu Buka Tautan
                           </Badge>
@@ -406,21 +375,13 @@ export default function PanelPetugasPage() {
 
                       <td className="px-4 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => copyInviteLink(staff)}
-                            title="Salin Link Undangan Petugas"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-ink transition cursor-pointer"
-                          >
-                            {copiedId === staff.id ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                          </button>
-
-                          {staff.phone && (
+                          {memberStatus === 'PENDING' && (
                             <button
                               type="button"
-                              onClick={() => shareViaWhatsApp(staff)}
-                              title="Kirim via WhatsApp"
-                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition cursor-pointer"
+                              disabled={isResending}
+                              onClick={() => handleResend(staff)}
+                              title="Kirim ulang email undangan"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition cursor-pointer disabled:opacity-50"
                             >
                               <Send size={14} />
                             </button>
@@ -429,7 +390,7 @@ export default function PanelPetugasPage() {
                           <button
                             type="button"
                             onClick={() => openEditModal(staff)}
-                            title="Edit Izin"
+                            title="Ubah Peran"
                             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-ink transition cursor-pointer"
                           >
                             <Edit2 size={14} />
@@ -463,7 +424,7 @@ export default function PanelPetugasPage() {
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2 font-bold text-ink">
                 <Users size={18} className="text-primary" />
-                <span>{editingStaff ? 'Ubah Hak Akses Petugas' : 'Tambah Petugas Baru'}</span>
+                <span>{editingStaff ? 'Ubah Peran Petugas' : 'Tambah Petugas Baru'}</span>
               </div>
               <button
                 type="button"
@@ -486,49 +447,38 @@ export default function PanelPetugasPage() {
                 <input
                   type="text"
                   value={name}
+                  disabled={Boolean(editingStaff)}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Contoh: Ahmad Fauzi"
-                  className="w-full rounded-xl border border-slate-200 p-2.5 text-xs sm:text-sm text-ink focus:border-primary focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 p-2.5 text-xs sm:text-sm text-ink focus:border-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
                   required
                 />
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-ink mb-1.5">Alamat Email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    disabled={Boolean(editingStaff)}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ahmad@example.com"
-                    className="w-full rounded-xl border border-slate-200 p-2.5 text-xs sm:text-sm text-ink focus:border-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-ink mb-1.5">Nomor WhatsApp</label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="081234567890"
-                    className="w-full rounded-xl border border-slate-200 p-2.5 text-xs sm:text-sm text-ink focus:border-primary focus:outline-none"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-ink mb-1.5">Alamat Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  disabled={Boolean(editingStaff)}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="ahmad@example.com"
+                  className="w-full rounded-xl border border-slate-200 p-2.5 text-xs sm:text-sm text-ink focus:border-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                  required
+                />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">Pilih Peran Utama</label>
+                <label className="block text-xs font-bold text-ink mb-1.5">Pilih Peran</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {(['SCANNER', 'RECEPTIONIST', 'CASHIER', 'COORDINATOR'] as StaffRole[]).map((r) => {
+                  {ASSIGNABLE_ROLES.map((r) => {
                     const cfg = ROLE_LABELS[r]
                     const isSelected = role === r
                     return (
                       <button
                         key={r}
                         type="button"
-                        onClick={() => handleRoleChange(r)}
+                        onClick={() => setRole(r)}
                         className={`flex flex-col text-left p-3 rounded-xl border transition cursor-pointer ${
                           isSelected
                             ? 'border-primary bg-indigo-50/50 ring-1 ring-primary'
@@ -546,27 +496,10 @@ export default function PanelPetugasPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-ink mb-2">Hak Akses Granular</label>
-                <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-                  {PERMISSION_OPTIONS.map((perm) => (
-                    <label
-                      key={perm.key}
-                      className="flex items-start gap-2.5 text-xs text-ink cursor-pointer hover:bg-white p-1.5 rounded-lg transition"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={permissions.includes(perm.key)}
-                        onChange={() => togglePermission(perm.key)}
-                        className="mt-0.5 accent-indigo-600 rounded"
-                      />
-                      <div>
-                        <strong className="block font-bold">{perm.label}</strong>
-                        <span className="text-muted text-[11px]">{perm.desc}</span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
+              <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3 text-[11px] text-sky-800">
+                Setelah disimpan, sistem otomatis mengirim email undangan berisi
+                tautan aktivasi yang berlaku 7 hari. Petugas harus membuka
+                tautan tersebut agar statusnya menjadi Aktif.
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
@@ -591,7 +524,7 @@ export default function PanelPetugasPage() {
                   ) : editingStaff ? (
                     'Simpan Perubahan'
                   ) : (
-                    'Tambah Petugas'
+                    'Kirim Undangan'
                   )}
                 </Button>
               </div>

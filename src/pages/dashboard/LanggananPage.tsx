@@ -1,14 +1,19 @@
-import { useState } from 'react'
-import { PlanCard } from '@/components/langganan/PlanCard'
-import { Button } from '@/components/ui/Button'
-import { Modal } from '@/components/ui/Modal'
-import { Badge } from '@/components/ui/Badge'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { usePlans } from '@/hooks/usePlans'
-import { useSubscription } from '@/hooks/useSubscription'
-import type { PlanCode, PlanTier } from '@/types/dashboard'
-import type { UpgradeResponse } from '@/types/subscription'
-import { formatDateId, formatNumber, formatRupiah, formatTimeWib } from '@/lib/format'
+import { useState } from "react";
+import { PlanCard } from "@/components/langganan/PlanCard";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { Badge } from "@/components/ui/Badge";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { usePlans } from "@/hooks/usePlans";
+import { useSubscription } from "@/hooks/useSubscription";
+import type { PlanCode, PlanTier } from "@/types/dashboard";
+import type { UpgradeResponse } from "@/types/subscription";
+import {
+  formatDateId,
+  formatNumber,
+  formatRupiah,
+  formatTimeWib,
+} from "@/lib/format";
 import {
   Sparkles,
   QrCode,
@@ -21,27 +26,27 @@ import {
   Check,
   ShieldCheck,
   Zap,
-} from 'lucide-react'
-import { cn } from '@/lib/cn'
+} from "lucide-react";
+import { cn } from "@/lib/cn";
 
 const FAQS = [
   {
-    q: 'Apakah saya bisa mengubah atau upgrade paket kapan saja?',
-    a: 'Ya, Anda dapat melakukan upgrade atau perpanjangan paket langganan kapan saja. Fitur dan kuota tambahan akan langsung aktif seketika setelah pembayaran terverifikasi.',
+    q: "Apakah saya bisa mengubah atau upgrade paket kapan saja?",
+    a: "Ya, Anda dapat melakukan upgrade atau perpanjangan paket langganan kapan saja. Fitur dan kuota tambahan akan langsung aktif seketika setelah pembayaran terverifikasi.",
   },
   {
-    q: 'Metode pembayaran apa saja yang didukung?',
-    a: 'Kami menerima pembayaran otomatis melalui QRIS (GoPay, OVO, Dana, ShopeePay, LinkAja, BCA Mobile), Transfer Bank Virtual Account (BCA, Mandiri, BNI, BRI), serta Kartu Kredit/Debit Visa & MasterCard.',
+    q: "Metode pembayaran apa saja yang didukung?",
+    a: "Kami menerima pembayaran otomatis melalui QRIS (GoPay, OVO, Dana, ShopeePay, LinkAja, BCA Mobile), Transfer Bank Virtual Account (BCA, Mandiri, BNI, BRI), serta Kartu Kredit/Debit Visa & MasterCard.",
   },
   {
-    q: 'Apakah ada watermark pada paket berbayar (Pro/Max)?',
-    a: 'Tidak ada watermark sama sekali. Undangan Anda akan tampil 100% eksklusif dan bersih dengan merek dan nama mempelai Anda sendiri.',
+    q: "Apakah ada watermark pada paket berbayar (Pro/Max)?",
+    a: "Tidak ada watermark sama sekali. Undangan Anda akan tampil 100% eksklusif dan bersih dengan merek dan nama mempelai Anda sendiri.",
   },
   {
-    q: 'Berapa lama masa aktif paket langganan?',
-    a: 'Paket Pro berlaku selama 3 bulan aktif untuk satu siklus acara pernikahan penuh, sedangkan Paket Max berlaku selama periode langganan aktif dengan kuota undangan tak terbatas.',
+    q: "Berapa lama masa aktif paket langganan?",
+    a: "Paket Pro berlaku selama 3 bulan aktif untuk satu siklus acara pernikahan penuh, sedangkan Paket Max berlaku selama periode langganan aktif dengan kuota undangan tak terbatas.",
   },
-]
+];
 
 /**
  * Halaman Manajemen & Pemilihan Paket Langganan Buwuh Platform.
@@ -49,57 +54,62 @@ const FAQS = [
  * alur upgrade pembayaran otomatis, serta riwayat faktur/invoice.
  */
 export default function LanggananPage() {
-  const user = useCurrentUser()
-  const { plans, isLoading: isPlansLoading } = usePlans()
+  const user = useCurrentUser();
+  const { plans, isLoading: isPlansLoading } = usePlans();
   const {
     subscription,
     invoices,
     upgradeSubscription,
     isUpgrading,
-  } = useSubscription()
+    isAwaitingPayment,
+  } = useSubscription();
 
-  const [activeTab, setActiveTab] = useState<'plans' | 'invoices'>('plans')
-  const [isYearly, setIsYearly] = useState(false)
-  const [selectedPlanCode, setSelectedPlanCode] = useState<PlanCode | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<'QRIS' | 'VA_BCA' | 'VA_MANDIRI'>('QRIS')
-  const [upgradeData, setUpgradeData] = useState<UpgradeResponse | null>(null)
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
-  const [copiedText, setCopiedText] = useState<string | null>(null)
-  const [isSuccessPaid, setIsSuccessPaid] = useState(false)
+  const [activeTab, setActiveTab] = useState<"plans" | "invoices">("plans");
+  const [isYearly, setIsYearly] = useState(false);
+  const [selectedPlanCode, setSelectedPlanCode] = useState<PlanCode | null>(
+    null,
+  );
+  const [paymentMethod, setPaymentMethod] = useState<
+    "QRIS" | "VA_BCA" | "VA_MANDIRI"
+  >("QRIS");
+  const [upgradeData, setUpgradeData] = useState<UpgradeResponse | null>(null);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [isSuccessPaid, setIsSuccessPaid] = useState(false);
 
-  const selectedPlan = plans.find((p) => p.code === selectedPlanCode)
-  const currentPlanCode = subscription?.planTier || user.plan || 'FREE'
+  const selectedPlan = plans.find((p) => p.code === selectedPlanCode);
+  const currentPlanCode = subscription?.planTier || user.plan || "FREE";
 
   function handleSelectPlan(code: PlanCode) {
-    if (code === currentPlanCode) return
-    setSelectedPlanCode(code)
-    setUpgradeData(null)
-    setIsSuccessPaid(false)
+    if (code === currentPlanCode) return;
+    setSelectedPlanCode(code);
+    setUpgradeData(null);
+    setIsSuccessPaid(false);
   }
 
   async function handleProceedPayment() {
-    if (!selectedPlanCode) return
+    if (!selectedPlanCode) return;
 
     try {
       const res = await upgradeSubscription({
         planTier: selectedPlanCode,
-        billingCycle: isYearly ? 'YEARLY' : 'MONTHLY',
+        billingCycle: isYearly ? "YEARLY" : "MONTHLY",
         paymentMethod,
-      })
-      setUpgradeData(res)
+      });
+      setUpgradeData(res);
     } catch {
       // Handled in hook
     }
   }
 
   async function handleCopy(text: string, label: string) {
-    await navigator.clipboard.writeText(text)
-    setCopiedText(label)
-    setTimeout(() => setCopiedText(null), 2000)
+    await navigator.clipboard.writeText(text);
+    setCopiedText(label);
+    setTimeout(() => setCopiedText(null), 2000);
   }
 
   function handleSimulateSuccess() {
-    setIsSuccessPaid(true)
+    setIsSuccessPaid(true);
   }
 
   return (
@@ -114,17 +124,30 @@ export default function LanggananPage() {
               <span className="rounded-full bg-indigo-500/20 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-indigo-300 border border-indigo-400/30">
                 Paket Aktif Akun
               </span>
-              <Badge variant={currentPlanCode === 'MAX' ? 'warning' : currentPlanCode === 'PRO' ? 'primary' : 'default'}>
+              <Badge
+                variant={
+                  currentPlanCode === "MAX"
+                    ? "warning"
+                    : currentPlanCode === "PRO"
+                      ? "primary"
+                      : "default"
+                }
+              >
                 {currentPlanCode} TIER
               </Badge>
             </div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-white">
-              Buwuhan {currentPlanCode === 'MAX' ? 'Max Enterprise' : currentPlanCode === 'PRO' ? 'Pro Wedding' : 'Free Starter'}
+              Buwuhan{" "}
+              {currentPlanCode === "MAX"
+                ? "Max Enterprise"
+                : currentPlanCode === "PRO"
+                  ? "Pro Wedding"
+                  : "Free Starter"}
             </h1>
             <p className="text-xs sm:text-sm text-indigo-200/80 max-w-xl leading-relaxed">
-              {currentPlanCode === 'FREE'
-                ? 'Anda sedang menggunakan versi dasar. Buka akses tanpa batas ke seluruh template, QR scanner resepsi, dan tanpa watermark.'
-                : `Paket aktif hingga ${subscription?.expiresAt ? formatDateId(subscription.expiresAt) : '3 Bulan ke Depan'}. Nikmati seluruh fitur eksklusif.`}
+              {currentPlanCode === "FREE"
+                ? "Anda sedang menggunakan versi dasar. Buka akses tanpa batas ke seluruh template, QR scanner resepsi, dan tanpa watermark."
+                : `Paket aktif hingga ${subscription?.expiresAt ? formatDateId(subscription.expiresAt) : "3 Bulan ke Depan"}. Nikmati seluruh fitur eksklusif.`}
             </p>
           </div>
 
@@ -134,7 +157,9 @@ export default function LanggananPage() {
                 Batas Undangan
               </span>
               <p className="font-display text-lg font-bold text-white mt-0.5">
-                {subscription?.limits?.maxInvitations ? `${formatNumber(subscription.limits.maxInvitations)} Acara` : '1 Undangan'}
+                {subscription?.limits?.maxInvitations
+                  ? `${formatNumber(subscription.limits.maxInvitations)} Acara`
+                  : "1 Undangan"}
               </p>
             </div>
 
@@ -143,7 +168,7 @@ export default function LanggananPage() {
                 Kapasitas Tamu
               </span>
               <p className="font-display text-lg font-bold text-white mt-0.5">
-                {currentPlanCode === 'FREE' ? '50 Tamu' : 'Unlimited'}
+                {currentPlanCode === "FREE" ? "50 Tamu" : "Unlimited"}
               </p>
             </div>
           </div>
@@ -155,11 +180,11 @@ export default function LanggananPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setActiveTab('plans')}
+            onClick={() => setActiveTab("plans")}
             className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition cursor-pointer ${
-              activeTab === 'plans'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+              activeTab === "plans"
+                ? "border-primary text-primary"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
             <Zap size={16} />
@@ -168,11 +193,11 @@ export default function LanggananPage() {
 
           <button
             type="button"
-            onClick={() => setActiveTab('invoices')}
+            onClick={() => setActiveTab("invoices")}
             className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition cursor-pointer ${
-              activeTab === 'invoices'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+              activeTab === "invoices"
+                ? "border-primary text-primary"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
             <Receipt size={16} />
@@ -182,7 +207,7 @@ export default function LanggananPage() {
       </div>
 
       {/* TAB 1: PILIHAN PAKET & PRICING */}
-      {activeTab === 'plans' && (
+      {activeTab === "plans" && (
         <div className="space-y-12">
           {/* Judul & Toggle Billing */}
           <div className="text-center max-w-2xl mx-auto space-y-3">
@@ -194,7 +219,8 @@ export default function LanggananPage() {
               Pilih Paket Sesuai Kebutuhan Acaramu
             </h2>
             <p className="text-xs sm:text-sm text-muted leading-relaxed">
-              Tingkatkan paket untuk mendapatkan akses tak terbatas ke seluruh fitur premium Buwuhan.
+              Tingkatkan paket untuk mendapatkan akses tak terbatas ke seluruh
+              fitur premium Buwuhan.
             </p>
 
             {/* Toggle Bulanan / Tahunan */}
@@ -204,8 +230,10 @@ export default function LanggananPage() {
                   type="button"
                   onClick={() => setIsYearly(false)}
                   className={cn(
-                    'rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer',
-                    !isYearly ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-ink',
+                    "rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer",
+                    !isYearly
+                      ? "bg-white text-primary shadow-xs"
+                      : "text-slate-500 hover:text-ink",
                   )}
                 >
                   Penagihan Bulanan
@@ -214,8 +242,10 @@ export default function LanggananPage() {
                   type="button"
                   onClick={() => setIsYearly(true)}
                   className={cn(
-                    'flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer',
-                    isYearly ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-ink',
+                    "flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer",
+                    isYearly
+                      ? "bg-white text-primary shadow-xs"
+                      : "text-slate-500 hover:text-ink",
                   )}
                 >
                   <span>Tahunan</span>
@@ -229,7 +259,9 @@ export default function LanggananPage() {
 
           {/* Grid Kartu Paket Langganan */}
           {isPlansLoading ? (
-            <div className="py-16 text-center text-xs text-muted">Memuat katalog paket...</div>
+            <div className="py-16 text-center text-xs text-muted">
+              Memuat katalog paket...
+            </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-3 items-stretch">
               {plans.map((plan: PlanTier) => (
@@ -245,22 +277,30 @@ export default function LanggananPage() {
           )}
 
           <p className="text-center text-xs text-muted max-w-lg mx-auto leading-relaxed">
-            Harga sudah termasuk PPN. Layanan dapat dibatalkan atau dialihkan sewaktu-waktu tanpa biaya penalti tambahan.
+            Harga sudah termasuk PPN. Layanan dapat dibatalkan atau dialihkan
+            sewaktu-waktu tanpa biaya penalti tambahan.
           </p>
 
           {/* FAQ Accordion */}
           <div className="mx-auto max-w-3xl pt-8 border-t border-slate-200/80 space-y-6">
             <div className="text-center">
-              <h3 className="font-display text-2xl font-bold text-ink">Pertanyaan yang Sering Diajukan</h3>
-              <p className="mt-1 text-xs text-muted">Semua jawaban untuk pertanyaan seputar paket langganan</p>
+              <h3 className="font-display text-2xl font-bold text-ink">
+                Pertanyaan yang Sering Diajukan
+              </h3>
+              <p className="mt-1 text-xs text-muted">
+                Semua jawaban untuk pertanyaan seputar paket langganan
+              </p>
             </div>
 
             <div className="space-y-3">
               {FAQS.map((faq, index) => {
-                const isOpen = openFaqIndex === index
+                const isOpen = openFaqIndex === index;
 
                 return (
-                  <div key={faq.q} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+                  <div
+                    key={faq.q}
+                    className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-2xs"
+                  >
                     <button
                       type="button"
                       onClick={() => setOpenFaqIndex(isOpen ? null : index)}
@@ -269,7 +309,10 @@ export default function LanggananPage() {
                       <span>{faq.q}</span>
                       <ChevronDown
                         size={18}
-                        className={cn('shrink-0 text-slate-400 transition-transform duration-200', isOpen && 'rotate-180 text-primary')}
+                        className={cn(
+                          "shrink-0 text-slate-400 transition-transform duration-200",
+                          isOpen && "rotate-180 text-primary",
+                        )}
                       />
                     </button>
                     {isOpen && (
@@ -278,7 +321,7 @@ export default function LanggananPage() {
                       </div>
                     )}
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -286,22 +329,29 @@ export default function LanggananPage() {
       )}
 
       {/* TAB 2: RIWAYAT TAGIHAN & INVOICE */}
-      {activeTab === 'invoices' && (
+      {activeTab === "invoices" && (
         <div className="space-y-4">
           <div className="rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-xs">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-sm text-ink">Riwayat Pembayaran & Faktur</h3>
-                <p className="text-xs text-muted">Seluruh arsip transaksi pembelian paket pada akun Anda</p>
+                <h3 className="font-bold text-sm text-ink">
+                  Riwayat Pembayaran & Faktur
+                </h3>
+                <p className="text-xs text-muted">
+                  Seluruh arsip transaksi pembelian paket pada akun Anda
+                </p>
               </div>
             </div>
 
             {invoices.length === 0 ? (
               <div className="p-12 text-center space-y-3">
                 <Receipt size={32} className="mx-auto text-slate-300" />
-                <p className="text-xs font-semibold text-slate-600">Belum ada riwayat transaksi</p>
+                <p className="text-xs font-semibold text-slate-600">
+                  Belum ada riwayat transaksi
+                </p>
                 <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                  Ketika Anda melakukan upgrade ke paket Pro atau Max, faktur bukti pembayaran otomatis tercatat di sini.
+                  Ketika Anda melakukan upgrade ke paket Pro atau Max, faktur
+                  bukti pembayaran otomatis tercatat di sini.
                 </p>
               </div>
             ) : (
@@ -320,24 +370,49 @@ export default function LanggananPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {invoices.map((inv) => (
-                      <tr key={inv.id} className="hover:bg-slate-50/70 transition">
-                        <td className="px-6 py-4 font-bold font-mono text-ink">{inv.invoiceNumber}</td>
+                      <tr
+                        key={inv.id}
+                        className="hover:bg-slate-50/70 transition"
+                      >
+                        <td className="px-6 py-4 font-bold font-mono text-ink">
+                          {inv.invoiceNumber}
+                        </td>
                         <td className="px-6 py-4">
-                          <Badge variant={inv.planTier === 'MAX' ? 'warning' : 'primary'}>
+                          <Badge
+                            variant={
+                              inv.planTier === "MAX" ? "warning" : "primary"
+                            }
+                          >
                             {inv.planTier}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 font-bold font-mono text-slate-800">
                           {formatRupiah(inv.amount)}
                         </td>
-                        <td className="px-6 py-4 text-slate-600">{inv.paymentMethod || 'QRIS'}</td>
+                        <td className="px-6 py-4 text-slate-600">
+                          {inv.paymentMethod || "QRIS"}
+                        </td>
                         <td className="px-6 py-4 text-slate-600">
                           <div>{formatDateId(inv.createdAt)}</div>
-                          <div className="text-[10px] text-slate-400">{formatTimeWib(inv.createdAt)}</div>
+                          <div className="text-[10px] text-slate-400">
+                            {formatTimeWib(inv.createdAt)}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
-                          <Badge variant={inv.status === 'PAID' ? 'success' : inv.status === 'PENDING' ? 'warning' : 'danger'}>
-                            {inv.status === 'PAID' ? 'Lunas' : inv.status === 'PENDING' ? 'Menunggu' : 'Gagal'}
+                          <Badge
+                            variant={
+                              inv.status === "PAID"
+                                ? "success"
+                                : inv.status === "PENDING"
+                                  ? "warning"
+                                  : "danger"
+                            }
+                          >
+                            {inv.status === "PAID"
+                              ? "Lunas"
+                              : inv.status === "PENDING"
+                                ? "Menunggu"
+                                : "Gagal"}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -345,7 +420,11 @@ export default function LanggananPage() {
                             variant="ghost"
                             size="sm"
                             icon={<Download size={13} />}
-                            onClick={() => alert(`Mengunduh invoice ${inv.invoiceNumber}`)}
+                            disabled={!inv.downloadUrl}
+                            onClick={() =>
+                              inv.downloadUrl &&
+                              window.open(inv.downloadUrl, "_blank", "noopener")
+                            }
                           >
                             Unduh
                           </Button>
@@ -366,17 +445,17 @@ export default function LanggananPage() {
         onClose={() => setSelectedPlanCode(null)}
         title={
           isSuccessPaid
-            ? 'Pembayaran Sukses!'
+            ? "Pembayaran Sukses!"
             : upgradeData
-            ? 'Instruksi Pembayaran'
-            : `Upgrade ke Paket Buwuhan ${selectedPlan?.name}`
+              ? "Instruksi Pembayaran"
+              : `Upgrade ke Paket Buwuhan ${selectedPlan?.name}`
         }
         description={
           isSuccessPaid
-            ? 'Paket Anda telah aktif secara otomatis.'
+            ? "Paket Anda telah aktif secara otomatis."
             : upgradeData
-            ? `Selesaikan pembayaran sebelum batas waktu berakhir (${formatTimeWib(upgradeData.expiresAt)})`
-            : 'Selesaikan transaksi untuk membuka seluruh fitur premium tanpa batas'
+              ? `Selesaikan pembayaran sebelum batas waktu berakhir (${formatTimeWib(upgradeData.expiresAt)})`
+              : "Selesaikan transaksi untuk membuka seluruh fitur premium tanpa batas"
         }
         maxWidth="md"
       >
@@ -386,9 +465,13 @@ export default function LanggananPage() {
               <CheckCircle2 size={36} />
             </div>
             <div>
-              <p className="font-display text-xl font-bold text-ink">Selamat, Paket Telah Aktif!</p>
+              <p className="font-display text-xl font-bold text-ink">
+                Selamat, Paket Telah Aktif!
+              </p>
               <p className="mt-1 text-xs text-muted max-w-sm mx-auto">
-                Akun Anda kini telah ditingkatkan ke <strong>Paket {selectedPlan?.name}</strong>. Anda dapat langsung menggunakan semua fitur premium.
+                Akun Anda kini telah ditingkatkan ke{" "}
+                <strong>Paket {selectedPlan?.name}</strong>. Anda dapat langsung
+                menggunakan semua fitur premium.
               </p>
             </div>
             <Button
@@ -410,8 +493,13 @@ export default function LanggananPage() {
                 {formatRupiah(upgradeData.amount)}
               </p>
             </div>
-
-            {paymentMethod === 'QRIS' && upgradeData.qrCodeUrl ? (
+            {isAwaitingPayment && (
+              <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-xs font-semibold text-sky-900">
+                Menunggu konfirmasi pembayaran… Halaman ini akan otomatis
+                diperbarui.
+              </div>
+            )}
+            {paymentMethod === "QRIS" && upgradeData.qrCodeUrl ? (
               <div className="text-center space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
                 <img
                   src={upgradeData.qrCodeUrl}
@@ -424,33 +512,48 @@ export default function LanggananPage() {
                     <span>Scan QRIS dengan Aplikasi Pembayaran Apapun</span>
                   </p>
                   <p className="text-[11px] text-slate-500">
-                    Mendukung GoPay, OVO, Dana, ShopeePay, BCA Mobile, Livin Mandiri
+                    Mendukung GoPay, OVO, Dana, ShopeePay, BCA Mobile, Livin
+                    Mandiri
                   </p>
                 </div>
               </div>
             ) : (
               <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Nomor Virtual Account {paymentMethod === 'VA_BCA' ? 'BCA' : 'Mandiri'}
+                  Nomor Virtual Account{" "}
+                  {paymentMethod === "VA_BCA" ? "BCA" : "Mandiri"}
                 </span>
                 <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3 border border-slate-200/80">
                   <span className="font-display text-lg font-bold font-mono text-ink tracking-wider">
-                    {upgradeData.virtualAccountNumber || '8801928374619283'}
+                    {upgradeData.virtualAccountNumber || "8801928374619283"}
                   </span>
                   <button
                     type="button"
-                    onClick={() => handleCopy(upgradeData.virtualAccountNumber || '8801928374619283', 'va')}
+                    onClick={() =>
+                      handleCopy(
+                        upgradeData.virtualAccountNumber || "8801928374619283",
+                        "va",
+                      )
+                    }
                     className="flex items-center gap-1 text-xs font-bold text-primary hover:underline cursor-pointer"
                   >
-                    {copiedText === 'va' ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                    <span>{copiedText === 'va' ? 'Tersalin' : 'Salin'}</span>
+                    {copiedText === "va" ? (
+                      <Check size={14} className="text-emerald-600" />
+                    ) : (
+                      <Copy size={14} />
+                    )}
+                    <span>{copiedText === "va" ? "Tersalin" : "Salin"}</span>
                   </button>
                 </div>
               </div>
             )}
 
             <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-              <Button variant="outline" size="sm" onClick={() => setSelectedPlanCode(null)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedPlanCode(null)}
+              >
                 Tutup
               </Button>
               <Button
@@ -471,40 +574,52 @@ export default function LanggananPage() {
               <div className="rounded-2xl bg-slate-50 p-4 border border-slate-200/80 space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-600">
                   <span>Paket Pilihan</span>
-                  <span className="font-bold text-ink">Buwuhan {selectedPlan.name}</span>
+                  <span className="font-bold text-ink">
+                    Buwuhan {selectedPlan.name}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-600">
                   <span>Periode Tagihan</span>
                   <span className="font-semibold text-slate-800">
-                    {isYearly ? 'Tahunan (Hemat 20%)' : 'Bulanan / Per Acara'}
+                    {isYearly ? "Tahunan (Hemat 20%)" : "Bulanan / Per Acara"}
                   </span>
                 </div>
                 <div className="h-px bg-slate-200" />
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-bold text-ink">Total Tagihan</span>
                   <span className="font-display text-lg font-bold text-primary">
-                    {formatRupiah(isYearly ? selectedPlan.price * 0.8 * 12 : selectedPlan.price)}
+                    {formatRupiah(
+                      isYearly
+                        ? selectedPlan.price * 0.8 * 12
+                        : selectedPlan.price,
+                    )}
                   </span>
                 </div>
               </div>
 
               {/* Pilihan Metode Pembayaran */}
               <div className="space-y-2">
-                <p className="text-xs font-bold text-ink">Pilih Metode Pembayaran Otomatis:</p>
+                <p className="text-xs font-bold text-ink">
+                  Pilih Metode Pembayaran Otomatis:
+                </p>
                 <div className="space-y-2">
                   <label
-                    onClick={() => setPaymentMethod('QRIS')}
+                    onClick={() => setPaymentMethod("QRIS")}
                     className={`flex items-center justify-between rounded-xl border p-3 text-xs font-semibold cursor-pointer transition ${
-                      paymentMethod === 'QRIS'
-                        ? 'border-primary bg-indigo-50/50 text-primary ring-2 ring-primary/20'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                      paymentMethod === "QRIS"
+                        ? "border-primary bg-indigo-50/50 text-primary ring-2 ring-primary/20"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <QrCode size={18} />
                       <div>
-                        <p className="font-bold">QRIS Instan (Semua E-Wallet & M-Banking)</p>
-                        <p className="text-[10px] text-slate-500 font-normal">GoPay, OVO, Dana, ShopeePay, BCA, Mandiri</p>
+                        <p className="font-bold">
+                          QRIS Instan (Semua E-Wallet & M-Banking)
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-normal">
+                          GoPay, OVO, Dana, ShopeePay, BCA, Mandiri
+                        </p>
                       </div>
                     </div>
                     <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 uppercase">
@@ -513,35 +628,39 @@ export default function LanggananPage() {
                   </label>
 
                   <label
-                    onClick={() => setPaymentMethod('VA_BCA')}
+                    onClick={() => setPaymentMethod("VA_BCA")}
                     className={`flex items-center justify-between rounded-xl border p-3 text-xs font-semibold cursor-pointer transition ${
-                      paymentMethod === 'VA_BCA'
-                        ? 'border-primary bg-indigo-50/50 text-primary ring-2 ring-primary/20'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                      paymentMethod === "VA_BCA"
+                        ? "border-primary bg-indigo-50/50 text-primary ring-2 ring-primary/20"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <CreditCard size={18} />
                       <div>
                         <p className="font-bold">BCA Virtual Account</p>
-                        <p className="text-[10px] text-slate-500 font-normal">Verifikasi otomatis 24 jam</p>
+                        <p className="text-[10px] text-slate-500 font-normal">
+                          Verifikasi otomatis 24 jam
+                        </p>
                       </div>
                     </div>
                   </label>
 
                   <label
-                    onClick={() => setPaymentMethod('VA_MANDIRI')}
+                    onClick={() => setPaymentMethod("VA_MANDIRI")}
                     className={`flex items-center justify-between rounded-xl border p-3 text-xs font-semibold cursor-pointer transition ${
-                      paymentMethod === 'VA_MANDIRI'
-                        ? 'border-primary bg-indigo-50/50 text-primary ring-2 ring-primary/20'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                      paymentMethod === "VA_MANDIRI"
+                        ? "border-primary bg-indigo-50/50 text-primary ring-2 ring-primary/20"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <CreditCard size={18} />
                       <div>
                         <p className="font-bold">Mandiri Virtual Account</p>
-                        <p className="text-[10px] text-slate-500 font-normal">Verifikasi otomatis 24 jam</p>
+                        <p className="text-[10px] text-slate-500 font-normal">
+                          Verifikasi otomatis 24 jam
+                        </p>
                       </div>
                     </div>
                   </label>
@@ -550,7 +669,11 @@ export default function LanggananPage() {
 
               {/* Tombol Aksi */}
               <div className="mt-6 flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-                <Button variant="outline" size="sm" onClick={() => setSelectedPlanCode(null)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedPlanCode(null)}
+                >
                   Batal
                 </Button>
                 <Button
@@ -568,5 +691,5 @@ export default function LanggananPage() {
         )}
       </Modal>
     </div>
-  )
+  );
 }

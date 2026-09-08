@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense } from "react";
 import {
   createBrowserRouter,
   createRoutesFromElements,
@@ -6,52 +6,70 @@ import {
   Route,
   Navigate,
   Outlet,
-} from 'react-router-dom'
-import { AuthProvider } from '@/contexts/AuthContext'
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
-import { PageLoader } from '@/components/common/PageLoader'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
-import { GuestRoute } from '@/components/auth/GuestRoute'
-import { AdminRoute } from '@/components/auth/AdminRoute'
-import { useAuth } from '@/hooks/useAuth'
+} from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { PageLoader } from "@/components/common/PageLoader";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { GuestRoute } from "@/components/auth/GuestRoute";
+import { AdminRoute } from "@/components/auth/AdminRoute";
+import { useAuth } from "@/hooks/useAuth";
 
 // Layout tetap dimuat langsung karena ukurannya kecil dan selalu dipakai
-import AuthLayout from '@/layouts/AuthLayout'
-import DashboardLayout from '@/layouts/DashboardLayout'
-import PanelLayout from '@/layouts/PanelLayout'
-import PlainLayout from '@/layouts/PlainLayout'
-import AdminLayout from '@/layouts/AdminLayout'
+import AuthLayout from "@/layouts/AuthLayout";
+import DashboardLayout from "@/layouts/DashboardLayout";
+import PanelLayout from "@/layouts/PanelLayout";
+import PlainLayout from "@/layouts/PlainLayout";
+import AdminLayout from "@/layouts/AdminLayout";
 
 // Halaman dipecah menjadi bundle terpisah (code splitting) agar bundle awal ringan
-const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
-const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'))
-const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
-const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'))
-const VerifyEmailPage = lazy(() => import('@/pages/auth/VerifyEmailPage'))
-const BerandaPage = lazy(() => import('@/pages/dashboard/BerandaPage'))
-const UndanganPage = lazy(() => import('@/pages/dashboard/UndanganPage'))
-const LanggananPage = lazy(() => import('@/pages/dashboard/LanggananPage'))
-const BuwuhPage = lazy(() => import('@/pages/dashboard/BuwuhPage'))
-const PengaturanPage = lazy(() => import('@/pages/dashboard/PengaturanPage'))
-const PanelBerandaPage = lazy(() => import('@/pages/panel/PanelBerandaPage'))
-const PanelPetugasPage = lazy(() => import('@/pages/panel/PanelPetugasPage'))
-const PanelEditPage = lazy(() => import('@/pages/panel/PanelEditPage'))
-const PanelRsvpPage = lazy(() => import('@/pages/panel/PanelRsvpPage'))
-const PanelBukuTamuPage = lazy(() => import('@/pages/panel/PanelBukuTamuPage'))
-const PanelHadiahPage = lazy(() => import('@/pages/panel/PanelHadiahPage'))
-const PanelTemplatePage = lazy(() => import('@/pages/panel/PanelTemplatePage'))
-const PanelScanQrPage = lazy(() => import('@/pages/panel/PanelScanQrPage'))
-const InvitationPage = lazy(() => import('@/pages/InvitationPage'))
-const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
-const PanelCatatanBuwuhPage = lazy(() => import('@/pages/panel/PanelCatatanBuwuhPage'))
+const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
+const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
+const ForgotPasswordPage = lazy(
+  () => import("@/pages/auth/ForgotPasswordPage"),
+);
+const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage"));
+const VerifyEmailPage = lazy(() => import("@/pages/auth/VerifyEmailPage"));
+const BerandaPage = lazy(() => import("@/pages/dashboard/BerandaPage"));
+const UndanganPage = lazy(() => import("@/pages/dashboard/UndanganPage"));
+const LanggananPage = lazy(() => import("@/pages/dashboard/LanggananPage"));
+const BuwuhPage = lazy(() => import("@/pages/dashboard/BuwuhPage"));
+const PengaturanPage = lazy(() => import("@/pages/dashboard/PengaturanPage"));
+const PanelBerandaPage = lazy(() => import("@/pages/panel/PanelBerandaPage"));
+const PanelPetugasPage = lazy(() => import("@/pages/panel/PanelPetugasPage"));
+const PanelEditPage = lazy(() => import("@/pages/panel/PanelEditPage"));
+const PanelRsvpPage = lazy(() => import("@/pages/panel/PanelRsvpPage"));
+const PanelBukuTamuPage = lazy(() => import("@/pages/panel/PanelBukuTamuPage"));
+const PanelHadiahPage = lazy(() => import("@/pages/panel/PanelHadiahPage"));
+const PanelTemplatePage = lazy(() => import("@/pages/panel/PanelTemplatePage"));
+const PanelScanQrPage = lazy(() => import("@/pages/panel/PanelScanQrPage"));
+const InvitationPage = lazy(() => import("@/pages/InvitationPage"));
+const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
+const PanelCatatanBuwuhPage = lazy(
+  () => import("@/pages/panel/PanelCatatanBuwuhPage"),
+);
+const JoinInvitationPage = lazy(
+  () => import("@/pages/panel/JoinInvitationPage"),
+);
 
 // Halaman Admin Platform Buwuhan
-const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'))
-const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'))
-const AdminUserDetailPage = lazy(() => import('@/pages/admin/AdminUserDetailPage'))
-const AdminInvitationsPage = lazy(() => import('@/pages/admin/AdminInvitationsPage'))
-const AdminTemplatesPage = lazy(() => import('@/pages/admin/AdminTemplatesPage'))
-const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'))
+const AdminDashboardPage = lazy(
+  () => import("@/pages/admin/AdminDashboardPage"),
+);
+const AdminUsersPage = lazy(() => import("@/pages/admin/AdminUsersPage"));
+const AdminUserDetailPage = lazy(
+  () => import("@/pages/admin/AdminUserDetailPage"),
+);
+const AdminInvitationsPage = lazy(
+  () => import("@/pages/admin/AdminInvitationsPage"),
+);
+const AdminTemplatesPage = lazy(
+  () => import("@/pages/admin/AdminTemplatesPage"),
+);
+const AdminSettingsPage = lazy(() => import("@/pages/admin/AdminSettingsPage"));
+const AdminSubscriptionsPage = lazy(
+  () => import("@/pages/admin/AdminSubscriptionsPage"),
+);
 
 /**
  * Layout Akar (RootLayout).
@@ -66,7 +84,7 @@ function RootLayout() {
         </Suspense>
       </AuthProvider>
     </ErrorBoundary>
-  )
+  );
 }
 
 /**
@@ -74,20 +92,18 @@ function RootLayout() {
  * Jika pengguna memiliki peran ADMIN, diarahkan langsung ke Portal Superadmin.
  */
 function RootRedirect() {
-  const { user, isAuthenticated } = useAuth()
-  if (isAuthenticated && user?.role === 'ADMIN') {
-    return <Navigate to="/admin/dashboard" replace />
+  const { user, isAuthenticated } = useAuth();
+  if (isAuthenticated && user?.role === "ADMIN") {
+    return <Navigate to="/admin/dashboard" replace />;
   }
-  return <Navigate to="/dashboard" replace />
+  return <Navigate to="/dashboard" replace />;
 }
 
-/**
- * Konfigurasi Router Data Aplikasi.
- * Menggunakan createBrowserRouter agar mendukung hook useBlocker untuk
- * pencegahan kehilangan data saat berpindah rute (unsaved changes guard).
- */
-export const router = createBrowserRouter(
-  createRoutesFromElements(
+// Router sengaja diekspor dari file ini agar bisa dipakai pada pengujian.
+// Aturan Fast Refresh dimatikan karena file ini memang berisi definisi rute
+// sekaligus komponen App — memisahkannya justru memicu error yang lebih banyak.
+// eslint-disable-next-line react-refresh/only-export-components
+export const router = createBrowserRouter(  createRoutesFromElements(
     <Route element={<RootLayout />}>
       <Route path="/" element={<RootRedirect />} />
 
@@ -117,6 +133,16 @@ export const router = createBrowserRouter(
           <Route path="pengaturan" element={<PengaturanPage />} />
         </Route>
 
+        {/* Halaman terima undangan petugas (tujuan tautan email dari backend).
+    HARUS didaftarkan sebelum rute dinamis :id agar "join" tidak
+    dianggap sebagai ID undangan. */}
+        <Route element={<PlainLayout />}>
+          <Route
+            path="/dashboard/undangan/join"
+            element={<JoinInvitationPage />}
+          />
+        </Route>
+
         {/* Panel per undangan — sidebar kontekstual */}
         <Route path="/dashboard/undangan/:id" element={<PanelLayout />}>
           <Route index element={<PanelBerandaPage />} />
@@ -140,6 +166,7 @@ export const router = createBrowserRouter(
           <Route path="users/:id" element={<AdminUserDetailPage />} />
           <Route path="invitations" element={<AdminInvitationsPage />} />
           <Route path="templates" element={<AdminTemplatesPage />} />
+          <Route path="langganan" element={<AdminSubscriptionsPage />} />
           <Route path="pengaturan" element={<AdminSettingsPage />} />
         </Route>
       </Route>
@@ -151,11 +178,11 @@ export const router = createBrowserRouter(
       <Route path="*" element={<NotFoundPage />} />
     </Route>,
   ),
-)
+);
 
 /**
  * Komponen Utama Aplikasi (App).
  */
 export default function App() {
-  return <RouterProvider router={router} />
+  return <RouterProvider router={router} />;
 }

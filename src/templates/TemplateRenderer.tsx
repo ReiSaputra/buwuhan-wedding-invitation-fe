@@ -3,6 +3,7 @@ import TemplateElegan from '@/templates/TemplateElegan'
 import TemplateMinimalis from '@/templates/TemplateMinimalis'
 import TemplateCeria from '@/templates/TemplateCeria'
 import TemplateSyukuran from '@/templates/TemplateSyukuran'
+import TemplateAqiqah from '@/templates/TemplateAqiqah'
 import type { PublicInvitationViewModel } from '@/types/invitation-api'
 
 export type TemplateRendererProps = {
@@ -30,9 +31,11 @@ export function TemplateRenderer({ slug, data }: TemplateRendererProps) {
   } else if (slug === 'khitanan-ceria-blue') {
     return <TemplateCeria data={data} />
   } else if (slug === 'rasulan-syukuran-gold') {
-    return <TemplateSyukuran data={data} />
-  } else {
-    if (import.meta.env.DEV && slug) {
+  return <TemplateSyukuran data={data} />
+} else if (slug === 'aqiqah-lembut-mint') {
+  return <TemplateAqiqah data={data} />
+} else {
+    if (slug) {
       console.warn(
         `[TemplateRenderer] Slug "${slug}" belum punya komponen. ` +
           `Tambahkan blok else if di src/templates/TemplateRenderer.tsx`

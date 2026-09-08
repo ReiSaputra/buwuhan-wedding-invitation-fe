@@ -183,3 +183,30 @@ export const THEME_SYUKURAN: TemplateTheme = {
   footerMeta: 'border-t border-white/10 text-amber-200/60',
   footerSparkles: true,
 }
+
+
+/** Tema untuk undangan Aqiqah (slug backend: `aqiqah-lembut-mint`). */
+export const THEME_AQIQAH: TemplateTheme = {
+  key: 'aqiqah',
+  page: 'min-h-screen bg-inv-page font-body text-inv-ink',
+  cover: 'bg-gradient-to-b from-emerald-100 via-teal-50 to-white',
+  coverOrnament: true,
+  coverBadge: 'bg-white/90 text-emerald-700 border border-emerald-300/50 shadow-xs',
+  coverTitle: 'font-display font-bold tracking-tight text-emerald-900',
+  coverAmp: 'text-emerald-600 font-serif italic',
+  coverDate: 'text-emerald-700',
+  coverCard: 'rounded-2xl border border-emerald-200 bg-white/80 shadow-xs backdrop-blur-xs',
+  coverCardLabel: 'text-slate-500',
+  coverCardName: 'font-display font-bold text-emerald-900',
+  coverCardNote: 'text-emerald-600 italic',
+  coverButton: 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 hover:bg-emerald-700',
+  coverIconRing: 'bg-gradient-to-tr from-emerald-400/40 to-teal-100',
+  coverIconInner: 'bg-white',
+  coverIcon: 'text-emerald-600 fill-emerald-200',
+  heroWrapper: 'rounded-b-3xl bg-white/70 shadow-sm pb-10',
+  footer: 'bg-emerald-950 text-white',
+  footerText: 'text-emerald-100/80 tracking-widest uppercase font-semibold',
+  footerTitle: 'font-display font-bold text-emerald-300',
+  footerMeta: 'border-t border-white/10 text-emerald-200/60',
+  footerSparkles: true,
+}

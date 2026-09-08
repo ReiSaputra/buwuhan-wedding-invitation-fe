@@ -97,7 +97,13 @@ export function ImageUrlInput({
           onChange(uploadedUrl)
         }
       } catch (uploadErr) {
-        console.info('Backend upload belum aktif, menggunakan data gambar lokal.', uploadErr)
+        console.error('Upload gambar gagal:', uploadErr)
+        // Batalkan pratinjau lokal agar data URL base64 tidak ikut tersimpan ke database
+        onChange('')
+        setFileName(null)
+        setErrorMessage(
+          'Gambar gagal diunggah ke server. Periksa koneksi Anda lalu coba lagi, atau gunakan mode "URL Tautan".',
+        )
       } finally {
         setIsUploading(false)
       }

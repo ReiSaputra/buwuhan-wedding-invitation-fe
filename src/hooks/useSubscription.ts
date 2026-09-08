@@ -1,12 +1,12 @@
+import { useCallback, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchData, postData } from '@/lib/api'
+import { fetchData, postData } from "@/lib/api";
 import type {
   InvoiceItem,
   UpgradePayload,
   UpgradeResponse,
   UserSubscription,
-} from '@/types/subscription'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
+} from "@/types/subscription";
 
 /**
  * Hook pengelola data status langganan aktif pengguna, alur upgrade paket,
@@ -14,91 +14,78 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
  *
  * Endpoint:
  * - GET  /subscriptions/me
- * - POST /subscriptions/upgrade
- * - GET  /subscriptions/me/invoices
+ * - POST /subscriptions/checkout
+ * - GET  /invoices/me
  */
 export function useSubscription() {
   const queryClient = useQueryClient()
-  const user = useCurrentUser()
+
+  // Ditandai true saat checkout mengembalikan status PENDING, supaya status
+  // langganan dipolling sampai webhook Midtrans mengaktifkannya.
+  const [checkoutPending, setCheckoutPending] = useState(false)
 
   // Query: Status Langganan Aktif Pengguna
   const subscriptionQuery = useQuery({
     queryKey: ['subscription', 'me'],
     queryFn: async (): Promise<UserSubscription> => {
-      try {
-        const data = await fetchData<UserSubscription>('/subscriptions/me')
-        return data
-      } catch {
-        // Fallback default sesuai profil user saat ini
-        return {
-          id: `sub-${user.id}`,
-          userId: user.id,
-          planTier: user.plan || 'FREE',
-          status: 'ACTIVE',
-          startDate: new Date().toISOString(),
-          expiresAt: user.plan === 'FREE' ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          limits: {
-            maxInvitations: user.plan === 'MAX' ? 999 : user.plan === 'PRO' ? 3 : 1,
-            maxGuests: user.plan === 'FREE' ? 50 : 999999,
-            maxPhotos: user.plan === 'MAX' ? 999 : user.plan === 'PRO' ? 100 : 10,
-            maxStaff: user.plan === 'MAX' ? 999 : user.plan === 'PRO' ? 3 : 0,
-            allowCustomDomain: user.plan === 'MAX',
-            allowQrCheckin: user.plan !== 'FREE',
-            allowExport: user.plan !== 'FREE',
-            allowCustomMusic: true,
-            watermark: user.plan === 'FREE',
-          },
-        }
-      }
+      return fetchData<UserSubscription>('/subscriptions/me')
+    },
+    refetchInterval: (query) => {
+      if (!checkoutPending) return false
+      return query.state.data?.status === 'ACTIVE' ? false : 5000
     },
   })
+
+  // Derived, bukan state: begitu status ACTIVE, banner otomatis hilang
+  // tanpa perlu setState di dalam effect.
+  const isAwaitingPayment = checkoutPending && subscriptionQuery.data?.status !== 'ACTIVE'
+
+  // Hentikan polling begitu langganan berubah menjadi ACTIVE.
+  useEffect(() => {
+    if (isAwaitingPayment && subscriptionQuery.data?.status === "ACTIVE") {
+      setIsAwaitingPayment(false);
+      invalidateAll();
+    }
+  }, [isAwaitingPayment, subscriptionQuery.data?.status]);
 
   // Query: Riwayat Invoice Tagihan
   const invoicesQuery = useQuery({
-    queryKey: ['subscription', 'me', 'invoices'],
+    queryKey: ["subscription", "me", "invoices"],
     queryFn: async (): Promise<InvoiceItem[]> => {
       try {
-        const data = await fetchData<InvoiceItem[]>('/subscriptions/me/invoices')
-        return data ?? []
+        const data = await fetchData<InvoiceItem[]>("/invoices/me");
+        return data ?? [];
       } catch {
-        return []
+        return [];
       }
     },
-  })
+  });
 
-  function invalidateAll() {
-    void queryClient.invalidateQueries({ queryKey: ['subscription'] })
+function invalidateAll() {
+  void queryClient.invalidateQueries({ queryKey: ['subscription'] })
+  void queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+  void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+}
+
+// Saat pembayaran akhirnya terkonfirmasi, segarkan profil & dashboard
+// supaya badge paket ikut berubah. Tidak ada setState di sini.
+useEffect(() => {
+  if (checkoutPending && subscriptionQuery.data?.status === 'ACTIVE') {
     void queryClient.invalidateQueries({ queryKey: ['currentUser'] })
     void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
   }
+}, [checkoutPending, subscriptionQuery.data?.status, queryClient])
 
   // Mutation: Ajukan Upgrade Tier
-  const upgradeMutation = useMutation({
-    mutationFn: async (payload: UpgradePayload) => {
-      try {
-        const res = await postData<UpgradeResponse, UpgradePayload>(
-          '/subscriptions/upgrade',
-          payload,
-        )
-        return res
-      } catch (err) {
-        console.warn('Backend upgrade endpoint belum aktif, menggunakan mock response:', err)
-        const mockInvoiceNumber = `INV-${Date.now().toString().slice(-6)}`
-        return {
-          invoiceId: `inv-${Date.now()}`,
-          invoiceNumber: mockInvoiceNumber,
-          amount: payload.planTier === 'MAX' ? 149000 : 49000,
-          paymentUrl: null,
-          snapToken: null,
-          qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=BUWUHAN-PAYMENT-' + mockInvoiceNumber,
-          virtualAccountNumber: '8801' + Math.floor(10000000 + Math.random() * 90000000),
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          status: 'PENDING' as const,
-        }
-      }
-    },
-    onSuccess: invalidateAll,
-  })
+  // Mutation: Ajukan Upgrade Tier
+const upgradeMutation = useMutation({
+  mutationFn: (payload: UpgradePayload) =>
+    postData<UpgradeResponse, UpgradePayload>('/subscriptions/checkout', payload),
+  onSuccess: (res) => {
+    setCheckoutPending(res.status === 'PENDING')
+    invalidateAll()
+  },
+})
 
   return {
     subscription: subscriptionQuery.data,
@@ -108,5 +95,7 @@ export function useSubscription() {
     isError: subscriptionQuery.isError,
     upgradeSubscription: upgradeMutation.mutateAsync,
     isUpgrading: upgradeMutation.isPending,
-  }
+    /** True selama menunggu konfirmasi pembayaran dari webhook Midtrans. */
+    isAwaitingPayment,
+  };
 }

@@ -92,8 +92,13 @@ export function ImageUploadInput({
           onChange(uploadedUrl)
         }
       } catch (uploadErr) {
-        // Jika backend endpoint upload belum siap, tetap pertahankan local preview
-        console.info('Endpoint upload backend belum tersedia/gagal, menggunakan data gambar lokal.', uploadErr)
+        console.error('Upload gambar gagal:', uploadErr)
+        // Batalkan pratinjau lokal agar data URL base64 tidak ikut tersimpan ke database
+        onChange('')
+        setFileName(null)
+        setErrorMessage(
+          'Gambar gagal diunggah ke server. Periksa koneksi Anda lalu coba lagi, atau gunakan mode "URL Gambar".',
+        )
       } finally {
         setIsUploading(false)
       }

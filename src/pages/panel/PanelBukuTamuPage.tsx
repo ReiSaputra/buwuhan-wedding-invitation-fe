@@ -33,6 +33,7 @@ import { useInvitationDetail } from '@/hooks/useInvitationDetail'
 import { useGuestBook } from '@/hooks/useGuestBook'
 import { useGuestActions } from '@/hooks/useGuestActions'
 import { useTableState } from '@/hooks/useTableState'
+import { useQuota } from '@/hooks/useQuota'
 import { exportGuestsData } from '@/lib/export'
 import { formatDateId, formatNumber, formatTimeWib, getInitial } from '@/lib/format'
 import { parseApiError } from '@/lib/errorHandler'
@@ -70,7 +71,8 @@ export default function PanelBukuTamuPage() {
     isError,
     isMutating,
   } = useGuestBook(id)
-  const { getGuestShareData } = useGuestActions(id)
+const { getGuestShareData } = useGuestActions(id)
+const quota = useQuota({ guests: entries.length })
 
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | 'ALL'>('ALL')
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -242,6 +244,8 @@ export default function PanelBukuTamuPage() {
             </Button>
             <Button
               variant="primary"
+              disabled={quota.guests.reached}
+title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.guests.text})` : undefined}
               size="sm"
               icon={<Plus size={14} />}
               onClick={() => {
@@ -254,6 +258,11 @@ export default function PanelBukuTamuPage() {
           </div>
         }
       />
+      {quota.guests.reached && (
+  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900">
+    Kuota tamu paket {quota.tier} sudah penuh ({quota.guests.text}). Tingkatkan paket untuk menambah tamu.
+  </div>
+)}
 
       {/* Kartu Ringkasan Metrik Statistik */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
