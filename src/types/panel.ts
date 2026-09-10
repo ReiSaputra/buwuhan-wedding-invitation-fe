@@ -47,6 +47,8 @@ export type GuestBookEntry = {
   recordedAt: string
   /** Nomor HP tamu. */
   phone?: string
+  /** Alamat email tamu untuk pengiriman undangan digital */
+  email?: string
   /** Ucapan, doa restu, atau catatan khusus dari tamu */
   message?: string
 }
@@ -141,6 +143,7 @@ export type NewGuestInput = {
   name: string
   category: string
   phone?: string
+  email?: string
   note?: string
 }
 

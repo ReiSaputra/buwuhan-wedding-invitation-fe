@@ -21,8 +21,8 @@ export type ImageUrlInputProps = {
   error?: string
   /** Teks petunjuk (placeholder) pada input */
   placeholder?: string
-  /** Kategori folder penyimpanan berkas di server */
-  folder?: 'gallery' | 'covers' | 'stories' | 'templates' | 'avatars'
+  /** Kategori folder penyimpanan berkas di server: 'images' (default) atau 'qris' */
+  folder?: 'images' | 'qris'
   /** Batas maksimal ukuran berkas dalam MB */
   maxSizeMb?: number
 }
@@ -40,7 +40,7 @@ export function ImageUrlInput({
   onChange,
   error,
   placeholder = 'https://res.cloudinary.com/…/foto.jpg',
-  folder = 'gallery',
+  folder = 'images',
   maxSizeMb = 5,
 }: ImageUrlInputProps) {
   const [mode, setMode] = useState<'upload' | 'url'>('upload')
@@ -96,13 +96,13 @@ export function ImageUrlInput({
         if (uploadedUrl) {
           onChange(uploadedUrl)
         }
-      } catch (uploadErr) {
+      } catch (uploadErr: unknown) {
         console.error('Upload gambar gagal:', uploadErr)
-        // Batalkan pratinjau lokal agar data URL base64 tidak ikut tersimpan ke database
         onChange('')
         setFileName(null)
+        const apiMsg = (uploadErr as { response?: { data?: { message?: string } } })?.response?.data?.message
         setErrorMessage(
-          'Gambar gagal diunggah ke server. Periksa koneksi Anda lalu coba lagi, atau gunakan mode "URL Tautan".',
+          apiMsg || 'Gambar gagal diunggah ke server. Pastikan format PNG/JPG/WebP dan ukuran maks. 5 MB.',
         )
       } finally {
         setIsUploading(false)

@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useCallback, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
   Download,
   MessageSquare,
@@ -16,41 +16,54 @@ import {
   Loader2,
   Upload,
   Eye,
-} from 'lucide-react'
-import { PanelPageHeader } from '@/components/panel/PanelPageHeader'
-import { StatCard } from '@/components/dashboard/StatCard'
-import { GuestFormModal } from '@/components/panel/GuestFormModal'
-import { GuestDetailModal } from '@/components/panel/GuestDetailModal'
-import { ImportGuestsModal } from '@/components/panel/ImportGuestsModal'
-import { Modal } from '@/components/ui/Modal'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
-import { TableCard } from '@/components/ui/TableCard'
-import { SearchInput } from '@/components/ui/SearchInput'
-import { Pagination } from '@/components/ui/Pagination'
-import { AnimatedStatusIcon } from '@/components/ui/AnimatedStatusIcon'
-import { useInvitationDetail } from '@/hooks/useInvitationDetail'
-import { useGuestBook } from '@/hooks/useGuestBook'
-import { useGuestActions } from '@/hooks/useGuestActions'
-import { useTableState } from '@/hooks/useTableState'
-import { useQuota } from '@/hooks/useQuota'
-import { exportGuestsData } from '@/lib/export'
-import { formatDateId, formatNumber, formatTimeWib, getInitial } from '@/lib/format'
-import { parseApiError } from '@/lib/errorHandler'
-import type { AttendanceStatus, GuestBookEntry, NewGuestInput } from '@/types/panel'
-import type { GuestPayload } from '@/types/invitation-api'
-import { QueryState } from '@/components/common/QueryState'
+  Mail,
+  Phone,
+} from "lucide-react";
+import { PanelPageHeader } from "@/components/panel/PanelPageHeader";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { GuestFormModal } from "@/components/panel/GuestFormModal";
+import { GuestDetailModal } from "@/components/panel/GuestDetailModal";
+import { ImportGuestsModal } from "@/components/panel/ImportGuestsModal";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { TableCard } from "@/components/ui/TableCard";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { Pagination } from "@/components/ui/Pagination";
+import { AnimatedStatusIcon } from "@/components/ui/AnimatedStatusIcon";
+import { useInvitationDetail, useCurrentInvitationRole } from "@/hooks/useInvitationDetail";
+import { useGuestBook } from "@/hooks/useGuestBook";
+import { useGuestActions } from "@/hooks/useGuestActions";
+import { useTableState } from "@/hooks/useTableState";
+import { useQuota } from "@/hooks/useQuota";
+import { exportGuestsData } from "@/lib/export";
+import {
+  formatDateId,
+  formatNumber,
+  formatTimeWib,
+  getInitial,
+} from "@/lib/format";
+import { parseApiError } from "@/lib/errorHandler";
+import type {
+  AttendanceStatus,
+  GuestBookEntry,
+  NewGuestInput,
+} from "@/types/panel";
+import type { GuestPayload } from "@/types/invitation-api";
+import { QueryState } from "@/components/common/QueryState";
 
-const filterOptions: Array<{ value: AttendanceStatus | 'ALL'; label: string }> = [
-  { value: 'ALL', label: 'Semua Kehadiran' },
-  { value: 'HADIR', label: 'Hadir' },
-  { value: 'TIDAK_HADIR', label: 'Tidak Hadir' },
-]
+const filterOptions: Array<{ value: AttendanceStatus | "ALL"; label: string }> =
+  [
+    { value: "ALL", label: "Semua Kehadiran" },
+    { value: "HADIR", label: "Hadir" },
+    { value: "TIDAK_HADIR", label: "Tidak Hadir" },
+  ];
 
-const thClass = 'px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500'
-const tdClass = 'px-6 py-4 align-middle'
+const thClass =
+  "px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500";
+const tdClass = "px-6 py-4 align-middle";
 const iconButtonClass =
-  'rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-ink cursor-pointer'
+  "rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-ink cursor-pointer";
 
 /**
  * Halaman Manajemen Buku Tamu pada Panel Pengelolaan Undangan Spesifik.
@@ -58,8 +71,9 @@ const iconButtonClass =
  * waktu check-in, kategori tamu, dan fitur kirim undangan via WhatsApp.
  */
 export default function PanelBukuTamuPage() {
-  const { id = '' } = useParams()
-  const { invitation } = useInvitationDetail(id)
+  const { id = "" } = useParams();
+  const { invitation } = useInvitationDetail(id);
+  const { canManageGuests } = useCurrentInvitationRole(id);
   const {
     entries,
     stats,
@@ -70,97 +84,117 @@ export default function PanelBukuTamuPage() {
     isLoading,
     isError,
     isMutating,
-  } = useGuestBook(id)
-const { getGuestShareData } = useGuestActions(id)
-const quota = useQuota({ guests: entries.length })
+  } = useGuestBook(id);
+  const { getGuestShareData, sendEmail, isSendingEmail } = useGuestActions(id);
+  const [sendingEmailGuestId, setSendingEmailGuestId] = useState<string | null>(
+    null,
+  );
+  const quota = useQuota({ guests: entries.length });
 
-  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | 'ALL'>('ALL')
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [isImportOpen, setIsImportOpen] = useState(false)
-  const [editingEntry, setEditingEntry] = useState<GuestBookEntry | null>(null)
-  const [viewedMessage, setViewedMessage] = useState<GuestBookEntry | null>(null)
-  const [deletingEntry, setDeletingEntry] = useState<GuestBookEntry | null>(null)
-  const [activeGuestActionId, setActiveGuestActionId] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "ALL">(
+    "ALL",
+  );
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<GuestBookEntry | null>(null);
+  const [viewedMessage, setViewedMessage] = useState<GuestBookEntry | null>(
+    null,
+  );
+  const [deletingEntry, setDeletingEntry] = useState<GuestBookEntry | null>(
+    null,
+  );
+  const [activeGuestActionId, setActiveGuestActionId] = useState<string | null>(
+    null,
+  );
   // ID tamu yang detailnya sedang dibuka (GET /invitations/:id/guests/:guestId)
-  const [detailGuestId, setDetailGuestId] = useState<string | null>(null)
+  const [detailGuestId, setDetailGuestId] = useState<string | null>(null);
 
   // State pop-up status
   const [popupState, setPopupState] = useState<{
-    isOpen: boolean
-    status: 'success' | 'error'
-    title: string
-    message: string
+    isOpen: boolean;
+    status: "success" | "error";
+    title: string;
+    message: string;
   }>({
     isOpen: false,
-    status: 'success',
-    title: '',
-    message: '',
-  })
+    status: "success",
+    title: "",
+    message: "",
+  });
 
   const getSearchText = useCallback(
-    (entry: GuestBookEntry) => `${entry.name} ${entry.category} ${entry.phone ?? ''}`,
+    (entry: GuestBookEntry) =>
+      `${entry.name} ${entry.category} ${entry.phone ?? ""} ${entry.email ?? ""}`,
     [],
-  )
+  );
 
   const filterFn = useCallback(
-    (entry: GuestBookEntry) => statusFilter === 'ALL' || entry.status === statusFilter,
+    (entry: GuestBookEntry) =>
+      statusFilter === "ALL" || entry.status === statusFilter,
     [statusFilter],
-  )
+  );
 
-  const table = useTableState({ rows: entries, pageSize: 8, getSearchText, filterFn })
+  const table = useTableState({
+    rows: entries,
+    pageSize: 8,
+    getSearchText,
+    filterFn,
+  });
 
   const hadirPercentage =
-    stats.total > 0 ? Math.round((stats.hadir / stats.total) * 100) : 0
+    stats.total > 0 ? Math.round((stats.hadir / stats.total) * 100) : 0;
 
-  const withMessageCount = entries.filter((e) => Boolean(e.message)).length
+  const withMessageCount = entries.filter((e) => Boolean(e.message)).length;
 
   function handleFormSubmit(input: NewGuestInput) {
     if (editingEntry) {
-      updateGuest(editingEntry.id, input)
+      updateGuest(editingEntry.id, input);
     } else {
-      addGuest(input)
+      addGuest(input);
     }
-    setEditingEntry(null)
+    setEditingEntry(null);
   }
 
-    /**
+  /**
    * Mengirim daftar tamu hasil parsing ke endpoint bulk import,
    * lalu menampilkan pop-up hasilnya.
    */
   async function handleImport(guests: GuestPayload[]) {
     try {
-      await importGuests(guests)
-      setIsImportOpen(false)
+      await importGuests(guests);
+      setIsImportOpen(false);
       setPopupState({
         isOpen: true,
-        status: 'success',
-        title: 'Import Berhasil',
+        status: "success",
+        title: "Import Berhasil",
         message: `${guests.length} tamu berhasil ditambahkan beserta QR code masing-masing.`,
-      })
+      });
     } catch (error) {
-      const parsed = parseApiError(error)
+      const parsed = parseApiError(error);
       setPopupState({
         isOpen: true,
-        status: 'error',
-        title: 'Import Gagal',
-        message: parsed.generalMessage || 'Terjadi kesalahan saat mengimport daftar tamu.',
-      })
+        status: "error",
+        title: "Import Gagal",
+        message:
+          parsed.generalMessage ||
+          "Terjadi kesalahan saat mengimport daftar tamu.",
+      });
     }
   }
 
   function handleEdit(entry: GuestBookEntry) {
-    setEditingEntry(entry)
-    setIsFormOpen(true)
+    setEditingEntry(entry);
+    setIsFormOpen(true);
   }
 
   function handlePromptDelete(entry: GuestBookEntry) {
-    setDeletingEntry(entry)
+    setDeletingEntry(entry);
   }
 
   function handleConfirmDelete() {
     if (deletingEntry) {
-      removeGuest(deletingEntry.id)
-      setDeletingEntry(null)
+      removeGuest(deletingEntry.id);
+      setDeletingEntry(null);
     }
   }
 
@@ -168,58 +202,84 @@ const quota = useQuota({ guests: entries.length })
    * Berbagi undangan via WhatsApp
    */
   async function handleShareWhatsApp(entry: GuestBookEntry) {
-    setActiveGuestActionId(entry.id)
+    setActiveGuestActionId(entry.id);
     try {
-      const shareData = await getGuestShareData(entry.id)
-      const targetUrl = shareData.whatsappShareUrl || shareData.whatsappUniversalShareUrl
+      const shareData = await getGuestShareData(entry.id);
+      const targetUrl =
+        shareData.whatsappShareUrl || shareData.whatsappUniversalShareUrl;
       if (targetUrl) {
-        window.open(targetUrl, '_blank', 'noreferrer')
+        window.open(targetUrl, "_blank", "noreferrer");
       } else {
         setPopupState({
           isOpen: true,
-          status: 'error',
-          title: 'Gagal Membuka WhatsApp',
-          message: 'Tautan WhatsApp tidak dapat dibuat. Pastikan data tamu valid.',
-        })
+          status: "error",
+          title: "Gagal Membuka WhatsApp",
+          message:
+            "Tautan WhatsApp tidak dapat dibuat. Pastikan data tamu valid.",
+        });
       }
     } catch (error) {
-      const parsed = parseApiError(error)
+      const parsed = parseApiError(error);
       setPopupState({
         isOpen: true,
-        status: 'error',
-        title: 'Gagal Mengambil Data WhatsApp',
-        message: parsed.generalMessage || 'Terjadi kesalahan saat menyiapkan pesan WhatsApp.',
-      })
+        status: "error",
+        title: "Gagal Mengambil Data WhatsApp",
+        message:
+          parsed.generalMessage ||
+          "Terjadi kesalahan saat menyiapkan pesan WhatsApp.",
+      });
     } finally {
-      setActiveGuestActionId(null)
+      setActiveGuestActionId(null);
     }
   }
 
   async function handleExport() {
     const fallbackRows = table.filteredRows.map((entry) => ({
-      'Nama Tamu': entry.name,
+      "Nama Tamu": entry.name,
       Kategori: entry.category,
-      Status: entry.status === 'HADIR' ? 'Hadir' : 'Tidak Hadir',
+      "Nomor HP": entry.phone ?? "",
+      Email: entry.email ?? "",
+      Status: entry.status === "HADIR" ? "Hadir" : "Tidak Hadir",
       Tanggal: formatDateId(entry.recordedAt),
       Waktu: formatTimeWib(entry.recordedAt),
-      'Nomor HP': entry.phone ?? '',
-      Ucapan: entry.message ?? '',
-    }))
+      Ucapan: entry.message ?? "",
+    }));
     try {
-      await exportGuestsData(id, 'xlsx', fallbackRows)
+      await exportGuestsData(id, "xlsx", fallbackRows);
     } catch {
-      alert('Gagal mengekspor data tamu')
+      alert("Gagal mengekspor data tamu");
     }
   }
+
+  const handleSendSingleEmail = async (guest: GuestBookEntry) => {
+    if (!guest.email) {
+      alert("Tamu ini belum memiliki alamat email.");
+      return;
+    }
+    try {
+      setSendingEmailGuestId(guest.id);
+      await sendEmail(guest.id);
+      alert(
+        `Email undangan berhasil dikirim ke ${guest.name} (${guest.email})`,
+      );
+    } catch (err) {
+      alert(`Gagal mengirim email: ${parseApiError(err)}`);
+    } finally {
+      setSendingEmailGuestId(null);
+    }
+  };
 
   return (
     <div className="animate-in fade-in space-y-6 duration-300">
       {/* Header Halaman */}
       <PanelPageHeader
         crumbs={[
-          { label: 'Beranda', to: '/dashboard' },
-          { label: `Panel ${invitation.coupleName || invitation.panelName}`, to: `/dashboard/undangan/${id}` },
-          { label: 'Buku Tamu' },
+          { label: "Beranda", to: "/dashboard" },
+          {
+            label: `Panel ${invitation.coupleName || invitation.panelName}`,
+            to: `/dashboard/undangan/${id}`,
+          },
+          { label: "Buku Tamu" },
         ]}
         title="Buku Tamu & Kehadiran"
         subtitle={`Catatan tamu hadir dan buku ucapan untuk pernikahan ${invitation.coupleName}`}
@@ -234,35 +294,44 @@ const quota = useQuota({ guests: entries.length })
             >
               Export CSV
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<Upload size={14} />}
-              onClick={() => setIsImportOpen(true)}
-            >
-              Import Tamu
-            </Button>
-            <Button
-              variant="primary"
-              disabled={quota.guests.reached}
-title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.guests.text})` : undefined}
-              size="sm"
-              icon={<Plus size={14} />}
-              onClick={() => {
-                setEditingEntry(null)
-                setIsFormOpen(true)
-              }}
-            >
-              Tambah Tamu
-            </Button>
+            {canManageGuests && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<Upload size={14} />}
+                  onClick={() => setIsImportOpen(true)}
+                >
+                  Import Tamu
+                </Button>
+                <Button
+                  variant="primary"
+                  disabled={quota.guests.reached}
+                  title={
+                    quota.guests.reached
+                      ? `Kuota paket ${quota.tier} sudah penuh (${quota.guests.text})`
+                      : undefined
+                  }
+                  size="sm"
+                  icon={<Plus size={14} />}
+                  onClick={() => {
+                    setEditingEntry(null);
+                    setIsFormOpen(true);
+                  }}
+                >
+                  Tambah Tamu
+                </Button>
+              </>
+            )}
           </div>
         }
       />
       {quota.guests.reached && (
-  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900">
-    Kuota tamu paket {quota.tier} sudah penuh ({quota.guests.text}). Tingkatkan paket untuk menambah tamu.
-  </div>
-)}
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-900">
+          Kuota tamu paket {quota.tier} sudah penuh ({quota.guests.text}).
+          Tingkatkan paket untuk menambah tamu.
+        </div>
+      )}
 
       {/* Kartu Ringkasan Metrik Statistik */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -297,10 +366,7 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
       </div>
 
       {/* Tabel Data Buku Tamu */}
-      <QueryState
-        isLoading={isLoading}
-        isError={isError}
-      >
+      <QueryState isLoading={isLoading} isError={isError}>
         <TableCard
           title="Catatan Kehadiran & Tamu"
           toolbar={
@@ -313,7 +379,9 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
               />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as AttendanceStatus | 'ALL')}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as AttendanceStatus | "ALL")
+                }
                 className="rounded-2xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
               >
                 {filterOptions.map((opt) => (
@@ -349,10 +417,16 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
                 <tr>
                   <td colSpan={5} className="px-6 py-16 text-center text-muted">
                     <div className="mx-auto max-w-xs space-y-2">
-                      <UsersRound size={28} className="mx-auto text-slate-300" />
-                      <p className="font-semibold text-slate-600">Tidak ada tamu ditemukan</p>
+                      <UsersRound
+                        size={28}
+                        className="mx-auto text-slate-300"
+                      />
+                      <p className="font-semibold text-slate-600">
+                        Tidak ada tamu ditemukan
+                      </p>
                       <p className="text-[11px] text-slate-400">
-                        Coba sesuaikan kata kunci pencarian atau tambah tamu baru.
+                        Coba sesuaikan kata kunci pencarian atau tambah tamu
+                        baru.
                       </p>
                     </div>
                   </td>
@@ -360,18 +434,37 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
               )}
 
               {table.pageRows.map((entry) => {
-                const isOperating = activeGuestActionId === entry.id
+                const isOperating = activeGuestActionId === entry.id;
                 return (
-                  <tr key={entry.id} className="transition hover:bg-slate-50/70">
+                  <tr
+                    key={entry.id}
+                    className="transition hover:bg-slate-50/70"
+                  >
                     <td className={tdClass}>
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xs font-bold text-primary border border-indigo-100/80">
                           {getInitial(entry.name)}
                         </div>
                         <div>
-                          <span className="font-bold text-ink block text-xs">{entry.name}</span>
-                          <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                            {entry.phone ? <span>{entry.phone}</span> : <span>ID: {entry.id}</span>}
+                          <span className="font-bold text-ink block text-xs">
+                            {entry.name}
+                          </span>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-slate-400">
+                            {entry.phone && (
+                              <span className="inline-flex items-center gap-1">
+                                <Phone size={10} className="text-slate-400" />
+                                <span>{entry.phone}</span>
+                              </span>
+                            )}
+                            {entry.email && (
+                              <span className="inline-flex items-center gap-1 text-slate-500">
+                                <Mail size={10} className="text-slate-400" />
+                                <span>{entry.email}</span>
+                              </span>
+                            )}
+                            {!entry.phone && !entry.email && (
+                              <span>ID: {entry.id}</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -384,8 +477,14 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
                     </td>
 
                     <td className={tdClass}>
-                      <Badge variant={entry.status === 'HADIR' ? 'success' : 'default'}>
-                        {entry.status === 'HADIR' ? 'Hadir di Lokasi' : 'Belum Hadir'}
+                      <Badge
+                        variant={
+                          entry.status === "HADIR" ? "success" : "default"
+                        }
+                      >
+                        {entry.status === "HADIR"
+                          ? "Hadir di Lokasi"
+                          : "Belum Hadir"}
                       </Badge>
                     </td>
 
@@ -422,8 +521,34 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
                           aria-label={`Kirim WhatsApp ke ${entry.name}`}
                           title="Kirim Undangan via WhatsApp"
                         >
-                          {isOperating ? <Loader2 size={15} className="animate-spin text-emerald-600" /> : <MessageCircle size={15} className="text-emerald-600" />}
+                          {isOperating ? (
+                            <Loader2
+                              size={15}
+                              className="animate-spin text-emerald-600"
+                            />
+                          ) : (
+                            <MessageCircle
+                              size={15}
+                              className="text-emerald-600"
+                            />
+                          )}
                         </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSendSingleEmail(entry)}
+                            disabled={
+                              isSendingEmail && sendingEmailGuestId === entry.id
+                            }
+                            className={iconButtonClass}
+                            title="Kirim Email Undangan"
+                          >
+                            {isSendingEmail &&
+                            sendingEmailGuestId === entry.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                            ) : (
+                              <Mail className="h-4 w-4 text-indigo-600" />
+                            )}
+                          </button>
 
                         {/* Tombol Lihat Ucapan */}
                         <button
@@ -432,36 +557,43 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
                           disabled={!entry.message}
                           className={`${iconButtonClass} disabled:opacity-20 disabled:pointer-events-none hover:text-primary hover:bg-indigo-50`}
                           aria-label={`Lihat ucapan ${entry.name}`}
-                          title={entry.message ? 'Lihat ucapan doa' : 'Tidak meninggalkan ucapan'}
+                          title={
+                            entry.message
+                              ? "Lihat ucapan doa"
+                              : "Tidak meninggalkan ucapan"
+                          }
                         >
                           <MessageSquare size={15} />
                         </button>
 
-                        {/* Tombol Ubah Data Tamu */}
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(entry)}
-                          className={iconButtonClass}
-                          aria-label={`Ubah data ${entry.name}`}
-                          title="Ubah data tamu"
-                        >
-                          <Pencil size={15} />
-                        </button>
+                        {/* Tombol Ubah & Hapus Tamu (Khusus OWNER & ADMIN) */}
+                        {canManageGuests && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleEdit(entry)}
+                              className={iconButtonClass}
+                              aria-label={`Ubah data ${entry.name}`}
+                              title="Ubah data tamu"
+                            >
+                              <Pencil size={15} />
+                            </button>
 
-                        {/* Tombol Hapus Tamu */}
-                        <button
-                          type="button"
-                          onClick={() => handlePromptDelete(entry)}
-                          className="rounded-xl p-2 text-slate-400 transition hover:bg-danger-light hover:text-danger cursor-pointer"
-                          aria-label={`Hapus catatan ${entry.name}`}
-                          title="Hapus catatan"
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => handlePromptDelete(entry)}
+                              className="rounded-xl p-2 text-slate-400 transition hover:bg-danger-light hover:text-danger cursor-pointer"
+                              aria-label={`Hapus catatan ${entry.name}`}
+                              title="Hapus catatan"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
@@ -470,11 +602,11 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
 
       {/* Formulir Modal Tambah dan Ubah Tamu */}
       <GuestFormModal
-        key={`${isFormOpen}-${editingEntry?.id ?? 'tamu-baru'}`}
+        key={`${isFormOpen}-${editingEntry?.id ?? "tamu-baru"}`}
         isOpen={isFormOpen}
         onClose={() => {
-          setIsFormOpen(false)
-          setEditingEntry(null)
+          setIsFormOpen(false);
+          setEditingEntry(null);
         }}
         onSubmit={handleFormSubmit}
         initialValue={
@@ -483,6 +615,7 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
                 name: editingEntry.name,
                 category: editingEntry.category,
                 phone: editingEntry.phone,
+                email: editingEntry.email,
                 note: editingEntry.message,
               }
             : null
@@ -512,7 +645,9 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
         isOpen={viewedMessage !== null}
         onClose={() => setViewedMessage(null)}
         title="Ucapan & Doa Restu Tamu"
-        description={viewedMessage ? `Dikirimkan oleh ${viewedMessage.name}` : undefined}
+        description={
+          viewedMessage ? `Dikirimkan oleh ${viewedMessage.name}` : undefined
+        }
         maxWidth="md"
       >
         <div className="space-y-4">
@@ -524,7 +659,8 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
             <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-100">
               <span>Kategori: {viewedMessage.category}</span>
               <span>
-                {formatDateId(viewedMessage.recordedAt)}, {formatTimeWib(viewedMessage.recordedAt)}
+                {formatDateId(viewedMessage.recordedAt)},{" "}
+                {formatTimeWib(viewedMessage.recordedAt)}
               </span>
             </div>
           )}
@@ -552,12 +688,14 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
           <div className="pt-2">
             <Button
               type="button"
-              variant={popupState.status === 'success' ? 'primary' : 'outline'}
+              variant={popupState.status === "success" ? "primary" : "outline"}
               className="w-full"
               size="sm"
-              onClick={() => setPopupState((prev) => ({ ...prev, isOpen: false }))}
+              onClick={() =>
+                setPopupState((prev) => ({ ...prev, isOpen: false }))
+              }
             >
-              {popupState.status === 'success' ? 'Selesai' : 'Tutup'}
+              {popupState.status === "success" ? "Selesai" : "Tutup"}
             </Button>
           </div>
         </div>
@@ -572,11 +710,17 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
       >
         <div className="space-y-4">
           <p className="text-xs text-slate-600 leading-relaxed">
-            Apakah Anda yakin ingin menghapus catatan tamu <strong>"{deletingEntry?.name}"</strong>? Data yang dihapus tidak dapat dipulihkan kembali.
+            Apakah Anda yakin ingin menghapus catatan tamu{" "}
+            <strong>"{deletingEntry?.name}"</strong>? Data yang dihapus tidak
+            dapat dipulihkan kembali.
           </p>
 
           <div className="flex items-center justify-end gap-2 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setDeletingEntry(null)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeletingEntry(null)}
+            >
               Batal
             </Button>
             <Button
@@ -585,11 +729,11 @@ title={quota.guests.reached ? `Kuota paket ${quota.tier} sudah penuh (${quota.gu
               onClick={handleConfirmDelete}
               disabled={isMutating}
             >
-              {isMutating ? 'Menghapus…' : 'Ya, Hapus Tamu'}
+              {isMutating ? "Menghapus…" : "Ya, Hapus Tamu"}
             </Button>
           </div>
         </div>
       </Modal>
     </div>
-  )
+  );
 }

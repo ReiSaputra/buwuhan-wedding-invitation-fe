@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchData } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { useMembers } from "@/hooks/useMembers";
 import type {
   ApiInvitation,
   GuestStatsApiData,
   RsvpStatsApiData,
 } from "@/types/invitation-api";
 import type { InvitationDetail, ActivityLog } from "@/types/dashboard";
+import type { InvitationRole } from "@/types/member";
 
 /**
  * Menyusun nama pasangan "Pria & Wanita" dari array couples backend.
@@ -109,5 +112,32 @@ export function useInvitationDetail(id: string) {
         rsvpStatsQuery.isLoading),
     isError: invitationQuery.isError,
     error: invitationQuery.error,
+  };
+}
+
+/**
+ * Hook pembantu untuk memeriksa peran pengguna pada undangan yang sedang dibuka:
+ * - OWNER: Pemilik akun yang membuat undangan (Akses Penuh)
+ * - ADMIN: Co-host yang diundang (Bisa kelola tamu & konten, TIDAK bisa kelola member/hapus undangan)
+ * - USER : Petugas penerima tamu (Hanya bisa lihat tamu & Scan QR presensi)
+ */
+export function useCurrentInvitationRole(invitationId: string) {
+  const { user } = useAuth();
+  const { invitation, isFound } = useInvitationDetail(invitationId);
+  const { data: members = [] } = useMembers(invitationId);
+
+  // Periksa apakah user yang sedang login adalah pemilik undangan atau terdaftar sebagai member
+  const isOwner = Boolean(user && invitation && isFound && !members.some((m) => m.email.toLowerCase() === user.email.toLowerCase()));
+  const myMember = members.find((m) => m.email.toLowerCase() === user?.email?.toLowerCase());
+
+  const role: InvitationRole = isOwner ? "OWNER" : (myMember?.role ?? "USER");
+
+  return {
+    role,
+    isOwner: role === "OWNER",
+    canManageMembers: role === "OWNER",
+    canEditContent: role === "OWNER" || role === "ADMIN",
+    canManageGuests: role === "OWNER" || role === "ADMIN",
+    canScanQr: true, // Seluruh role (OWNER, ADMIN, USER) berhak scan QR presensi
   };
 }

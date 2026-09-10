@@ -27,7 +27,7 @@ export function useInvitations() {
     coupleName: item.title,
     eventDate: item.eventDate ? item.eventDate.slice(0, 10) : null,
     eventTime: item.eventTime,
-    thumbnailUrl: undefined, // Tidak dikirim oleh GET /invitations
+    thumbnailUrl: null, // Tidak dikirim oleh GET /invitations
     status: item.status,
     guestCount: 0, // Tidak dikirim oleh GET /invitations
     checkedInCount: 0, // Tidak dikirim oleh GET /invitations

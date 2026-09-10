@@ -216,8 +216,10 @@ export default function AdminTemplatesPage() {
     }
   }
 
-  const templates = data?.templates || []
-  const pagination = data?.pagination || { page: 1, limit: 12, total: 0, totalPages: 1 }
+  const templates = Array.isArray(data) ? data : data?.templates || []
+  const pagination = Array.isArray(data)
+    ? { page: 1, limit: templates.length, total: templates.length, totalPages: 1 }
+    : data?.pagination || { page: 1, limit: 12, total: 0, totalPages: 1 }
 
   return (
     <div className="space-y-6 pb-12">
@@ -257,6 +259,46 @@ export default function AdminTemplatesPage() {
               }}
               placeholder="Cari nama template atau slug..."
             />
+          </div>
+
+          {/* Filter Status Aktif / Nonaktif */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveFilter('ALL')
+                setPage(1)
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                activeFilter === 'ALL' ? 'bg-white text-ink shadow-2xs' : 'text-slate-500 hover:text-ink'
+              }`}
+            >
+              Semua
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveFilter(true)
+                setPage(1)
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                activeFilter === true ? 'bg-white text-emerald-700 shadow-2xs' : 'text-slate-500 hover:text-ink'
+              }`}
+            >
+              Aktif
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveFilter(false)
+                setPage(1)
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                activeFilter === false ? 'bg-white text-rose-700 shadow-2xs' : 'text-slate-500 hover:text-ink'
+              }`}
+            >
+              Nonaktif
+            </button>
           </div>
 
           {/* Filter Status Aktif / Terarsip */}
@@ -407,7 +449,6 @@ export default function AdminTemplatesPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => openEditForm(template)}
-                      disabled={isProcessing}
                       className="text-xs text-slate-600 hover:text-slate-900 hover:border-slate-300 inline-flex items-center gap-1"
                     >
                       <Pencil className="w-3 h-3 text-slate-400" />

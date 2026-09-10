@@ -141,6 +141,10 @@ export const router = createBrowserRouter(  createRoutesFromElements(
             path="/dashboard/undangan/join"
             element={<JoinInvitationPage />}
           />
+          <Route
+            path="/invitations/accept"
+            element={<JoinInvitationPage />}
+          />
         </Route>
 
         {/* Panel per undangan — sidebar kontekstual */}

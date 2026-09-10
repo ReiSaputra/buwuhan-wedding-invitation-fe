@@ -18,6 +18,7 @@ function toGuestPayload(input: NewGuestInput): GuestPayload {
     name: input.name,
     category: input.category || null,
     phone: input.phone?.trim() || null,
+    email: input.email?.trim() || null,
     notes: input.note?.trim() || null,
   };
 }
@@ -35,6 +36,7 @@ function toGuestBookEntry(guest: ApiGuestItem): GuestBookEntry {
     status: guest.isAttended ? "HADIR" : "TIDAK_HADIR",
     recordedAt: guest.checkedInAt ?? guest.createdAt,
     phone: guest.phone ?? undefined,
+    email: guest.email ?? undefined,
     message: guest.notes ?? undefined,
   };
 }

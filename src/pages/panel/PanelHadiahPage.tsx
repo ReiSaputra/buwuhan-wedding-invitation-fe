@@ -59,8 +59,10 @@ export default function PanelHadiahPage() {
     stats,
     isLoading: isGiftsLoading,
     createGift,
+    updateGift,
     removeGift,
     isCreating: isCreatingGift,
+    isUpdating: isUpdatingGift,
   } = useGifts(id)
 
   // State Riwayat Hadiah
@@ -68,6 +70,7 @@ export default function PanelHadiahPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [deletingGift, setDeletingGift] = useState<GiftRecord | null>(null)
   const [isAddGiftModalOpen, setIsAddGiftModalOpen] = useState(false)
+  const [editingGift, setEditingGift] = useState<GiftRecord | null>(null)
 
   // State Form Catat Hadiah Manual
   const [guestName, setGuestName] = useState('')
@@ -191,6 +194,26 @@ export default function PanelHadiahPage() {
     }
   }
 
+    function handleOpenAddGift() {
+    setEditingGift(null)
+    setGuestName('')
+    setGiftKind('UANG')
+    setAmount('')
+    setItemName('')
+    setMethodLabel('Transfer BCA')
+    setIsAddGiftModalOpen(true)
+  }
+
+  function handleOpenEditGift(gift: GiftRecord) {
+    setEditingGift(gift)
+    setGuestName(gift.guestName)
+    setGiftKind(gift.kind)
+    setAmount(gift.amount ? String(gift.amount) : '')
+    setItemName(gift.itemName ?? '')
+    setMethodLabel(gift.methodLabel)
+    setIsAddGiftModalOpen(true)
+  }
+
   async function handleSaveManualGift(e: FormEvent) {
     e.preventDefault()
     if (!guestName.trim()) return
@@ -205,14 +228,20 @@ export default function PanelHadiahPage() {
     }
 
     try {
-      await createGift(payload)
-      showToast('Catatan hadiah berhasil ditambahkan!')
+      if (editingGift) {
+        await updateGift({ id: editingGift.id, payload })
+        showToast('Catatan hadiah berhasil diperbarui!')
+      } else {
+        await createGift(payload)
+        showToast('Catatan hadiah berhasil ditambahkan!')
+      }
       setIsAddGiftModalOpen(false)
+      setEditingGift(null)
       setGuestName('')
       setAmount('')
       setItemName('')
     } catch {
-      showToast('Gagal mencatat hadiah manual.')
+      showToast('Gagal menyimpan catatan hadiah.')
     }
   }
 
@@ -248,7 +277,7 @@ export default function PanelHadiahPage() {
             <Button
               variant="primary"
               icon={<Plus size={15} />}
-              onClick={() => setIsAddGiftModalOpen(true)}
+              onClick={handleOpenAddGift}
             >
               Catat Hadiah Manual
             </Button>
@@ -546,6 +575,11 @@ export default function PanelHadiahPage() {
                               },
                             },
                             {
+                              label: 'Edit Catatan',
+                              icon: <Edit2 size={14} />,
+                              onClick: () => handleOpenEditGift(gift),
+                            },
+                            {
                               label: 'Hapus Catatan',
                               icon: <Trash2 size={14} />,
                               onClick: () => setDeletingGift(gift),
@@ -670,9 +704,12 @@ export default function PanelHadiahPage() {
       {/* Modal Dialog Tambah Catatan Hadiah Manual */}
       <Modal
         isOpen={isAddGiftModalOpen}
-        onClose={() => setIsAddGiftModalOpen(false)}
-        title="Catat Hadiah Tamu Manual"
-        description="Tambahkan catatan amplop tunai atau kado fisik yang diserahkan di lokasi"
+        onClose={() => {
+          setIsAddGiftModalOpen(false)
+          setEditingGift(null)
+        }}
+        title={editingGift ? "Ubah Catatan Hadiah" : "Catat Hadiah Tamu Manual"}
+        description={editingGift ? "Perbarui nominal atau rincian hadiah dari tamu" : "Tambahkan catatan amplop tunai atau kado fisik yang diserahkan di lokasi"}
         maxWidth="md"
       >
         <form onSubmit={handleSaveManualGift} className="space-y-4">
@@ -769,16 +806,23 @@ export default function PanelHadiahPage() {
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-            <Button type="button" variant="outline" onClick={() => setIsAddGiftModalOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsAddGiftModalOpen(false)
+                setEditingGift(null)
+              }}
+            >
               Batal
             </Button>
             <Button
               type="submit"
               variant="primary"
-              disabled={isCreatingGift}
+              disabled={isCreatingGift || isUpdatingGift}
               icon={<Sparkles size={14} />}
             >
-              Simpan Hadiah
+              {editingGift ? 'Simpan Perubahan' : 'Simpan Hadiah'}
             </Button>
           </div>
         </form>

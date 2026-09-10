@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchData, postData } from "@/lib/api";
 import type {
@@ -40,13 +40,13 @@ export function useSubscription() {
   // tanpa perlu setState di dalam effect.
   const isAwaitingPayment = checkoutPending && subscriptionQuery.data?.status !== 'ACTIVE'
 
-  // Hentikan polling begitu langganan berubah menjadi ACTIVE.
+  // Hentikan polling dan segarkan data begitu langganan berubah menjadi ACTIVE.
   useEffect(() => {
-    if (isAwaitingPayment && subscriptionQuery.data?.status === "ACTIVE") {
-      setIsAwaitingPayment(false);
+    if (checkoutPending && subscriptionQuery.data?.status === 'ACTIVE') {
+      setCheckoutPending(false);
       invalidateAll();
     }
-  }, [isAwaitingPayment, subscriptionQuery.data?.status]);
+  }, [checkoutPending, subscriptionQuery.data?.status]);
 
   // Query: Riwayat Invoice Tagihan
   const invoicesQuery = useQuery({

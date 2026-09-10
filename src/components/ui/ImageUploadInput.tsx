@@ -91,13 +91,13 @@ export function ImageUploadInput({
         if (uploadedUrl) {
           onChange(uploadedUrl)
         }
-      } catch (uploadErr) {
+      } catch (uploadErr: unknown) {
         console.error('Upload gambar gagal:', uploadErr)
-        // Batalkan pratinjau lokal agar data URL base64 tidak ikut tersimpan ke database
         onChange('')
         setFileName(null)
+        const apiMsg = (uploadErr as { response?: { data?: { message?: string } } })?.response?.data?.message
         setErrorMessage(
-          'Gambar gagal diunggah ke server. Periksa koneksi Anda lalu coba lagi, atau gunakan mode "URL Gambar".',
+          apiMsg || 'Gambar gagal diunggah ke server. Pastikan format PNG/JPG/WebP dan ukuran maks. 5 MB.',
         )
       } finally {
         setIsUploading(false)

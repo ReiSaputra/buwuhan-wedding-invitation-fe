@@ -18,6 +18,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { useGuestDetail } from '@/hooks/useGuestDetail'
+import { useGuestActions } from '@/hooks/useGuestActions'
 import { formatDateId, formatTimeWib } from '@/lib/format'
 
 export type GuestDetailModalProps = {
@@ -44,8 +45,25 @@ export function GuestDetailModal({
   guestId,
   onClose,
 }: GuestDetailModalProps) {
-  const { guest, isLoading, isError } = useGuestDetail(invitationId, guestId)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [emailSentStatus, setEmailSentStatus] = useState<string | null>(null)
+  const { guest, isLoading, isError } = useGuestDetail(
+    invitationId,
+    guestId,
+  )
+  const { sendEmail, isSendingEmail } = useGuestActions(invitationId)
+
+  async function handleSendEmail() {
+    if (!guest) return
+    setEmailSentStatus(null)
+    try {
+      await sendEmail(guest.id)
+      setEmailSentStatus(`Email undangan berhasil dikirim ke ${guest.email}`)
+      setTimeout(() => setEmailSentStatus(null), 5000)
+    } catch (err: unknown) {
+      alert((err as Error)?.message || 'Gagal mengirim email undangan.')
+    }
+  }
 
   async function handleCopy(field: string, value: string) {
     try {
@@ -190,8 +208,33 @@ export function GuestDetailModal({
               </p>
             </div>
 
+            {/* Feedback Pengiriman Email */}
+            {emailSentStatus && (
+              <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-[11px] font-medium text-emerald-700 animate-in fade-in">
+                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span>{emailSentStatus}</span>
+              </div>
+            )}
+
             {/* Aksi */}
             <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-4">
+              {guest.email && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSendingEmail}
+                  onClick={handleSendEmail}
+                  className="inline-flex items-center gap-1.5 text-primary border-primary/20 hover:bg-primary/5"
+                >
+                  {isSendingEmail ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Mail className="h-3.5 w-3.5" />
+                  )}
+                  {isSendingEmail ? 'Mengirim...' : 'Kirim Email'}
+                </Button>
+              )}
+
               <Button
                 variant="outline"
                 size="sm"
