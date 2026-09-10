@@ -21,8 +21,8 @@ export type ImageUrlInputProps = {
   error?: string
   /** Teks petunjuk (placeholder) pada input */
   placeholder?: string
-  /** Kategori folder penyimpanan berkas di server: 'images' (default) atau 'qris' */
-  folder?: 'images' | 'qris'
+  /** Kategori folder penyimpanan berkas di server */
+  folder?: 'images' | 'qris' | 'gallery' | string
   /** Batas maksimal ukuran berkas dalam MB */
   maxSizeMb?: number
 }

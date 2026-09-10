@@ -1,4 +1,4 @@
-import { QrCode, ArrowRight, Sparkles } from 'lucide-react'
+import { QrCode, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export type ScanQrCtaProps = {
@@ -24,16 +24,9 @@ export function ScanQrCta({ to }: ScanQrCtaProps) {
       <div className="relative z-10 flex items-center gap-4">
         <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-white shadow-inner backdrop-blur-xs transition-transform duration-300 group-hover:scale-110">
           <QrCode size={28} />
-          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400" />
-          </span>
         </div>
 
         <div>
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 uppercase tracking-wider">
-            <Sparkles size={11} /> Resepsi Live
-          </span>
           <h3 className="font-display text-base font-bold text-white leading-tight">
             Scan QR Tamu Disini
           </h3>

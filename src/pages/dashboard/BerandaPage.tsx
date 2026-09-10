@@ -1,4 +1,4 @@
-import { Mail, Users, QrCode, Sparkles, HeartHandshake } from 'lucide-react'
+import { Mail, Users, QrCode, HeartHandshake } from 'lucide-react'
 import { Breadcrumb } from '@/components/dashboard/Breadcrumb'
 import { StatCard } from '@/components/dashboard/StatCard'
 import { InvitationList } from '@/components/dashboard/InvitationList'
@@ -32,10 +32,6 @@ export default function BerandaPage() {
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="max-w-xl space-y-2">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-xs">
-              <Sparkles size={13} className="text-amber-300" />
-              <span>Panel Manajemen Undangan Digital</span>
-            </div>
             <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white leading-tight">
               Halo, {user.nickname || user.fullName}!
             </h1>

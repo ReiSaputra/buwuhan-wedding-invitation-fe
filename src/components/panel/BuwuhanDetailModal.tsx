@@ -1,19 +1,21 @@
-import { CalendarClock, Loader2, PackageOpen, Pencil, ServerCrash } from 'lucide-react'
+import { CalendarClock, Loader2, MapPin, PackageOpen, Pencil, ServerCrash } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { useBuwuhanDetail } from '@/hooks/useBuwuhanDetail'
-import { formatDateId, formatNumber, formatRupiah, formatTimeWib } from '@/lib/format'
-import { getBuwuhanCategory } from '@/lib/buwuhHelper'
+import { formatDateCompact, formatTimeCompact, formatNumber, formatRupiah } from '@/lib/format'
+import { getBuwuhanCategory, sumMoneyOnly } from '@/lib/buwuhHelper'
 import type { ApiBuwuhan } from '@/types/invitation-api'
 
 export type BuwuhanDetailModalProps = {
-  invitationId: string
-  /** ID catatan buwuh yang dilihat. Komponen hanya dirender saat ID ada. */
+  invitationId?: string
+  /** ID catatan buwuh yang dilihat. */
   buwuhanId: string
   onClose: () => void
   /** Membuka formulir ubah untuk catatan yang sedang dilihat. */
   onEdit: (record: ApiBuwuhan) => void
+  /** Objek catatan opsional bila sudah tersedia di state induk */
+  record?: ApiBuwuhan | null
 }
 
 /**
@@ -22,15 +24,16 @@ export type BuwuhanDetailModalProps = {
  * (kategori, jumlah, satuan, estimasi nilai) beserta jejak waktu pencatatan.
  */
 export function BuwuhanDetailModal({
-  invitationId,
+  invitationId = 'standalone',
   buwuhanId,
   onClose,
   onEdit,
+  record,
 }: BuwuhanDetailModalProps) {
-  const { buwuhan, isLoading, isError } = useBuwuhanDetail(invitationId, buwuhanId)
+  const { buwuhan: fetchedBuwuhan, isLoading, isError } = useBuwuhanDetail(invitationId, buwuhanId)
+  const buwuhan = record || fetchedBuwuhan
 
-  const totalValue =
-    buwuhan?.items.reduce((total, item) => total + (item.estimatedValue ?? 0), 0) ?? 0
+  const nominalUang = buwuhan ? sumMoneyOnly(buwuhan) : 0
 
   const thClass =
     'px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500'
@@ -72,9 +75,15 @@ export function BuwuhanDetailModal({
               <h3 className="font-display text-lg font-extrabold tracking-tight text-ink">
                 {buwuhan.giverName}
               </h3>
+              {buwuhan.giverAddress && (
+                <p className="flex items-center gap-1 text-xs text-slate-500">
+                  <MapPin size={12} className="shrink-0" />
+                  {buwuhan.giverAddress}
+                </p>
+              )}
               <div className="flex flex-wrap items-center gap-1.5">
                 <Badge variant="outline" icon={<CalendarClock size={11} />}>
-                  Diterima {formatDateId(buwuhan.receivedAt)}
+                  Diterima {formatDateCompact(buwuhan.receivedAt)} · {formatTimeCompact(buwuhan.receivedAt)}
                 </Badge>
                 <Badge variant="outline" icon={<PackageOpen size={11} />}>
                   {formatNumber(buwuhan.items.length)} item
@@ -122,10 +131,10 @@ export function BuwuhanDetailModal({
                 <tfoot className="border-t border-slate-100 bg-slate-50/60">
                   <tr>
                     <td className={`${tdClass} font-bold text-slate-600`} colSpan={3}>
-                      Total Estimasi
+                      Nominal Uang
                     </td>
                     <td className={`${tdClass} text-right font-extrabold text-ink`}>
-                      {formatRupiah(totalValue)}
+                      {formatRupiah(nominalUang)}
                     </td>
                   </tr>
                 </tfoot>
@@ -135,10 +144,10 @@ export function BuwuhanDetailModal({
             {/* Jejak waktu */}
             <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-2xl border border-border bg-slate-50/60 px-4 py-3 text-[11px] text-slate-500">
               <span>
-                Dicatat: {formatDateId(buwuhan.createdAt)}, {formatTimeWib(buwuhan.createdAt)}
+                Dicatat: {formatDateCompact(buwuhan.createdAt)} · {formatTimeCompact(buwuhan.createdAt)}
               </span>
               <span>
-                Diubah: {formatDateId(buwuhan.updatedAt)}, {formatTimeWib(buwuhan.updatedAt)}
+                Diubah: {formatDateCompact(buwuhan.updatedAt)} · {formatTimeCompact(buwuhan.updatedAt)}
               </span>
             </div>
 

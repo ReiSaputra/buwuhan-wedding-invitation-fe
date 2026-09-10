@@ -15,16 +15,18 @@ import { useInvitationDetail } from '@/hooks/useInvitationDetail'
 import { useBuwuhan } from '@/hooks/useBuwuhan'
 import { useTableState } from '@/hooks/useTableState'
 import { exportBuwuhanData } from '@/lib/export'
-import { formatDateId, formatNumber, formatRupiah, getInitial } from '@/lib/format'
-import { calculateBuwuhStats, getBuwuhanCategory } from '@/lib/buwuhHelper'
+import { formatDateCompact, formatTimeCompact, formatNumber, formatRupiah, getInitial } from '@/lib/format'
+import { calculateBuwuhStats, getBuwuhanCategory, sumMoneyOnly } from '@/lib/buwuhHelper'
 import type { ApiBuwuhan, BuwuhanCategory, BuwuhanPayload } from '@/types/invitation-api'
 
 const thClass = 'px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500'
 const tdClass = 'px-6 py-4 align-middle'
 
-/** Menjumlahkan estimasi nilai seluruh item dalam satu transaksi buwuh. */
-function sumEstimatedValue(record: ApiBuwuhan): number {
-  return record.items.reduce((total, item) => total + (item.estimatedValue ?? 0), 0)
+/** Mendapatkan ikon kategori bantuan tanpa teks label. */
+function CategoryIcon({ category }: { category: BuwuhanCategory }) {
+  if (category === 'Uang') return <Banknote size={13} className="shrink-0 text-emerald-600" />
+  if (category === 'Beras') return <Wheat size={13} className="shrink-0 text-amber-600" />
+  return <Gift size={13} className="shrink-0 text-indigo-600" />
 }
 
 /** Komponen badge penanda 3 jenis bantuan utama */
@@ -94,12 +96,12 @@ export default function PanelCatatanBuwuhPage() {
   async function handleExport() {
     const fallbackRows = table.filteredRows.map((record) => ({
       'Nama Pemberi': record.giverName,
-      'Jenis Bantuan': Array.from(new Set(record.items.map((i) => getBuwuhanCategory(i)))).join(', '),
+      'Alamat Pemberi': record.giverAddress ?? '-',
       Rincian: record.items
-        .map((i) => `${i.itemName} (${i.quantity} ${i.unit})`)
+        .map((i) => `[${getBuwuhanCategory(i)}] ${i.itemName} (${i.quantity} ${i.unit})`)
         .join('; '),
-      'Estimasi Nilai': sumEstimatedValue(record),
-      Tanggal: formatDateId(record.receivedAt),
+      'Nominal Uang': sumMoneyOnly(record),
+      Tanggal: `${formatDateCompact(record.receivedAt)} ${formatTimeCompact(record.receivedAt)}`,
       Catatan: record.note ?? '',
     }))
     try {
@@ -192,9 +194,9 @@ export default function PanelCatatanBuwuhPage() {
             <thead className="border-b border-slate-100 bg-slate-50/60">
               <tr>
                 <th className={thClass}>Pemberi</th>
-                <th className={thClass}>Jenis Bantuan</th>
+                <th className={thClass}>Alamat Pemberi</th>
                 <th className={thClass}>Rincian Bantuan</th>
-                <th className={thClass}>Estimasi Nilai</th>
+                <th className={thClass}>Nominal Uang</th>
                 <th className={thClass}>Tanggal</th>
                 <th className={`${thClass} text-right`}>Aksi</th>
               </tr>
@@ -216,34 +218,33 @@ export default function PanelCatatanBuwuhPage() {
                   <tr key={record.id} className="transition hover:bg-slate-50/70">
                     <td className={tdClass}>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-indigo-100/80 bg-indigo-50 text-xs font-bold text-primary">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-100/80 bg-indigo-50 text-xs font-bold text-primary">
                           {getInitial(record.giverName)}
                         </div>
-                        <div>
+                        <div className="min-w-0 max-w-[200px]">
                           <span className="block text-xs font-bold text-ink">{record.giverName}</span>
                           {record.note && (
-                            <span className="text-[11px] text-slate-400">"{record.note}"</span>
+                            <span className="block break-words text-[11px] leading-snug text-slate-400">"{record.note}"</span>
                           )}
                         </div>
                       </div>
                     </td>
                     <td className={tdClass}>
-                      <div className="flex flex-wrap gap-1.5">
-                        {categories.map((cat) => (
-                          <CategoryBadge key={cat} category={cat} />
-                        ))}
-                      </div>
+                      <span className="block max-w-[180px] break-words text-xs text-slate-600">
+                        {record.giverAddress || '-'}
+                      </span>
                     </td>
                     <td className={tdClass}>
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {record.items.map((item) => {
                           const cat = getBuwuhanCategory(item)
                           return (
                             <div key={item.id} className="text-slate-700">
-                              <span className="font-semibold text-slate-800">{item.itemName}</span>
-                              <span className="text-slate-500">
-                                {' '}
-                                —{' '}
+                              <div className="flex items-center gap-1.5">
+                                <CategoryIcon category={cat} />
+                                <span className="font-semibold text-slate-800">{item.itemName}</span>
+                              </div>
+                              <span className="ml-5 text-[11px] text-slate-500">
                                 {cat === 'Uang'
                                   ? formatRupiah(item.estimatedValue ?? item.quantity)
                                   : `${item.quantity} ${item.unit}`}
@@ -254,9 +255,12 @@ export default function PanelCatatanBuwuhPage() {
                       </div>
                     </td>
                     <td className={`${tdClass} font-bold text-ink`}>
-                      {formatRupiah(sumEstimatedValue(record))}
+                      {formatRupiah(sumMoneyOnly(record))}
                     </td>
-                    <td className={tdClass}>{formatDateId(record.receivedAt)}</td>
+                    <td className={`${tdClass} text-slate-600`}>
+                      <span className="block text-xs">{formatDateCompact(record.receivedAt)}</span>
+                      <span className="block text-[11px] text-slate-400">{formatTimeCompact(record.receivedAt)}</span>
+                    </td>
                     <td className={tdClass}>
                       <div className="flex items-center justify-end gap-1.5">
                         <button
@@ -321,6 +325,7 @@ export default function PanelCatatanBuwuhPage() {
         onSubmit={handleSubmit}
         initialValue={editing}
         isSubmitting={isMutating}
+        defaultInvitationId={id}
       />
 
       <Modal

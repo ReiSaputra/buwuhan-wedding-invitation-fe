@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { AnimatedStatusIcon } from '@/components/ui/AnimatedStatusIcon'
 import { ImageUrlInput } from '@/components/ui/ImageUrlInput'
+import { api } from '@/lib/api'
 import { useGallery } from '@/hooks/useGallery'
 import { parseApiError } from '@/lib/errorHandler'
 import type { ApiGalleryPhoto } from '@/types/invitation-api'
@@ -117,18 +118,32 @@ export function GalleryManager({ invitationId, photos, onDirtyChange }: GalleryM
     setIsBulkProcessing(true)
 
     try {
-      // Baca seluruh file menjadi DataURL
-      const readPromises = bulkFiles.map((file) => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onload = (e) => resolve(e.target?.result as string)
-          reader.readAsDataURL(file)
-        })
+      // 1. Unggah seluruh berkas ke endpoint multipart /uploads/images
+      const uploadPromises = bulkFiles.map(async (file) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'images')
+
+        const res = await api.post<{ data: { url: string; fileUrl?: string } }>(
+          '/uploads/images',
+          formData,
+          {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          },
+        )
+        return res.data?.data?.url || res.data?.data?.fileUrl
       })
 
-      const dataUrls = await Promise.all(readPromises)
+      const uploadedUrls = await Promise.all(uploadPromises)
+      const validUrls = uploadedUrls.filter((url): url is string => Boolean(url))
+
+      if (validUrls.length === 0) {
+        throw new Error('Gagal mengunggah berkas ke server.')
+      }
+
+      // 2. Simpan daftar URL gambar ke galeri undangan
       const currentCount = photos.length
-      const payloads = dataUrls.map((url, idx) => ({
+      const payloads = validUrls.map((url, idx) => ({
         imageUrl: url,
         caption: null,
         order: currentCount + idx,
@@ -143,12 +158,16 @@ export function GalleryManager({ invitationId, photos, onDirtyChange }: GalleryM
         title: 'Galeri Berhasil Diperbarui',
         message: `${payloads.length} foto baru telah ditambahkan ke album pernikahan Anda.`,
       })
-    } catch {
+    } catch (bulkErr) {
+      const parsed = parseApiError(bulkErr)
       setPopupState({
         isOpen: true,
         status: 'error',
         title: 'Gagal Mengunggah Foto Massal',
-        message: 'Terjadi kendala saat menyimpan foto-foto galeri.',
+        message:
+          parsed.generalMessage ??
+          parsed.allMessages[0] ??
+          'Terjadi kendala saat mengunggah dan menyimpan foto-foto galeri.',
       })
     } finally {
       setIsBulkProcessing(false)
@@ -341,7 +360,7 @@ export function GalleryManager({ invitationId, photos, onDirtyChange }: GalleryM
           value={imageUrl}
           onChange={setImageUrl}
           error={error}
-          folder="gallery"
+          folder="images"
         />
 
         <div>

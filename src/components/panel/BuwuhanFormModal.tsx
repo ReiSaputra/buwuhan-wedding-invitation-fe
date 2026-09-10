@@ -19,6 +19,10 @@ export type BuwuhanFormModalProps = {
   /** Data awal saat mode ubah; null berarti mode tambah baru */
   initialValue?: ApiBuwuhan | null
   isSubmitting?: boolean
+  /** ID undangan default jika dibuka dari panel undangan tertentu */
+  defaultInvitationId?: string
+  /** Nama acara default */
+  defaultInvitationTitle?: string
 }
 
 type DraftItem = {
@@ -38,7 +42,19 @@ const EMPTY_ITEM: DraftItem = {
 }
 
 const inputClass =
-  'w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-ink placeholder:text-slate-400 focus:border-primary focus:outline-none'
+  'w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-ink placeholder:text-slate-400 focus:border-primary focus:outline-none bg-white'
+
+/** Format angka mentah ke pemisah ribuan Indonesia: 100000 → "100.000" */
+function formatThousands(value: string): string {
+  const digits = value.replace(/\D/g, '')
+  if (!digits) return ''
+  return Number(digits).toLocaleString('id-ID')
+}
+
+/** Hapus titik pemisah ribuan: "100.000" → "100000" */
+function stripThousands(formatted: string): string {
+  return formatted.replace(/\./g, '')
+}
 
 /**
  * Modal formulir pencatatan buwuh: satu pemberi dengan satu atau lebih
@@ -50,9 +66,15 @@ export function BuwuhanFormModal({
   onSubmit,
   initialValue = null,
   isSubmitting = false,
+  defaultInvitationId,
+  defaultInvitationTitle,
 }: BuwuhanFormModalProps) {
   const [giverName, setGiverName] = useState(initialValue?.giverName ?? '')
+  const [giverAddress, setGiverAddress] = useState(initialValue?.giverAddress ?? '')
   const [note, setNote] = useState(initialValue?.note ?? '')
+  const [invitationTitle, setInvitationTitle] = useState(
+    initialValue?.invitationTitle ?? defaultInvitationTitle ?? ''
+  )
   const [items, setItems] = useState<DraftItem[]>(
     initialValue
       ? initialValue.items.map((item) => {
@@ -118,7 +140,10 @@ export function BuwuhanFormModal({
 
     onSubmit({
       giverName: giverName.trim(),
+      giverAddress: giverAddress.trim() || null,
       note: note.trim() || null,
+      invitationId: defaultInvitationId || initialValue?.invitationId || null,
+      invitationTitle: invitationTitle.trim() || null,
       items: payloadItems,
     })
     onClose()
@@ -151,6 +176,26 @@ export function BuwuhanFormModal({
               value={note}
               onChange={(event) => setNote(event.target.value)}
               placeholder="Opsional, misal: titipan keluarga"
+            />
+          </label>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="space-y-1.5">
+            <span className="text-[11px] font-bold text-slate-600">Acara Undangan</span>
+            <input
+              className={inputClass}
+              value={invitationTitle}
+              onChange={(event) => setInvitationTitle(event.target.value)}
+              placeholder="Contoh: The Wedding of Budi & Siti"
+            />
+          </label>
+          <label className="space-y-1.5">
+            <span className="text-[11px] font-bold text-slate-600">Alamat Pemberi</span>
+            <input
+              className={inputClass}
+              value={giverAddress}
+              onChange={(event) => setGiverAddress(event.target.value)}
+              placeholder="Contoh: Ds. Kedungwaru, Kec. Tulungagung"
             />
           </label>
         </div>
@@ -268,14 +313,15 @@ export function BuwuhanFormModal({
                       {item.category === 'Uang' ? 'Nominal Uang (Rp)' : 'Estimasi Nilai (Rp)'}
                     </label>
                     <input
-                      type="number"
-                      min="0"
+                      type="text"
+                      inputMode="numeric"
                       className={inputClass}
-                      value={item.estimatedValue}
-                      onChange={(event) =>
-                        patchItem(index, { estimatedValue: event.target.value })
-                      }
-                      placeholder={item.category === 'Uang' ? 'Contoh: 100000' : 'Estimasi Rp (opsional)'}
+                      value={formatThousands(item.estimatedValue)}
+                      onChange={(event) => {
+                        const raw = stripThousands(event.target.value)
+                        patchItem(index, { estimatedValue: raw })
+                      }}
+                      placeholder={item.category === 'Uang' ? 'Contoh: 100.000' : 'Estimasi Rp (opsional)'}
                     />
                   </div>
                 </div>

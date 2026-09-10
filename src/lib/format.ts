@@ -85,3 +85,23 @@ export function formatTimeWib(iso: string): string {
 export function getInitial(name: string): string {
   return name.trim().charAt(0).toUpperCase() || "?";
 }
+
+/**
+ * Memformat tanggal ISO menjadi format kompak tanggal saja.
+ *
+ * @param iso - Tanggal dalam format ISO-8601
+ * @returns String format tanggal kompak (misal: "26-09-10")
+ */
+export function formatDateCompact(iso: string): string {
+  return dayjs(iso).format("DD-MM-YY");
+}
+
+/**
+ * Memformat tanggal ISO menjadi format jam, menit, detik dengan label WIB.
+ *
+ * @param iso - Tanggal dalam format ISO-8601
+ * @returns String format waktu (misal: "23:39:50 WIB")
+ */
+export function formatTimeCompact(iso: string): string {
+  return `${dayjs(iso).format("HH:mm:ss")} WIB`;
+}

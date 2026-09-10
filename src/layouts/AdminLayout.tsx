@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { ShieldCheck, Menu, X, LogOut, Clock, Sparkles } from 'lucide-react'
+import { ShieldCheck, Menu, X, LogOut, Clock } from 'lucide-react'
 import { adminNav, adminNavFooter } from '@/config/navigation'
 import { NavItem } from '@/components/dashboard/NavItem'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -176,13 +176,6 @@ export default function AdminLayout() {
             >
               <Menu size={18} />
             </button>
-
-            <div className="flex items-center gap-2">
-              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 px-2.5 py-1 text-xs font-bold text-primary border border-indigo-100">
-                <Sparkles size={13} />
-                Portal Kontrol Platform
-              </span>
-            </div>
           </div>
 
           <div className="flex items-center gap-3">

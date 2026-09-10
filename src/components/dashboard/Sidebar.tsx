@@ -1,4 +1,4 @@
-import { Gem, X, Sparkles } from 'lucide-react'
+import { Gem, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { NavItem } from './NavItem'
 import { NavGroup } from './NavGroup'
@@ -23,7 +23,7 @@ export type SidebarProps = {
  * 
  * @param props - Properti Sidebar (subtitle, items, footer, onClose)
  */
-export function Sidebar({ subtitle, items, footer, onClose }: SidebarProps) {
+export function Sidebar({ items, footer, onClose }: SidebarProps) {
   const user: CurrentUser = useCurrentUser()
 
   /**
@@ -63,9 +63,6 @@ export function Sidebar({ subtitle, items, footer, onClose }: SidebarProps) {
             <span className="font-display text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
               Buwuh Panel
             </span>
-            <span className="text-[11px] font-medium text-white/60 tracking-wider uppercase flex items-center gap-1">
-              <Sparkles size={10} className="text-amber-300" /> Wedding SaaS
-            </span>
           </div>
         </Link>
 
@@ -81,14 +78,6 @@ export function Sidebar({ subtitle, items, footer, onClose }: SidebarProps) {
           </button>
         )}
       </div>
-
-      {/* Subtitle konteks panel jika ada */}
-      {subtitle && (
-        <div className="mx-2 mb-4 rounded-xl bg-white/10 px-3 py-2 text-xs text-white/85 backdrop-blur-xs border border-white/10 flex items-center justify-between">
-          <span className="truncate font-medium">Panel: {subtitle}</span>
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-        </div>
-      )}
 
       <div className="mb-3 h-px bg-white/15" />
 

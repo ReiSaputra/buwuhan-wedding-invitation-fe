@@ -53,6 +53,19 @@ export const CATEGORY_UNITS: Record<BuwuhanCategory, BuwuhanUnit[]> = {
   Barang: ['unit', 'pack', 'box', 'ekor', 'jasa', 'transaksi'],
 }
 
+/**
+ * Menjumlahkan estimasi nilai hanya dari item berkategori Uang saja.
+ * Beras dan Barang tidak dihitung walaupun memiliki estimasi nilai.
+ */
+export function sumMoneyOnly(record: ApiBuwuhan | ApiOwnerBuwuhan): number {
+  return record.items.reduce((total, item) => {
+    if (getBuwuhanCategory(item) === 'Uang') {
+      return total + (item.estimatedValue ?? item.quantity)
+    }
+    return total
+  }, 0)
+}
+
 export type BuwuhStats = {
   totalMoney: number
   moneyTransactions: number

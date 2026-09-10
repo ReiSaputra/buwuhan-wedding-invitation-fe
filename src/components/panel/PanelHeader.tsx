@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Copy, Check, ExternalLink, Calendar, Sparkles } from 'lucide-react'
+import { Copy, Check, ExternalLink, Calendar } from 'lucide-react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/id'
 import { Button } from '@/components/ui/Button'
@@ -50,11 +50,6 @@ export function PanelHeader({ coupleName, eventDate, slug, hasTemplate = true, s
 
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-primary">
-            <Sparkles size={11} className="text-amber-500" />
-            <span>Panel Acara Pernikahan</span>
-          </div>
-
           <h1 className="font-display text-2xl sm:text-4xl font-extrabold text-ink tracking-tight">
             {coupleName}
           </h1>

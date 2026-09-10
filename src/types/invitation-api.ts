@@ -350,7 +350,9 @@ export interface ApiBuwuhanItem {
 export interface ApiBuwuhan {
   id: string
   invitationId: string
+  invitationTitle?: string | null
   giverName: string
+  giverAddress: string | null
   note: string | null
   receivedAt: string
   createdAt: string
@@ -378,8 +380,11 @@ export interface BuwuhanItemPayload {
 
 export interface BuwuhanPayload {
   giverName: string
+  giverAddress?: string | null
   note?: string | null
   receivedAt?: string
+  invitationId?: string | null
+  invitationTitle?: string | null
   items: BuwuhanItemPayload[]
 }
 

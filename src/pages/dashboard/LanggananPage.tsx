@@ -211,10 +211,6 @@ export default function LanggananPage() {
         <div className="space-y-12">
           {/* Judul & Toggle Billing */}
           <div className="text-center max-w-2xl mx-auto space-y-3">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200/60 px-3.5 py-1 text-xs font-bold text-primary">
-              <Sparkles size={13} className="text-amber-500" />
-              <span>Investasi Terbaik untuk Momen Bahagia</span>
-            </div>
             <h2 className="font-display text-3xl font-extrabold text-ink tracking-tight">
               Pilih Paket Sesuai Kebutuhan Acaramu
             </h2>
