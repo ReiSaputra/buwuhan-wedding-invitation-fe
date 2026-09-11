@@ -14,6 +14,11 @@ let inMemoryAccessToken: string | null = null;
 let onAuthFailedCallback: (() => void) | null = null;
 
 /**
+ * Callback opsional saat access token berhasil diperbarui di latar belakang.
+ */
+let onTokenRefreshedCallback: ((token: string) => void) | null = null;
+
+/**
  * Mengatur atau menghapus Access Token di memori aplikasi.
  *
  * @param token - String JWT access token baru atau null saat logout/expired
@@ -36,8 +41,17 @@ export function getAccessToken(): string | null {
  *
  * @param callback - Fungsi yang dijalankan saat user harus diarahkan ke login
  */
-export function setOnAuthFailed(callback: () => void): void {
+export function setOnAuthFailed(callback: (() => void) | null): void {
   onAuthFailedCallback = callback;
+}
+
+/**
+ * Mendaftarkan fungsi callback yang dipanggil ketika access token baru berhasil diperoleh.
+ *
+ * @param callback - Fungsi yang menerima access token baru
+ */
+export function setOnTokenRefreshed(callback: ((token: string) => void) | null): void {
+  onTokenRefreshedCallback = callback;
 }
 
 /**
@@ -82,34 +96,67 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Variabel status dan antrean untuk menangani refresh token tunggal saat ada request bersamaan
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (token: string) => void;
-  reject: (error: unknown) => void;
-}> = [];
+/**
+ * Variabel penampung Promise in-flight untuk refresh token.
+ * Mencegah race condition ketika multiple requests atau React StrictMode
+ * memanggil refresh token pada waktu bersamaan.
+ */
+let refreshPromise: Promise<string | null> | null = null;
 
 /**
- * Memproses antrean request yang tertahan saat proses refresh token sedang berjalan.
+ * Melakukan refresh access token secara terpusat dan aman dari race condition (Singleton Promise).
+ * Semua pemanggil paralel (initSession, interceptor 401, query data) akan menunggu Promise yang sama.
+ * Tepat 1 HTTP POST /auth/refresh-token yang dikirim ke backend.
  *
- * @param error - Objek error jika refresh token gagal
- * @param token - Token baru jika refresh token berhasil
+ * @returns Access token baru jika berhasil, atau melempar error / null jika gagal
  */
-function processQueue(error: unknown, token: string | null = null) {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else if (token) {
-      prom.resolve(token);
+export async function requestRefreshToken(): Promise<string | null> {
+  // Jika sedang ada request refresh token yang berjalan, gunakan Promise yang sama
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const isInstant = instantAuthStorage.isInstantAccess();
+      if (isInstant) {
+        const token = instantAuthStorage.getToken();
+        return token;
+      }
+
+      const res = await api.post<
+        BackendSuccessEnvelope<{ accessToken: string }>
+      >("/auth/refresh-token", {});
+
+      const newToken = res.data?.data?.accessToken;
+      if (!newToken) {
+        throw new Error(
+          "Access token baru tidak ditemukan dalam respon refresh-token",
+        );
+      }
+
+      setAccessToken(newToken);
+
+      if (onTokenRefreshedCallback) {
+        onTokenRefreshedCallback(newToken);
+      }
+
+      return newToken;
+    } catch (error) {
+      setAccessToken(null);
+      throw error;
+    } finally {
+      refreshPromise = null;
     }
-  });
-  failedQueue = [];
+  })();
+
+  return refreshPromise;
 }
 
 /**
  * Interceptor response:
  * Mendeteksi error 401 Unauthorized (token kedaluwarsa) dan melakukan silent refresh
- * otomatis ke endpoint POST /auth/refresh-token tanpa mengganggu alur pengguna.
+ * otomatis menggunakan singleton requestRefreshToken() tanpa memicu race condition.
  */
 api.interceptors.response.use(
   (response) => response,
@@ -141,53 +188,22 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Jika sedang dalam proses refresh token oleh request lain, tahan request ini ke antrean
-    if (isRefreshing) {
-      return new Promise<string>((resolve, reject) => {
-        failedQueue.push({ resolve, reject });
-      })
-        .then((newToken) => {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return api(originalRequest);
-        })
-        .catch((err) => Promise.reject(err));
-    }
-
     originalRequest._retry = true;
-    isRefreshing = true;
 
     try {
-      // Panggil POST /auth/refresh-token (cookie otomatis terkirim karena withCredentials: true)
-      const res = await api.post<
-        BackendSuccessEnvelope<{ accessToken: string }>
-      >("/auth/refresh-token", {});
-
-      const newAccessToken = res.data?.data?.accessToken;
-
-      if (!newAccessToken) {
-        throw new Error(
-          "Access token baru tidak ditemukan dalam respon refresh-token",
-        );
+      const newToken = await requestRefreshToken();
+      if (!newToken) {
+        throw new Error("Gagal memperoleh access token baru");
       }
 
-      setAccessToken(newAccessToken);
-      processQueue(null, newAccessToken);
-
       // Ulangi request awal dengan access token yang baru
-      originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return api(originalRequest);
     } catch (refreshError) {
-      // Refresh token gagal / expired total
-      setAccessToken(null);
-      processQueue(refreshError, null);
-
       if (onAuthFailedCallback) {
         onAuthFailedCallback();
       }
-
       return Promise.reject(refreshError);
-    } finally {
-      isRefreshing = false;
     }
   },
 );

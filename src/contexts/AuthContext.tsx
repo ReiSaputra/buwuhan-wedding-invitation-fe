@@ -6,7 +6,13 @@ import {
   useCallback,
   type ReactNode,
 } from 'react'
-import { api, setAccessToken as setGlobalAccessToken, setOnAuthFailed } from '@/lib/api'
+import {
+  api,
+  setAccessToken as setGlobalAccessToken,
+  setOnAuthFailed,
+  setOnTokenRefreshed,
+  requestRefreshToken,
+} from '@/lib/api'
 import { instantAuthStorage } from '@/lib/instantAuthStorage'
 import type {
   AuthUser,
@@ -14,7 +20,6 @@ import type {
   RegisterInput,
   LoginResponseData,
   RegisterResponseData,
-  RefreshTokenResponseData,
   BackendSuccessEnvelope,
 } from '@/types/auth'
 
@@ -88,19 +93,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   /**
-   * Memulihkan sesi pengguna dengan memanggil refresh token (menggunakan cookie httpOnly).
+   * Memulihkan sesi pengguna dengan memanggil refresh token terpusat (singleton promise).
    * 
    * @returns true jika berhasil memulihkan sesi, false jika gagal/belum login
    */
   const refreshSession = useCallback(async (): Promise<boolean> => {
     try {
-      const res = await api.post<BackendSuccessEnvelope<RefreshTokenResponseData>>(
-        '/auth/refresh-token',
-        {},
-      )
-
-      const token = res.data?.data?.accessToken
-      if (!token) return false
+      const token = await requestRefreshToken()
+      if (!token) {
+        updateAccessToken(null)
+        setUser(null)
+        return false
+      }
 
       updateAccessToken(token)
 
@@ -132,6 +136,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true
 
+    // Sinkronkan state React jika Axios interceptor me-refresh token di background
+    setOnTokenRefreshed((newToken) => {
+      if (isMounted) {
+        setAccessTokenState(newToken)
+      }
+    })
+
     // Daftarkan callback jika axios interceptor gagal total me-refresh token
     setOnAuthFailed(() => {
       if (isMounted) {
@@ -160,6 +171,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         await refreshSession()
+      } catch {
+        // Abaikan error pada silent refresh awal
       } finally {
         if (isMounted) {
           setIsLoading(false)
@@ -171,6 +184,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false
+      setOnTokenRefreshed(null)
+      setOnAuthFailed(null)
     }
   }, [refreshSession, updateAccessToken])
 
