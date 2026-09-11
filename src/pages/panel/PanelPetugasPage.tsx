@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { Breadcrumb } from "@/components/dashboard/Breadcrumb";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
+import { parseApiError } from "@/lib/errorHandler";
 import { useInvitationDetail, useCurrentInvitationRole } from "@/hooks/useInvitationDetail";
 import {
   useMembers,
@@ -81,7 +83,7 @@ export default function PanelPetugasPage() {
   const { mutateAsync: addStaff, isPending: isAdding } = useInviteMember(id);
   const { mutateAsync: updateStaff, isPending: isUpdating } =
     useUpdateMemberRole(id);
-  const { mutateAsync: deleteStaff } = useRemoveMember(id);
+  const { mutateAsync: deleteStaff, isPending: isDeletingStaff } = useRemoveMember(id);
   const { mutateAsync: resendInvite, isPending: isResending } =
     useResendMemberInvite(id);
   const { mutateAsync: generateInstantLink, isPending: isGeneratingLink } =
@@ -97,6 +99,7 @@ export default function PanelPetugasPage() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Member | null>(null);
+  const [deletingStaff, setDeletingStaff] = useState<Member | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [selectedDetailMemberId, setSelectedDetailMemberId] = useState<string | null>(null);
 
@@ -134,7 +137,7 @@ export default function PanelPetugasPage() {
       setModalError("Nama petugas wajib diisi");
       return;
     }
-    if (!email.trim() || !email.includes("@")) {
+    if (inviteMethod === "email" && (!email.trim() || !email.includes("@"))) {
       setModalError("Masukkan alamat email petugas yang valid");
       return;
     }
@@ -147,7 +150,7 @@ export default function PanelPetugasPage() {
       } else if (inviteMethod === "instant") {
         const res = await generateInstantLink({
           name: name.trim(),
-          role: role === "OWNER" ? "USER" : role,
+          role: "USER",
         });
         setGeneratedLinkData(res);
         setToast(`Tautan akses cepat untuk ${name.trim()} berhasil dibuat!`);
@@ -168,15 +171,7 @@ export default function PanelPetugasPage() {
     }
   }
 
-  async function handleDelete(staffId: string, staffName: string) {
-    if (!window.confirm(`Yakin ingin mencabut akses untuk ${staffName}?`))
-      return;
-    try {
-      await deleteStaff(staffId);
-    } catch (err: unknown) {
-      alert((err as Error)?.message || "Gagal menghapus petugas");
-    }
-  }
+
 
   /**
    * Backend tidak pernah mengirim token undangan ke frontend (token hanya
@@ -501,7 +496,7 @@ export default function PanelPetugasPage() {
 
                             <button
                               type="button"
-                              onClick={() => handleDelete(staff.id, staff.name)}
+                              onClick={() => setDeletingStaff(staff)}
                               title="Cabut Akses"
                               className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 transition cursor-pointer"
                             >
@@ -659,46 +654,58 @@ export default function PanelPetugasPage() {
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-xs font-bold text-ink mb-1.5">
-                    Pilih Peran
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {ASSIGNABLE_ROLES.map((r) => {
-                      const cfg = ROLE_LABELS[r];
-                      const isSelected = role === r;
-                      return (
-                        <button
-                          key={r}
-                          type="button"
-                          onClick={() => setRole(r)}
-                          className={`flex flex-col text-left p-3 rounded-xl border transition cursor-pointer ${
-                            isSelected
-                              ? "border-primary bg-indigo-50/50 ring-1 ring-primary"
-                              : "border-slate-200 bg-white hover:bg-slate-50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5 font-bold text-xs text-ink">
-                            <cfg.icon
-                              size={14}
-                              className={
-                                isSelected ? "text-primary" : "text-slate-500"
-                              }
-                            />
-                            <span>{cfg.label.split(" (")[0]}</span>
-                          </div>
-                          <p className="mt-1 text-[11px] text-muted line-clamp-2">
-                            {cfg.desc}
-                          </p>
-                        </button>
-                      );
-                    })}
+                {inviteMethod === "email" || editingStaff ? (
+                  <div>
+                    <label className="block text-xs font-bold text-ink mb-1.5">
+                      Pilih Peran
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {ASSIGNABLE_ROLES.map((r) => {
+                        const cfg = ROLE_LABELS[r];
+                        const isSelected = role === r;
+                        return (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => setRole(r)}
+                            className={`flex flex-col text-left p-3 rounded-xl border transition cursor-pointer ${
+                              isSelected
+                                ? "border-primary bg-indigo-50/50 ring-1 ring-primary"
+                                : "border-slate-200 bg-white hover:bg-slate-50"
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 font-bold text-xs text-ink">
+                              <cfg.icon
+                                size={14}
+                                className={
+                                  isSelected ? "text-primary" : "text-slate-500"
+                                }
+                              />
+                              <span>{cfg.label.split(" (")[0]}</span>
+                            </div>
+                            <p className="mt-1 text-[11px] text-muted line-clamp-2">
+                              {cfg.desc}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+                    <div className="flex items-center gap-2 font-bold text-xs text-primary">
+                      <QrCode size={14} />
+                      <span>Peran: Petugas Pencatat Buwuh (USER)</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-600">
+                      Hak akses otomatis dikunci untuk modul Catatan Buwuh pada acara ini demi keamanan data acara Anda.
+                    </p>
+                  </div>
+                )}
 
                 <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3 text-[11px] text-sky-800">
                   {inviteMethod === "instant"
-                    ? "Sistem akan membuat tautan unik yang langsung memberikan akses scan QR dan kelola acara tanpa mewajibkan petugas membuat akun."
+                    ? "Sistem akan membuat tautan unik (Magic Link) yang langsung memberikan akses pencatatan buwuh tanpa mewajibkan petugas membuat akun."
                     : "Sistem otomatis mengirim email undangan berisi tautan aktivasi yang berlaku 7 hari."}
                 </div>
 
@@ -736,6 +743,63 @@ export default function PanelPetugasPage() {
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* MODAL KONFIRMASI CABUT AKSES PETUGAS                                      */}
+      {/* ========================================================================= */}
+      <Modal
+        isOpen={deletingStaff !== null}
+        onClose={() => setDeletingStaff(null)}
+        title="Cabut Hak Akses Petugas?"
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-rose-100 bg-rose-50/80 p-4 flex items-start gap-3.5">
+            <div className="p-2 rounded-xl bg-rose-100 text-rose-600 shrink-0">
+              <Trash2 size={20} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold text-rose-950">
+                Konfirmasi Pencabutan Akses
+              </h4>
+              <p className="text-xs text-rose-700 leading-relaxed">
+                Yakin ingin mencabut akses untuk <strong>"{deletingStaff?.name}"</strong>? Petugas ini tidak akan dapat lagi masuk ke panel atau mencatat bantuan tamu.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeletingStaff(null)}
+              disabled={isDeletingStaff}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={isDeletingStaff}
+              onClick={async () => {
+                if (deletingStaff) {
+                  try {
+                    await deleteStaff(deletingStaff.id);
+                    setToast(`Akses untuk ${deletingStaff.name} berhasil dicabut`);
+                    setTimeout(() => setToast(null), 4000);
+                    setDeletingStaff(null);
+                  } catch (err: unknown) {
+                    const parsed = parseApiError(err);
+                    alert(parsed.generalMessage || "Gagal mencabut akses petugas");
+                  }
+                }
+              }}
+            >
+              {isDeletingStaff ? "Mencabut…" : "Ya, Cabut Akses"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* ========================================================================= */}
       {/* MODAL DETAIL INFORMASI PETUGAS (GET /invitations/:id/members/:memberId)   */}

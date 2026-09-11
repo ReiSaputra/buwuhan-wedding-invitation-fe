@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { deleteData, fetchData, patchData, postData } from '@/lib/api'
+import { instantAuthStorage } from '@/lib/instantAuthStorage'
 import type { ApiBuwuhan, ApiBuwuhanSummary, BuwuhanPayload } from '@/types/invitation-api'
 
 const EMPTY_SUMMARY: ApiBuwuhanSummary = {
@@ -59,20 +60,60 @@ export function useBuwuhan(invitationId: string) {
 
   /** Menyegarkan daftar buwuh per-undangan, daftar global buwuhan, ringkasannya, dan dashboard. */
   function invalidateAll() {
-    void queryClient.invalidateQueries({ queryKey: ['invitation', invitationId] })
-    void queryClient.invalidateQueries({ queryKey: ['buwuhans'] })
-    void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    const isInstant = instantAuthStorage.isInstantAccess()
+
+    void queryClient.invalidateQueries({ queryKey: ['invitation', invitationId, 'buwuhans'] })
+    void queryClient.invalidateQueries({ queryKey: ['invitation', invitationId, 'buwuhan-summary'] })
+    void queryClient.refetchQueries({ queryKey: ['invitation', invitationId, 'buwuhans'] })
+
+    if (!isInstant) {
+      void queryClient.invalidateQueries({ queryKey: ['invitation', invitationId] })
+      void queryClient.invalidateQueries({ queryKey: ['buwuhans'] })
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    }
   }
 
   const createMutation = useMutation({
-    mutationFn: (payload: BuwuhanPayload) =>
-      postData<ApiBuwuhan, BuwuhanPayload>(`/invitations/${invitationId}/buwuhans`, payload),
+    mutationFn: (payload: BuwuhanPayload) => {
+      const body = {
+        giverName: payload.giverName.trim(),
+        giverAddress: payload.giverAddress?.trim() || null,
+        note: payload.note?.trim() || null,
+        items: payload.items.map((it) => ({
+          itemName: it.itemName.trim(),
+          quantity: Number(it.quantity) || 1,
+          unit: it.unit,
+          category: it.category || null,
+          estimatedValue:
+            it.estimatedValue !== null && it.estimatedValue !== undefined && it.estimatedValue !== ('' as unknown)
+              ? Number(it.estimatedValue)
+              : null,
+        })),
+      }
+      return postData<ApiBuwuhan, typeof body>(`/invitations/${invitationId}/buwuhans`, body)
+    },
     onSuccess: invalidateAll,
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: BuwuhanPayload }) =>
-      patchData<ApiBuwuhan, BuwuhanPayload>(`/buwuhans/${id}`, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: BuwuhanPayload }) => {
+      const body = {
+        giverName: payload.giverName.trim(),
+        giverAddress: payload.giverAddress?.trim() || null,
+        note: payload.note?.trim() || null,
+        items: payload.items.map((it) => ({
+          itemName: it.itemName.trim(),
+          quantity: Number(it.quantity) || 1,
+          unit: it.unit,
+          category: it.category || null,
+          estimatedValue:
+            it.estimatedValue !== null && it.estimatedValue !== undefined && it.estimatedValue !== ('' as unknown)
+              ? Number(it.estimatedValue)
+              : null,
+        })),
+      }
+      return patchData<ApiBuwuhan, typeof body>(`/buwuhans/${id}`, body)
+    },
     onSuccess: invalidateAll,
   })
 

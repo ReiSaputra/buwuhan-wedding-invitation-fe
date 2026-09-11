@@ -159,6 +159,7 @@ eventLabel={eventLabel}
           <LoveStoryGallerySection
             loveStories={loveStories}
             galleryPhotos={galleryPhotos}
+            eventCategory={eventCategory}
           />
 
           <WishesSection slug={slug} guestNameDefault={guestName} />

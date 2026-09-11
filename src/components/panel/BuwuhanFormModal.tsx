@@ -15,7 +15,7 @@ import { CATEGORY_UNITS, getBuwuhanCategory } from '@/lib/buwuhHelper'
 export type BuwuhanFormModalProps = {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (payload: BuwuhanPayload) => void
+  onSubmit: (payload: BuwuhanPayload) => void | Promise<void>
   /** Data awal saat mode ubah; null berarti mode tambah baru */
   initialValue?: ApiBuwuhan | null
   isSubmitting?: boolean
@@ -23,6 +23,8 @@ export type BuwuhanFormModalProps = {
   defaultInvitationId?: string
   /** Nama acara default */
   defaultInvitationTitle?: string
+  /** Apakah kolom input Acara Undangan ditampilkan (default: false di panel) */
+  showInvitationField?: boolean
 }
 
 type DraftItem = {
@@ -68,6 +70,7 @@ export function BuwuhanFormModal({
   isSubmitting = false,
   defaultInvitationId,
   defaultInvitationTitle,
+  showInvitationField = false,
 }: BuwuhanFormModalProps) {
   const [giverName, setGiverName] = useState(initialValue?.giverName ?? '')
   const [giverAddress, setGiverAddress] = useState(initialValue?.giverAddress ?? '')
@@ -117,7 +120,7 @@ export function BuwuhanFormModal({
   }
 
   /** Mengubah draft formulir menjadi body request yang diterima backend. */
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
 
     const payloadItems: BuwuhanItemPayload[] = items
@@ -137,22 +140,25 @@ export function BuwuhanFormModal({
       })
 
     if (
-  !giverName.trim() ||
-  giverAddress.trim().length > 500 ||
-  payloadItems.length === 0
-) {
-  return
-}
+      !giverName.trim() ||
+      giverAddress.trim().length > 500 ||
+      payloadItems.length === 0
+    ) {
+      return
+    }
 
-    onSubmit({
-      giverName: giverName.trim(),
-      giverAddress: giverAddress.trim() || null,
-      note: note.trim() || null,
-      invitationId: defaultInvitationId || initialValue?.invitationId || null,
-      invitationTitle: invitationTitle.trim() || null,
-      items: payloadItems,
-    })
-    onClose()
+    try {
+      await onSubmit({
+        giverName: giverName.trim(),
+        giverAddress: giverAddress.trim() || null,
+        note: note.trim() || null,
+        invitationId: defaultInvitationId || initialValue?.invitationId || null,
+        invitationTitle: showInvitationField ? (invitationTitle.trim() || null) : null,
+        items: payloadItems,
+      })
+    } catch {
+      // Error ditangani oleh callback parent
+    }
   }
 
   return (
@@ -176,46 +182,59 @@ export function BuwuhanFormModal({
             />
           </label>
           <label className="space-y-1.5">
-            <span className="text-[11px] font-bold text-slate-600">Catatan</span>
+            <span className="text-[11px] font-bold text-slate-600">
+              Alamat / Asal Domisili
+            </span>
             <input
+              type="text"
               className={inputClass}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder="Opsional, misal: titipan keluarga"
+              value={giverAddress}
+              onChange={(event) =>
+                setGiverAddress(event.target.value.slice(0, 500))
+              }
+              placeholder="Contoh: Ds. Kedungwaru, Kec. Tulungagung"
+              maxLength={500}
             />
+            <span className="block text-right text-[10px] text-slate-400">
+              {giverAddress.length}/500
+            </span>
           </label>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1.5">
-            <span className="text-[11px] font-bold text-slate-600">Acara Undangan</span>
-            <input
-              className={inputClass}
-              value={invitationTitle}
-              onChange={(event) => setInvitationTitle(event.target.value)}
-              placeholder="Contoh: The Wedding of Budi & Siti"
-            />
-          </label>
-          <label className="space-y-1.5">
-  <span className="text-[11px] font-bold text-slate-600">
-    Alamat / Asal Domisili
-  </span>
 
-  <input
-    type="text"
-    className={inputClass}
-    value={giverAddress}
-    onChange={(event) =>
-      setGiverAddress(event.target.value.slice(0, 500))
-    }
-    placeholder="Contoh: Ds. Kedungwaru, Kec. Tulungagung"
-    maxLength={500}
-  />
-
-  <span className="block text-right text-[10px] text-slate-400">
-    {giverAddress.length}/500
-  </span>
-</label>
-        </div>
+        {showInvitationField ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-1.5">
+              <span className="text-[11px] font-bold text-slate-600">Acara Undangan</span>
+              <input
+                className={inputClass}
+                value={invitationTitle}
+                onChange={(event) => setInvitationTitle(event.target.value)}
+                placeholder="Contoh: The Wedding of Budi & Siti"
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-[11px] font-bold text-slate-600">Catatan</span>
+              <input
+                className={inputClass}
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="Opsional, misal: titipan keluarga"
+              />
+            </label>
+          </div>
+        ) : (
+          <div className="w-full">
+            <label className="space-y-1.5 block">
+              <span className="text-[11px] font-bold text-slate-600">Catatan</span>
+              <input
+                className={inputClass}
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="Opsional, misal: titipan keluarga"
+              />
+            </label>
+          </div>
+        )}
 
         <div className="space-y-2.5">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">

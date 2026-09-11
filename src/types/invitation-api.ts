@@ -24,7 +24,7 @@ export interface ApiGalleryPhoto {
   order: number
 }
 
-export interface ApiLoveStory {
+export interface InvitationStory {
   id: string
   yearOrDate: string
   title: string
@@ -32,6 +32,12 @@ export interface ApiLoveStory {
   imageUrl: string | null
   order: number
 }
+
+/**
+ * Alias representatif untuk generalisasi Story / Linimasa Acara (Issue #32)
+ */
+export type ApiStory = InvitationStory
+export type ApiLoveStory = InvitationStory
 
 export type ApiEventCategory = 'WEDDING' | 'KHITANAN' | 'RASULAN' | 'AQIQAH';
 export type CelebrantGender = 'MALE' | 'FEMALE';
@@ -391,10 +397,12 @@ export interface ApiBuwuhan {
   receivedAt: string
   createdAt: string
   updatedAt: string
+  recordedByMemberId?: string | null
   recordedBy?: {
-  memberId: string | null
-  name: string | null
-} | null
+    id?: string | null
+    memberId?: string | null
+    name?: string | null
+  } | null
   items: ApiBuwuhanItem[]
 }
 

@@ -14,6 +14,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { GuestRoute } from "@/components/auth/GuestRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { useAuth } from "@/hooks/useAuth";
+import { instantAuthStorage } from "@/lib/instantAuthStorage";
 
 // Layout tetap dimuat langsung karena ukurannya kecil dan selalu dipakai
 import AuthLayout from "@/layouts/AuthLayout";
@@ -97,7 +98,21 @@ function RootLayout() {
  */
 function RootRedirect() {
   const { user, isAuthenticated } = useAuth();
-  if (isAuthenticated && user?.role === "ADMIN") {
+  const isInstant = instantAuthStorage.isInstantAccess();
+
+  if (isInstant) {
+    const access = instantAuthStorage.getAccess();
+    if (access?.invitationId) {
+      return (
+        <Navigate
+          to={`/dashboard/undangan/${access.invitationId}/catatan-buwuh`}
+          replace
+        />
+      );
+    }
+  }
+
+  if (isAuthenticated && user?.role === 'ADMIN') {
     return <Navigate to="/admin/dashboard" replace />;
   }
   return <Navigate to="/dashboard" replace />;
@@ -137,22 +152,6 @@ export const router = createBrowserRouter(  createRoutesFromElements(
           <Route path="pengaturan" element={<PengaturanPage />} />
         </Route>
 
-        {/* Halaman terima undangan petugas & magic link instan */}
-        <Route element={<PlainLayout />}>
-          <Route
-            path="/dashboard/undangan/join"
-            element={<JoinInvitationPage />}
-          />
-          <Route
-            path="/invitations/accept"
-            element={<JoinInvitationPage />}
-          />
-          {/* <Route
-            path="/petugas/akses"
-            element={<InstantAccessPage />}
-          /> */}
-        </Route>
-
         {/* Panel per undangan — sidebar kontekstual */}
         <Route path="/dashboard/undangan/:id" element={<PanelLayout />}>
           <Route index element={<PanelBerandaPage />} />
@@ -181,8 +180,13 @@ export const router = createBrowserRouter(  createRoutesFromElements(
         </Route>
       </Route>
 
-      {/* Halaman publik akses instan petugas (Magic Link tanpa perlu login) */}
-      <Route path="/petugas/akses" element={<InstantAccessPage />} />
+      {/* Rute Publik: Magic Link Petugas Instan & Terima Undangan Panitia (Bisa dibuka tanpa akun) */}
+      <Route element={<PlainLayout />}>
+        <Route path="/petugas/akses" element={<InstantAccessPage />} />
+        <Route path="/dashboard/undangan/join" element={<JoinInvitationPage />} />
+        <Route path="/invitations/accept" element={<JoinInvitationPage />} />
+        <Route path="/members/instant-access" element={<InstantAccessPage />} />
+      </Route>
 
       {/* Halaman undangan publik untuk tamu resepsi (tanpa proteksi login) */}
       <Route path="/undangan/:slug" element={<InvitationPage />} />

@@ -4,6 +4,7 @@ import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useInstantMemberAccess } from "@/hooks/useMembers";
 import { useAuth } from "@/hooks/useAuth";
 import { parseApiError } from "@/lib/errorHandler";
+import { instantAuthStorage } from "@/lib/instantAuthStorage";
 
 /**
  * Halaman penukaran Magic Link Petugas Instan (POST /api/members/instant-access).
@@ -29,28 +30,38 @@ export default function InstantAccessPage() {
         const result = await redeemToken(currentToken);
         if (isCancelled) return;
 
-        // 1. Simpan token & identitas petugas ke LocalStorage & AuthContext
-        localStorage.setItem("buwuhan_current_member_id", result.member.id);
-        localStorage.setItem("buwuhan_current_member_name", result.member.name);
+        // 1. Simpan token & identitas petugas ke sessionStorage (terisolasi per-tab) & AuthContext
+        instantAuthStorage.setSession({
+          token: result.sessionToken,
+          memberId: result.member.id,
+          memberName: result.member.name,
+          access: result.access,
+          invitation: result.invitation,
+        });
 
         setAuthSession(result.sessionToken, {
           id: result.member.id,
           fullName: result.member.name,
           email: "",
-          role: result.member.role === "ADMIN" ? "ADMIN" : "USER",
+          role: "USER",
           plan: "FREE",
         });
 
+        const targetInvitationId = result.invitation?.id || result.access?.invitationId;
+        const invitationTitle = result.invitation?.title || 'Undangan';
+
         setStatus("success");
         setMessage(
-          `Selamat datang, ${result.member.name}! Anda terhubung sebagai ${result.member.role} untuk acara "${result.invitation.title}". Mengalihkan ke catatan buwuh...`,
+          `Selamat bertugas, ${result.member.name}! Akses Anda telah aktif untuk mencatat buwuh pada "${invitationTitle}". Mengalihkan ke Catatan Buwuh...`,
         );
 
         // 2. Arahkan langsung ke panel catatan buwuh
         setTimeout(() => {
-          navigate(`/dashboard/undangan/${result.invitation.id}/catatan-buwuh`, {
-            replace: true,
-          });
+          if (targetInvitationId) {
+            navigate(`/dashboard/undangan/${targetInvitationId}/catatan-buwuh`, {
+              replace: true,
+            });
+          }
         }, 1000);
       } catch (err) {
         if (isCancelled) return;

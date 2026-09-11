@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/Badge'
 import { useBuwuhanDetail } from '@/hooks/useBuwuhanDetail'
 import { formatDateCompact, formatTimeCompact, formatNumber, formatRupiah } from '@/lib/format'
 import { getBuwuhanCategory, sumMoneyOnly } from '@/lib/buwuhHelper'
+import { instantAuthStorage } from '@/lib/instantAuthStorage'
 import type { ApiBuwuhan } from '@/types/invitation-api'
 
 export type BuwuhanDetailModalProps = {
@@ -32,6 +33,24 @@ export function BuwuhanDetailModal({
 }: BuwuhanDetailModalProps) {
   const { buwuhan: fetchedBuwuhan, isLoading, isError } = useBuwuhanDetail(invitationId, buwuhanId)
   const buwuhan = record || fetchedBuwuhan
+
+  const isInstantAccess = instantAuthStorage.isInstantAccess()
+  const instantAccess = instantAuthStorage.getAccess()
+  const currentMemberId = instantAuthStorage.getMemberId() || instantAccess?.memberId
+  const currentMemberName = instantAuthStorage.getMemberName() || 'Petugas'
+
+  const recMemberId =
+    buwuhan?.recordedByMemberId ||
+    buwuhan?.recordedBy?.memberId ||
+    buwuhan?.recordedBy?.id ||
+    null
+  const recName =
+    buwuhan?.recordedBy?.name ||
+    (recMemberId && recMemberId === currentMemberId ? currentMemberName : null)
+
+  const canEdit =
+    !isInstantAccess ||
+    Boolean(currentMemberId && recMemberId === currentMemberId)
 
   const nominalUang = buwuhan ? sumMoneyOnly(buwuhan) : 0
 
@@ -76,9 +95,9 @@ export function BuwuhanDetailModal({
                 {buwuhan.giverName}
               </h3>
               <p className="flex items-center gap-1 text-xs text-slate-500">
-  <MapPin size={12} className="shrink-0" />
-  {buwuhan.giverAddress || '-'}
-</p>
+                <MapPin size={12} className="shrink-0" />
+                <span>{buwuhan.giverAddress || '-'}</span>
+              </p>
               <div className="flex flex-wrap items-center gap-1.5">
                 <Badge variant="outline" icon={<CalendarClock size={11} />}>
                   Diterima {formatDateCompact(buwuhan.receivedAt)} · {formatTimeCompact(buwuhan.receivedAt)}
@@ -150,9 +169,13 @@ export function BuwuhanDetailModal({
                 </span>
               </div>
               <div>
-                {buwuhan.recordedBy?.name ? (
+                {recName ? (
                   <span className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full text-[10px]">
-                    Petugas: {buwuhan.recordedBy.name}
+                    Petugas: {recName}
+                  </span>
+                ) : recMemberId ? (
+                  <span className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full text-[10px]">
+                    Petugas
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 font-medium text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full text-[10px]">
@@ -166,15 +189,17 @@ export function BuwuhanDetailModal({
               <Button variant="outline" size="sm" onClick={onClose}>
                 Tutup
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => onEdit(buwuhan)}
-                className="inline-flex items-center gap-1.5"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Ubah Catatan
-              </Button>
+              {canEdit && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => onEdit(buwuhan)}
+                  className="inline-flex items-center gap-1.5"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Ubah Catatan
+                </Button>
+              )}
             </div>
           </div>
         )}

@@ -74,8 +74,13 @@ export const dashboardNavFooter: NavEntry[] = [
  * @param id - ID undangan yang sedang dikelola
  * @returns Array entri navigasi untuk panel undangan
  */
-export function buildPanelNav(id: string): NavEntry[] {
+export function buildPanelNav(id: string, isInstant: boolean = false): NavEntry[] {
   const base = `/dashboard/undangan/${id}`
+  if (isInstant) {
+    return [
+      { type: 'item', to: `${base}/catatan-buwuh`, label: 'Catatan Buwuh', icon: <Wallet size={ICON} />, end: true },
+    ]
+  }
   return [
     { type: 'item', to: base, label: 'Beranda', icon: <Grid2x2 size={ICON} />, end: true },
     { type: 'item', to: `${base}/edit`, label: 'Edit Undangan', icon: <Mail size={ICON} /> },
@@ -89,7 +94,6 @@ export function buildPanelNav(id: string): NavEntry[] {
         { to: `${base}/buku-tamu`, label: 'Buku Tamu' },
         { to: `${base}/rsvp`, label: 'Kehadiran' },
         { to: `${base}/hadiah`, label: 'Hadiah' },
-
       ],
     },
     { type: 'item', to: `${base}/catatan-buwuh`, label: 'Catatan Buwuh', icon: <Wallet size={ICON} /> },

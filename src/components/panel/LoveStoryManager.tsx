@@ -1,31 +1,71 @@
 import { useState, useEffect } from 'react'
-import { Heart, Plus, Trash2, Calendar, Sparkles, Pencil, Save } from 'lucide-react'
+import {
+  Heart,
+  BookOpen,
+  Plus,
+  Trash2,
+  Calendar,
+  Sparkles,
+  Pencil,
+  Save,
+  Baby,
+  Scissors,
+} from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { AnimatedStatusIcon } from '@/components/ui/AnimatedStatusIcon'
 import { ImageUrlInput } from '@/components/ui/ImageUrlInput'
-import { useLoveStories } from '@/hooks/useLoveStories'
+import { useStories } from '@/hooks/useLoveStories'
 import { parseApiError } from '@/lib/errorHandler'
-import type { ApiLoveStory } from '@/types/invitation-api'
+import { getStoryCategoryMeta } from '@/lib/storyHelper'
+import { cn } from '@/lib/cn'
+import type { InvitationStory, ApiEventCategory } from '@/types/invitation-api'
 
 export type LoveStoryManagerProps = {
   /** ID undangan yang sedang dikelola */
   invitationId: string
-  /** Daftar kisah cinta saat ini, diambil dari detail undangan */
-  stories: ApiLoveStory[]
+  /** Daftar cerita/momen saat ini, diambil dari detail undangan */
+  stories: InvitationStory[]
+  /** Kategori acara (WEDDING, KHITANAN, AQIQAH, RASULAN, dll) */
+  eventCategory?: ApiEventCategory | string | null
   /** Callback saat ada input draft momen baru */
   onDirtyChange?: (isDirty: boolean) => void
 }
 
 /**
- * Panel pengelola momen kisah cinta (Love Story) pasangan pengantin.
- * Memungkinkan mempelai menambahkan, mengedit (PATCH), dan menghapus (DELETE)
- * linimasa cerita perjalanan cinta mereka secara opsional, dilengkapi tanggal/tahun,
- * judul, narasi cerita, dan foto kenangan.
+ * Helper untuk merender ikon kategori linimasa.
  */
-export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveStoryManagerProps) {
-  const { addStory, updateStory, removeStory, isMutating } = useLoveStories(invitationId)
+function renderCategoryIcon(iconType: string, size = 15) {
+  switch (iconType) {
+    case 'heart':
+      return <Heart size={size} />
+    case 'baby':
+      return <Baby size={size} />
+    case 'scissors':
+      return <Scissors size={size} />
+    case 'book':
+      return <BookOpen size={size} />
+    default:
+      return <Sparkles size={size} />
+  }
+}
+
+/**
+ * Panel pengelola linimasa cerita & momen perjalanan (Story Timeline).
+ * Mendukung berbagai kategori acara (Pernikahan, Khitanan, Aqiqah, Rasulan, dll).
+ * Memungkinkan pemilik undangan menambahkan, mengedit (PATCH), dan menghapus (DELETE)
+ * linimasa cerita secara fleksibel.
+ */
+export function LoveStoryManager({
+  invitationId,
+  stories,
+  eventCategory,
+  onDirtyChange,
+}: LoveStoryManagerProps) {
+  const { addStory, updateStory, removeStory, isMutating } = useStories(invitationId)
+
+  const meta = getStoryCategoryMeta(eventCategory, stories.length)
 
   // State untuk form tambah baru
   const [yearOrDate, setYearOrDate] = useState('')
@@ -46,7 +86,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
   }, [isDirty, onDirtyChange])
 
   // State untuk modal edit momen
-  const [editTarget, setEditTarget] = useState<ApiLoveStory | null>(null)
+  const [editTarget, setEditTarget] = useState<InvitationStory | null>(null)
   const [editYearOrDate, setEditYearOrDate] = useState('')
   const [editTitle, setEditTitle] = useState('')
   const [editStory, setEditStory] = useState('')
@@ -59,7 +99,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
   }>({})
 
   // State untuk modal konfirmasi hapus momen
-  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<ApiLoveStory | null>(null)
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<InvitationStory | null>(null)
 
   // State untuk modal pop-up status berhasil / gagal
   const [popupState, setPopupState] = useState<{
@@ -75,19 +115,19 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
   })
 
   /**
-   * Memvalidasi form dan mengirim data love story baru ke backend (POST).
+   * Memvalidasi form dan mengirim data story baru ke backend (POST).
    */
   function handleAdd() {
     const nextErrors: typeof errors = {}
 
     if (!yearOrDate.trim()) {
-      nextErrors.yearOrDate = 'Tahun atau tanggal momen wajib diisi'
+      nextErrors.yearOrDate = 'Waktu / tanggal momen wajib diisi'
     }
     if (!title.trim()) {
       nextErrors.title = 'Judul momen wajib diisi'
     }
     if (!story.trim()) {
-      nextErrors.story = 'Cerita momen wajib diisi'
+      nextErrors.story = 'Cerita / narasi momen wajib diisi'
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -106,7 +146,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
         order: stories.length + 1,
       },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           setYearOrDate('')
           setTitle('')
           setStory('')
@@ -116,7 +156,9 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
             isOpen: true,
             status: 'success',
             title: 'Momen Berhasil Ditambahkan',
-            message: 'Momen kisah cinta baru telah berhasil disimpan ke linimasa undangan Anda.',
+            message:
+              result?.message ||
+              'Cerita baru telah berhasil disimpan ke linimasa undangan Anda.',
           })
         },
         onError: (err) => {
@@ -124,7 +166,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
           const errorMsg =
             parsed.generalMessage ??
             parsed.allMessages[0] ??
-            'Gagal menyimpan momen kisah cinta. Silakan periksa kembali data Anda.'
+            'Gagal menyimpan momen cerita. Silakan periksa kembali data Anda.'
           setErrors({ general: errorMsg })
           setPopupState({
             isOpen: true,
@@ -138,32 +180,32 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
   }
 
   /**
-   * Membuka modal edit dan mengisi form dengan data momen yang dipilih.
+   * Membuka modal edit dengan mengisi state awal dari item story yang dipilih.
    */
-  function handleStartEdit(item: ApiLoveStory) {
+  function handleStartEdit(item: InvitationStory) {
     setEditTarget(item)
     setEditYearOrDate(item.yearOrDate)
     setEditTitle(item.title)
     setEditStory(item.story)
-    setEditImageUrl(item.imageUrl ?? '')
+    setEditImageUrl(item.imageUrl || '')
     setEditErrors({})
   }
 
   /**
-   * Memvalidasi form edit dan mengirim pembaruan ke backend (PATCH).
+   * Menyimpan perubahan pada momen cerita (PATCH).
    */
   function handleSaveEdit() {
     if (!editTarget) return
 
     const nextErrors: typeof editErrors = {}
     if (!editYearOrDate.trim()) {
-      nextErrors.yearOrDate = 'Tahun atau tanggal momen wajib diisi'
+      nextErrors.yearOrDate = 'Waktu / tanggal momen wajib diisi'
     }
     if (!editTitle.trim()) {
       nextErrors.title = 'Judul momen wajib diisi'
     }
     if (!editStory.trim()) {
-      nextErrors.story = 'Cerita momen wajib diisi'
+      nextErrors.story = 'Cerita / narasi momen wajib diisi'
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -184,14 +226,15 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
         },
       },
       {
-        onSuccess: () => {
-          const savedTitle = editTitle.trim()
+        onSuccess: (result) => {
           setEditTarget(null)
           setPopupState({
             isOpen: true,
             status: 'success',
             title: 'Momen Berhasil Diperbarui',
-            message: `Momen "${savedTitle}" telah berhasil diperbarui.`,
+            message:
+              result?.message ||
+              'Perubahan cerita linimasa telah berhasil disimpan ke database.',
           })
         },
         onError: (err) => {
@@ -199,7 +242,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
           const errorMsg =
             parsed.generalMessage ??
             parsed.allMessages[0] ??
-            'Gagal memperbarui momen kisah cinta. Silakan periksa kembali data Anda.'
+            'Gagal memperbarui momen cerita. Silakan coba lagi.'
           setEditErrors({ general: errorMsg })
           setPopupState({
             isOpen: true,
@@ -213,22 +256,21 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
   }
 
   /**
-   * Menjalankan penghapusan momen setelah dikonfirmasi via pop-up modal (DELETE).
+   * Menghapus momen cerita yang dipilih (DELETE).
    */
   function handleConfirmDelete() {
     if (!deleteConfirmTarget) return
 
-    const targetId = deleteConfirmTarget.id
-    const targetTitle = deleteConfirmTarget.title
-
-    removeStory.mutate(targetId, {
-      onSuccess: () => {
+    removeStory.mutate(deleteConfirmTarget.id, {
+      onSuccess: (result) => {
         setDeleteConfirmTarget(null)
         setPopupState({
           isOpen: true,
           status: 'success',
           title: 'Momen Berhasil Dihapus',
-          message: `Momen "${targetTitle}" telah berhasil dihapus dari linimasa undangan.`,
+          message:
+            result?.message ||
+            'Momen cerita telah dihapus dari linimasa undangan Anda.',
         })
       },
       onError: (err) => {
@@ -237,7 +279,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
         const errorMsg =
           parsed.generalMessage ??
           parsed.allMessages[0] ??
-          'Gagal menghapus momen kisah cinta. Silakan coba lagi.'
+          'Gagal menghapus momen cerita. Silakan coba lagi.'
         setPopupState({
           isOpen: true,
           status: 'error',
@@ -254,15 +296,21 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
-              <Heart size={15} />
+            <div
+              className={cn(
+                'flex h-7 w-7 items-center justify-center rounded-lg transition-colors',
+                meta.themeColorClass.bg,
+                meta.themeColorClass.text,
+              )}
+            >
+              {renderCategoryIcon(meta.iconType, 15)}
             </div>
             <h2 className="font-display text-base font-bold text-ink">
-              Kisah Cinta / Love Story ({stories.length})
+              {meta.sectionTitle}
             </h2>
           </div>
           <p className="mt-1 text-xs text-muted">
-            Tambahkan rangkaian momen berkesan dan perjalanan cinta Anda berdua (opsional).
+            {meta.sectionSubtitle}
           </p>
         </div>
 
@@ -272,7 +320,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
         </span>
       </div>
 
-      {/* Daftar Kisah Cinta yang Sudah Tersimpan */}
+      {/* Daftar Momen yang Sudah Tersimpan */}
       {stories.length > 0 ? (
         <div className="space-y-3">
           <p className="text-[11px] font-bold tracking-wider text-slate-600 uppercase">
@@ -340,17 +388,25 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/40 p-6 text-center">
-          <Heart size={24} className="mx-auto text-slate-300" />
-          <p className="mt-2 text-xs font-medium text-slate-500">
-            Belum ada momen kisah cinta yang ditambahkan.
+          <div
+            className={cn(
+              'mx-auto flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
+              meta.themeColorClass.bg,
+              meta.themeColorClass.text,
+            )}
+          >
+            {renderCategoryIcon(meta.iconType, 20)}
+          </div>
+          <p className="mt-2 text-xs font-medium text-slate-700">
+            {meta.emptyTitle}
           </p>
-          <p className="text-[11px] text-muted">
-            Gunakan formulir di bawah untuk menambahkan kisah awal bertemu, kencan pertama, atau momen lamaran.
+          <p className="mt-1 text-[11px] text-muted max-w-md mx-auto">
+            {meta.emptySubtitle}
           </p>
         </div>
       )}
 
-      {/* Formulir Tambah Kisah Cinta Baru */}
+      {/* Formulir Tambah Momen Baru */}
       <div className="space-y-3.5 border-t border-slate-100 pt-4">
         <p className="text-[11px] font-bold tracking-wider text-slate-600 uppercase">
           Tambah Momen Baru
@@ -363,14 +419,14 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
         )}
 
         <div className="grid gap-3 sm:grid-cols-2">
-          {/* Tahun / Tanggal */}
+          {/* Tahun / Waktu / Usia */}
           <div>
             <label
               htmlFor="story-date"
               className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600"
             >
               <Calendar size={13} className="text-primary" />
-              <span>Tahun / Tanggal Momen</span>
+              <span>Tahun / Waktu / Usia</span>
             </label>
             <input
               id="story-date"
@@ -380,7 +436,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
                 setYearOrDate(e.target.value)
                 setErrors((prev) => ({ ...prev, yearOrDate: undefined }))
               }}
-              placeholder="Contoh: 2020 atau 14 Feb 2020"
+              placeholder={meta.timePlaceholder}
               className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-ink shadow-2xs transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none"
             />
             {errors.yearOrDate && (
@@ -405,7 +461,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
                 setTitle(e.target.value)
                 setErrors((prev) => ({ ...prev, title: undefined }))
               }}
-              placeholder="Contoh: Pertama Kali Bertemu"
+              placeholder={meta.titlePlaceholder}
               className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-ink shadow-2xs transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none"
             />
             {errors.title && (
@@ -420,8 +476,8 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
             htmlFor="story-content"
             className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600"
           >
-            <Heart size={13} className="text-primary" />
-            <span>Cerita Kisah Cinta</span>
+            {renderCategoryIcon(meta.iconType, 13)}
+            <span>Cerita / Narasi Momen</span>
           </label>
           <textarea
             id="story-content"
@@ -431,7 +487,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
               setStory(e.target.value)
               setErrors((prev) => ({ ...prev, story: undefined }))
             }}
-            placeholder="Kami pertama kali berkenalan di sebuah coffee shop di Yogyakarta..."
+            placeholder={meta.storyPlaceholder}
             className="mt-1.5 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-ink shadow-2xs transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none"
           />
           {errors.story && (
@@ -444,7 +500,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
           label="URL Foto Momen (Opsional)"
           value={imageUrl}
           onChange={setImageUrl}
-          placeholder="https://storage.buwuhan.com/photos/pertama-bertemu.jpg"
+          placeholder="https://storage.buwuhan.com/photos/momen.jpg"
         />
 
         {/* Tombol Tambah */}
@@ -456,17 +512,17 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
             onClick={handleAdd}
             isLoading={addStory.isPending}
           >
-            Tambah Momen Kisah Cinta
+            {meta.addButtonLabel}
           </Button>
         </div>
       </div>
 
-      {/* Modal Edit Momen Kisah Cinta (PATCH /invitations/:id/stories/:storyId) */}
+      {/* Modal Edit Momen Cerita (PATCH /invitations/:id/stories/:storyId) */}
       <Modal
         isOpen={Boolean(editTarget)}
         onClose={() => setEditTarget(null)}
-        title="Edit Momen Kisah Cinta"
-        description="Perbarui informasi tanggal, judul, cerita, atau tautan foto kenangan momen ini."
+        title={meta.editModalTitle}
+        description={meta.editModalDescription}
         maxWidth="md"
         hideCloseButton={false}
       >
@@ -485,7 +541,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
                 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600"
               >
                 <Calendar size={13} className="text-primary" />
-                <span>Tahun / Tanggal Momen</span>
+                <span>Tahun / Waktu / Usia</span>
               </label>
               <input
                 id="edit-story-date"
@@ -495,7 +551,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
                   setEditYearOrDate(e.target.value)
                   setEditErrors((prev) => ({ ...prev, yearOrDate: undefined }))
                 }}
-                placeholder="Contoh: 2020 atau 14 Feb 2020"
+                placeholder={meta.timePlaceholder}
                 className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-ink shadow-2xs transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none"
               />
               {editErrors.yearOrDate && (
@@ -520,7 +576,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
                   setEditTitle(e.target.value)
                   setEditErrors((prev) => ({ ...prev, title: undefined }))
                 }}
-                placeholder="Contoh: Pertama Kali Bertemu"
+                placeholder={meta.titlePlaceholder}
                 className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-ink shadow-2xs transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none"
               />
               {editErrors.title && (
@@ -535,8 +591,8 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
               htmlFor="edit-story-content"
               className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600"
             >
-              <Heart size={13} className="text-primary" />
-              <span>Cerita Kisah Cinta</span>
+              {renderCategoryIcon(meta.iconType, 13)}
+              <span>Cerita / Narasi Momen</span>
             </label>
             <textarea
               id="edit-story-content"
@@ -546,7 +602,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
                 setEditStory(e.target.value)
                 setEditErrors((prev) => ({ ...prev, story: undefined }))
               }}
-              placeholder="Tuliskan cerita momen ini..."
+              placeholder={meta.storyPlaceholder}
               className="mt-1.5 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-ink shadow-2xs transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none"
             />
             {editErrors.story && (
@@ -559,7 +615,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
             label="URL Foto Momen (Opsional)"
             value={editImageUrl}
             onChange={setEditImageUrl}
-            placeholder="https://storage.buwuhan.com/photos/pertama-bertemu.jpg"
+            placeholder="https://storage.buwuhan.com/photos/momen.jpg"
           />
 
           {/* Tombol Aksi Modal Edit */}
@@ -597,7 +653,7 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
 
           <div>
             <h3 className="font-display text-lg font-bold text-ink">
-              Hapus Momen Kisah Cinta?
+              Hapus Momen Cerita?
             </h3>
             <p className="mt-1.5 text-xs text-muted leading-relaxed">
               Apakah Anda yakin ingin menghapus momen{' '}
@@ -662,3 +718,4 @@ export function LoveStoryManager({ invitationId, stories, onDirtyChange }: LoveS
     </div>
   )
 }
+

@@ -1,4 +1,5 @@
 import { useAuth } from '@/hooks/useAuth'
+import { instantAuthStorage } from '@/lib/instantAuthStorage'
 import type { CurrentUser } from '@/types/dashboard'
 
 const GUEST_USER: CurrentUser = {
@@ -20,6 +21,22 @@ const GUEST_USER: CurrentUser = {
  */
 export function useCurrentUser(): CurrentUser {
   const { user } = useAuth()
+  const isInstant = instantAuthStorage.isInstantAccess()
+
+  if (isInstant) {
+    const memberName = instantAuthStorage.getMemberName() || user?.fullName || 'Petugas'
+    const memberId = instantAuthStorage.getMemberId() || user?.id || 'instant'
+
+    return {
+      id: memberId,
+      fullName: memberName,
+      nickname: memberName.split(' ')[0] || 'Petugas',
+      role: 'Petugas Lapangan',
+      avatarUrl: null,
+      plan: 'FREE',
+      email: '',
+    }
+  }
 
   if (!user) return GUEST_USER
 

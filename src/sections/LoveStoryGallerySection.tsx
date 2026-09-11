@@ -1,25 +1,29 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Image as ImageIcon, X } from 'lucide-react'
-import type { ApiGalleryPhoto, ApiLoveStory } from '@/types/invitation-api'
+import { getStorySectionTitle, getStorySectionSubtitle } from '@/lib/storyHelper'
+import type { ApiGalleryPhoto, ApiLoveStory, ApiEventCategory } from '@/types/invitation-api'
 
 export type LoveStoryGallerySectionProps = {
-  /** Daftar kisah cinta dari backend, urut berdasarkan kolom order */
+  /** Daftar kisah/cerita dari backend, urut berdasarkan kolom order */
   loveStories: ApiLoveStory[]
   /** Daftar foto galeri dari backend, urut berdasarkan kolom order */
   galleryPhotos: ApiGalleryPhoto[]
+  /** Kategori acara untuk menyesuaikan judul linimasa (Wedding, Khitanan, Aqiqah, Rasulan) */
+  eventCategory?: ApiEventCategory | string | null
 }
 
 /**
- * Komponen Galeri Foto Prewedding & Cerita Cinta (Love Story).
+ * Komponen Galeri Foto & Cerita Linimasa Perjalanan (Story Timeline).
  * Menampilkan kisah perjalanan dan galeri kenangan berdasarkan data asli undangan,
- * dilengkapi interaksi popup modal gambar resolusi penuh dan animasi GPU ringan.
+ * disesuaikan secara otomatis berdasarkan kategori acara (Wedding, Khitanan, Aqiqah, dll).
  *
- * @param props - Properti LoveStoryGallerySection (loveStories, galleryPhotos)
+ * @param props - Properti LoveStoryGallerySection (loveStories, galleryPhotos, eventCategory)
  */
 export function LoveStoryGallerySection({
   loveStories,
   galleryPhotos,
+  eventCategory,
 }: LoveStoryGallerySectionProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
 
@@ -36,15 +40,15 @@ export function LoveStoryGallerySection({
   return (
     <section id="galeri" className="py-20 px-6 bg-inv-card relative overflow-hidden">
       <div className="mx-auto max-w-4xl space-y-16">
-        {/* Cerita Cinta */}
+        {/* Linimasa Cerita / Momen */}
         {hasStories && (
           <div className="space-y-8">
             <div className="text-center space-y-2">
               <span className="text-xs font-bold uppercase tracking-[0.25em] text-inv-accent">
-                Our Journey
+                {getStorySectionSubtitle(eventCategory)}
               </span>
               <h2 className="font-display text-3xl sm:text-4xl font-bold text-inv-ink">
-                Kisah Perjalanan Cinta Kami
+                {getStorySectionTitle(eventCategory)}
               </h2>
             </div>
 

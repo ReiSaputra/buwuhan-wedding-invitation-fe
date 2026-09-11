@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Banknote, Download, Eye, Gift, Pencil, Plus, Trash2, Wheat } from 'lucide-react'
 import { StatCard } from '@/components/dashboard/StatCard'
 import { TableCard } from '@/components/ui/TableCard'
@@ -11,7 +10,6 @@ import { Button } from '@/components/ui/Button'
 import { BuwuhanFormModal } from '@/components/panel/BuwuhanFormModal'
 import { BuwuhanDetailModal } from '@/components/panel/BuwuhanDetailModal'
 import { useStandaloneBuwuhan } from '@/hooks/useStandaloneBuwuhan'
-import { useInvitations } from '@/hooks/useInvitations'
 import { useTableState } from '@/hooks/useTableState'
 import { downloadCsv } from '@/lib/export'
 import { formatDateCompact, formatTimeCompact, formatNumber, formatRupiah } from '@/lib/format'
@@ -35,7 +33,6 @@ function CategoryIcon({ category }: { category: BuwuhanCategory }) {
 export default function BuwuhPage() {
   const { records, addBuwuhan, updateBuwuhan, removeBuwuhan, isLoading, isError, isMutating } =
     useStandaloneBuwuhan()
-  const { invitations } = useInvitations()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editing, setEditing] = useState<ApiBuwuhan | null>(null)
@@ -46,15 +43,12 @@ export default function BuwuhPage() {
 
   const getSearchText = useCallback(
     (record: ApiBuwuhan) => {
-      const invTitle =
-        invitations.find((i) => i.id === record.invitationId)?.title ||
-        (record as ApiOwnerBuwuhan).invitationTitle ||
-        ''
+      const invTitle = (record as ApiOwnerBuwuhan).invitationTitle || ''
       return `${record.giverName} ${invTitle} ${record.giverAddress ?? ''} ${record.note ?? ''} ${record.items
         .map((i) => `${i.itemName} ${getBuwuhanCategory(i)} ${i.unit}`)
         .join(' ')}`
     },
-    [invitations],
+    [],
   )
 
   const table = useTableState({ rows: records, pageSize: 8, getSearchText })
@@ -73,10 +67,7 @@ export default function BuwuhPage() {
   /** Mengunduh seluruh baris hasil pencarian sebagai berkas CSV. */
   function handleExport() {
     const exportRows = table.filteredRows.map((record) => {
-      const invTitle =
-        invitations.find((i) => i.id === record.invitationId)?.title ||
-        (record as ApiOwnerBuwuhan).invitationTitle ||
-        '-'
+      const invTitle = (record as ApiOwnerBuwuhan).invitationTitle || '-'
       return {
         'Nama Pemberi': record.giverName,
         'Acara Undangan': invTitle,
@@ -181,7 +172,7 @@ export default function BuwuhPage() {
             <thead className="border-b border-slate-100 bg-slate-50 font-bold uppercase tracking-wider text-slate-500">
               <tr>
                 <th className={thClass}>Pemberi / Tamu</th>
-                <th className={thClass}>Sumber Catatan</th>
+                <th className={thClass}>Acara Undangan</th>
                 <th className={thClass}>Alamat Pemberi</th>
                 <th className={thClass}>Rincian Bantuan</th>
                 <th className={thClass}>Nominal Uang</th>
@@ -199,10 +190,7 @@ export default function BuwuhPage() {
               ) : (
                 table.pageRows.map((record) => {
                   const ownerRecord = record as ApiOwnerBuwuhan
-                  const invTitle =
-                    invitations.find((i) => i.id === record.invitationId)?.title ||
-                    ownerRecord.invitationTitle ||
-                    'Undangan Digital'
+                  const invTitle = ownerRecord.invitationTitle || '-'
 
                   return (
                     <tr key={record.id} className="transition-colors hover:bg-slate-50/80">
@@ -215,16 +203,7 @@ export default function BuwuhPage() {
                         )}
                       </td>
                       <td className={tdClass}>
-                        {record.invitationId ? (
-                          <Link
-                            to={`/dashboard/undangan/${record.invitationId}/catatan-buwuh`}
-                            className="font-medium text-primary hover:underline"
-                          >
-                            {invTitle}
-                          </Link>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
+                        <span className="text-slate-700 font-medium">{invTitle}</span>
                       </td>
                       <td className={tdClass}>
                         <span className="block max-w-[160px] break-words text-xs text-slate-600">
@@ -314,6 +293,7 @@ export default function BuwuhPage() {
           onSubmit={handleSubmit}
           initialValue={editing}
           isSubmitting={isMutating}
+          showInvitationField={true}
         />
       )}
 

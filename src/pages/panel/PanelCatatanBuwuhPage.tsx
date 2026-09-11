@@ -17,6 +17,8 @@ import { useTableState } from '@/hooks/useTableState'
 import { exportBuwuhanData } from '@/lib/export'
 import { formatDateCompact, formatTimeCompact, formatNumber, formatRupiah, getInitial } from '@/lib/format'
 import { calculateBuwuhStats, getBuwuhanCategory, sumMoneyOnly } from '@/lib/buwuhHelper'
+import { parseApiError } from '@/lib/errorHandler'
+import { instantAuthStorage } from '@/lib/instantAuthStorage'
 import type { ApiBuwuhan, BuwuhanCategory, BuwuhanPayload } from '@/types/invitation-api'
 
 const thClass = 'px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500'
@@ -29,44 +31,33 @@ function CategoryIcon({ category }: { category: BuwuhanCategory }) {
   return <Gift size={13} className="shrink-0 text-indigo-600" />
 }
 
-// /** Komponen badge penanda 3 jenis bantuan utama */
-// function CategoryBadge({ category }: { category: BuwuhanCategory }) {
-//   if (category === 'Uang') {
-//     return (
-//       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 shadow-2xs">
-//         <Banknote size={12} className="text-emerald-600" />
-//         Uang
-//       </span>
-//     )
-//   }
-
-//   if (category === 'Beras') {
-//     return (
-//       <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 shadow-2xs">
-//         <Wheat size={12} className="text-amber-600" />
-//         Beras
-//       </span>
-//     )
-//   }
-
-//   return (
-//     <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/80 bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 shadow-2xs">
-//       <Gift size={12} className="text-indigo-600" />
-//       Barang
-//     </span>
-//   )
-// }
-
 /**
  * Halaman Catatan Buwuh pada panel undangan: mencatat bantuan tamu yang diklasifikasikan
  * ke dalam 3 jenis utama: Total Uang, Total Beras, dan Total Barang.
  */
 export default function PanelCatatanBuwuhPage() {
-  const { id = '' } = useParams()
+  const { id: paramId = '' } = useParams()
+
+  const isInstantAccess = instantAuthStorage.isInstantAccess()
+  const instantAccess = instantAuthStorage.getAccess()
+
+  // Gunakan ID dari param URL, atau fallback ke ID undangan sesi petugas instan
+  const id = paramId || instantAccess?.invitationId || ''
+
   const { invitation } = useInvitationDetail(id)
   const { role: currentRole, canManageGuests } = useCurrentInvitationRole(id)
-  const currentMemberId = typeof window !== 'undefined' ? localStorage.getItem('buwuhan_current_member_id') : null
-  const isOwnerOrAdmin = currentRole === 'OWNER' || currentRole === 'ADMIN' || canManageGuests
+  const currentMemberId = instantAuthStorage.getMemberId() || instantAccess?.memberId
+  const currentMemberName = instantAuthStorage.getMemberName() || 'Petugas'
+
+  // Owner/Admin dalam sesi akun reguler
+  const isOwnerOrAdmin =
+    !isInstantAccess &&
+    (currentRole === 'OWNER' || currentRole === 'ADMIN' || canManageGuests)
+
+  // Hak hapus catatan: dilarang untuk petugas instan (canDeleteBuwuhan: false)
+  const canDeleteBuwuhan =
+    isOwnerOrAdmin && (!isInstantAccess && (instantAccess?.canDeleteBuwuhan ?? true))
+
   const { records, addBuwuhan, updateBuwuhan, removeBuwuhan, isLoading, isError, isMutating } =
     useBuwuhan(id)
 
@@ -94,10 +85,24 @@ export default function PanelCatatanBuwuhPage() {
   const table = useTableState({ rows: records, pageSize: 8, getSearchText })
 
   /** Menyimpan data formulir, otomatis memilih mode tambah atau ubah. */
-  function handleSubmit(payload: BuwuhanPayload) {
-    if (editing) void updateBuwuhan(editing.id, payload)
-    else void addBuwuhan(payload)
-    setEditing(null)
+  async function handleSubmit(payload: BuwuhanPayload) {
+    try {
+      if (editing) {
+        await updateBuwuhan(editing.id, payload)
+      } else {
+        await addBuwuhan(payload)
+      }
+      setIsFormOpen(false)
+      setEditing(null)
+    } catch (err: unknown) {
+      console.error('Gagal menyimpan catatan buwuh:', err)
+      const parsed = parseApiError(err)
+      const errorMsg =
+        parsed.generalMessage ||
+        (err instanceof Error ? err.message : 'Gagal menyimpan catatan buwuh. Silakan periksa kembali data Anda.')
+      alert(errorMsg)
+      throw err
+    }
   }
 
   /** Mengunduh seluruh baris hasil pencarian sebagai berkas XLSX/CSV. */
@@ -124,13 +129,32 @@ export default function PanelCatatanBuwuhPage() {
   return (
     <div className="animate-in fade-in space-y-6 duration-300">
       <PanelPageHeader
-        crumbs={[
-          { label: 'Beranda', to: '/dashboard' },
-          { label: `Panel ${invitation.coupleName || invitation.panelName}`, to: `/dashboard/undangan/${id}` },
-          { label: 'Catatan Buwuh' },
-        ]}
+        crumbs={
+          isInstantAccess
+            ? [
+                {
+                  label: `Catatan Buwuh — ${
+                    invitation.coupleName || invitation.panelName || 'Undangan'
+                  }`,
+                },
+              ]
+            : [
+                { label: 'Beranda', to: '/dashboard' },
+                {
+                  label: `Panel ${
+                    invitation.coupleName || invitation.panelName
+                  }`,
+                  to: `/dashboard/undangan/${id}`,
+                },
+                { label: 'Catatan Buwuh' },
+              ]
+        }
         title="Catatan Buwuh"
-        subtitle="Pencatatan bantuan dari tamu: Uang, Beras, atau Barang beserta estimasi nilainya."
+        subtitle={
+          isInstantAccess
+            ? `Panel Pencatatan Bantuan Tamu (Sesi Petugas: ${currentMemberName})`
+            : 'Pencatatan bantuan dari tamu: Uang, Beras, atau Barang beserta estimasi nilainya.'
+        }
         actions={
           <>
             <Button
@@ -221,6 +245,17 @@ export default function PanelCatatanBuwuhPage() {
                 </tr>
               )}
               {table.pageRows.map((record) => {
+                const recMemberId =
+                  record.recordedByMemberId ||
+                  record.recordedBy?.memberId ||
+                  record.recordedBy?.id ||
+                  null
+                const recName =
+                  record.recordedBy?.name ||
+                  (recMemberId && recMemberId === currentMemberId ? currentMemberName : null)
+                const isMyRecord = Boolean(currentMemberId && recMemberId === currentMemberId)
+                const canEditRecord = isOwnerOrAdmin || isMyRecord
+
                 return (
                   <tr key={record.id} className="transition hover:bg-slate-50/70">
                     <td className={tdClass}>
@@ -230,19 +265,18 @@ export default function PanelCatatanBuwuhPage() {
                         </div>
                         <div className="min-w-0 max-w-[200px]">
                           <span className="block text-xs font-bold text-ink">
-  {record.giverName}
-</span>
+                            {record.giverName}
+                          </span>
 
-<span className="block break-words text-[11px] leading-snug text-slate-500">
-  {record.giverAddress || '-'}
-</span>
+                          <span className="block break-words text-[11px] leading-snug text-slate-500">
+                            {record.giverAddress || '-'}
+                          </span>
 
-{record.note && (
-  <span className="block break-words text-[11px] leading-snug text-slate-400">
-    "{record.note}"
-  </span>
-)}
-                          
+                          {record.note && (
+                            <span className="block break-words text-[11px] leading-snug text-slate-400">
+                              "{record.note}"
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -274,11 +308,16 @@ export default function PanelCatatanBuwuhPage() {
                     <td className={`${tdClass} font-bold text-ink`}>
                       {formatRupiah(sumMoneyOnly(record))}
                     </td>
-                                        {/* Kolom Pencatat (Audit Log) */}
+
+                    {/* Kolom Pencatat (Audit Log) */}
                     <td className={tdClass}>
-                      {record.recordedBy?.name ? (
+                      {recName ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 shadow-2xs">
-                          Petugas: {record.recordedBy.name}
+                          Petugas: {recName}
+                        </span>
+                      ) : recMemberId ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 shadow-2xs">
+                          Petugas
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 shadow-2xs">
@@ -305,7 +344,7 @@ export default function PanelCatatanBuwuhPage() {
                         </button>
 
                         {/* Tombol Ubah: Owner/Admin bisa edit semua, Petugas HANYA bisa edit catatannya sendiri */}
-                        {(isOwnerOrAdmin || (currentMemberId && record.recordedBy?.memberId === currentMemberId)) && (
+                        {canEditRecord && (
                           <button
                             type="button"
                             onClick={() => {
@@ -320,8 +359,8 @@ export default function PanelCatatanBuwuhPage() {
                           </button>
                         )}
 
-                        {/* Tombol Hapus: Sembunyikan untuk Petugas, HANYA tampil untuk Owner & Admin */}
-                        {isOwnerOrAdmin && (
+                        {/* Tombol Hapus: Sembunyikan untuk Petugas instan (canDeleteBuwuhan: false) */}
+                        {canDeleteBuwuhan && (
                           <button
                             type="button"
                             onClick={() => setDeleting(record)}

@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { deleteData, patchData, postData } from '@/lib/api'
-import type { ApiLoveStory } from '@/types/invitation-api'
+import { api } from '@/lib/api'
+import type { BackendSuccessEnvelope } from '@/types/auth'
+import type { InvitationStory } from '@/types/invitation-api'
 
-export type LoveStoryPayload = {
+export type StoryPayload = {
   yearOrDate: string
   title: string
   story: string
@@ -10,13 +11,23 @@ export type LoveStoryPayload = {
   order?: number
 }
 
-export type UpdateLoveStoryParams = {
+export type LoveStoryPayload = StoryPayload
+
+export type UpdateStoryParams = {
   storyId: string
-  payload: Partial<LoveStoryPayload>
+  payload: Partial<StoryPayload>
+}
+
+export type UpdateLoveStoryParams = UpdateStoryParams
+
+export interface StoryMutationResult {
+  data?: InvitationStory
+  message?: string
 }
 
 /**
- * Hook aksi untuk mengelola momen kisah cinta (Love Story) sebuah undangan.
+ * Hook aksi untuk mengelola momen cerita / linimasa (Story Timeline) sebuah undangan.
+ * Mendukung berbagai kategori acara (Wedding, Khitanan, Aqiqah, Rasulan, dll).
  *
  * Endpoint:
  * - POST   /invitations/:invitationId/stories
@@ -25,34 +36,42 @@ export type UpdateLoveStoryParams = {
  *
  * @param invitationId - ID undangan yang sedang dikelola
  */
-export function useLoveStories(invitationId: string) {
+export function useStories(invitationId: string) {
   const queryClient = useQueryClient()
 
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: ['invitation', invitationId] })
   }
 
-  const addStory = useMutation({
-    mutationFn: (payload: LoveStoryPayload) =>
-      postData<ApiLoveStory, LoveStoryPayload>(
+  const addStory = useMutation<StoryMutationResult, Error, StoryPayload>({
+    mutationFn: async (payload: StoryPayload) => {
+      const res = await api.post<BackendSuccessEnvelope<InvitationStory>>(
         `/invitations/${invitationId}/stories`,
         payload,
-      ),
+      )
+      return { data: res.data.data, message: res.data.message }
+    },
     onSuccess: invalidate,
   })
 
-  const updateStory = useMutation({
-    mutationFn: ({ storyId, payload }: UpdateLoveStoryParams) =>
-      patchData<ApiLoveStory, Partial<LoveStoryPayload>>(
+  const updateStory = useMutation<StoryMutationResult, Error, UpdateStoryParams>({
+    mutationFn: async ({ storyId, payload }: UpdateStoryParams) => {
+      const res = await api.patch<BackendSuccessEnvelope<InvitationStory>>(
         `/invitations/${invitationId}/stories/${storyId}`,
         payload,
-      ),
+      )
+      return { data: res.data.data, message: res.data.message }
+    },
     onSuccess: invalidate,
   })
 
-  const removeStory = useMutation({
-    mutationFn: (storyId: string) =>
-      deleteData(`/invitations/${invitationId}/stories/${storyId}`),
+  const removeStory = useMutation<StoryMutationResult, Error, string>({
+    mutationFn: async (storyId: string) => {
+      const res = await api.delete<BackendSuccessEnvelope<null>>(
+        `/invitations/${invitationId}/stories/${storyId}`,
+      )
+      return { message: res.data?.message }
+    },
     onSuccess: invalidate,
   })
 
@@ -63,3 +82,7 @@ export function useLoveStories(invitationId: string) {
     isMutating: addStory.isPending || updateStory.isPending || removeStory.isPending,
   }
 }
+
+/** Alias untuk backward compatibility */
+export const useLoveStories = useStories
+

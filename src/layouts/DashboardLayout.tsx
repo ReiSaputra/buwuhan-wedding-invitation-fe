@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/dashboard/Sidebar'
 import { Topbar } from '@/components/dashboard/Topbar'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useAuth } from '@/hooks/useAuth'
+import { instantAuthStorage } from '@/lib/instantAuthStorage'
 import { dashboardNav, dashboardNavFooter } from '@/config/navigation'
 
 /**
@@ -19,6 +20,18 @@ export default function DashboardLayout() {
   // Pengguna dengan role ADMIN otomatis dialihkan langsung ke Portal Admin
   if (authUser?.role === 'ADMIN') {
     return <Navigate to="/admin/dashboard" replace />
+  }
+
+  // Pengguna dengan sesi instan dialihkan langsung ke panel catatan buwuh undangan terkait
+  const isInstantAccess = instantAuthStorage.isInstantAccess()
+
+  if (isInstantAccess) {
+    const access = instantAuthStorage.getAccess()
+    const targetInvitationId = access?.invitationId
+
+    if (targetInvitationId) {
+      return <Navigate to={`/dashboard/undangan/${targetInvitationId}/catatan-buwuh`} replace />
+    }
   }
 
   return (

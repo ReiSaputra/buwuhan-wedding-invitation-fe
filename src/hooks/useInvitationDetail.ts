@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchData } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useMembers } from "@/hooks/useMembers";
+import { instantAuthStorage } from "@/lib/instantAuthStorage";
 import type {
   ApiInvitation,
   GuestStatsApiData,
@@ -37,9 +38,9 @@ function buildInvitationSubject(
 const EMPTY_DETAIL: InvitationDetail = {
   id: "",
   slug: "",
-  title: "",
-  panelName: "Undangan",
-  coupleName: "Undangan",
+  title: "Memuat Undangan...",
+  panelName: "Memuat...",
+  coupleName: "Memuat...",
   eventDate: null,
   eventTime: null,
   venue: null,
@@ -63,29 +64,44 @@ const EMPTY_DETAIL: InvitationDetail = {
  * @param id - Identifier unik undangan (cuid dari backend)
  */
 export function useInvitationDetail(id: string) {
-  const enabled = Boolean(id);
+  const isInstant = instantAuthStorage.isInstantAccess()
+  const enabled = Boolean(id)
 
   const invitationQuery = useQuery({
-    queryKey: ["invitation", id],
+    queryKey: ['invitation', id],
     queryFn: () => fetchData<ApiInvitation>(`/invitations/${id}`),
-    enabled,
-  });
+    enabled: enabled && !isInstant,
+  })
 
   const guestStatsQuery = useQuery({
-    queryKey: ["invitation", id, "guest-stats"],
+    queryKey: ['invitation', id, 'guest-stats'],
     queryFn: () =>
       fetchData<GuestStatsApiData>(`/invitations/${id}/guests/stats`),
-    enabled,
-  });
+    enabled: enabled && !isInstant,
+  })
 
   const rsvpStatsQuery = useQuery({
-    queryKey: ["invitation", id, "rsvp-stats"],
+    queryKey: ['invitation', id, 'rsvp-stats'],
     queryFn: () =>
       fetchData<RsvpStatsApiData>(`/invitations/${id}/rsvps/stats`),
-    enabled,
-  });
+    enabled: enabled && !isInstant,
+  })
 
-  const raw = invitationQuery.data;
+  const raw = invitationQuery.data
+
+  let instantFallback: Partial<InvitationDetail> | null = null
+  if (isInstant) {
+    const stored = instantAuthStorage.getInvitation()
+    if (stored) {
+      instantFallback = {
+        id: stored.id || id,
+        title: stored.title || 'Undangan',
+        panelName: stored.title || 'Undangan',
+        coupleName: stored.title || 'Undangan',
+        slug: stored.slug || '',
+      }
+    }
+  }
 
   const invitation: InvitationDetail = raw
     ? {
@@ -102,27 +118,26 @@ export function useInvitationDetail(id: string) {
         guestCount: guestStatsQuery.data?.totalGuests ?? 0,
         confirmedCount: rsvpStatsQuery.data?.totalConfirmed ?? 0,
         checkedInCount: guestStatsQuery.data?.totalAttended ?? 0,
-        // Fitur buwuh/amplop digital belum ada di backend, jadi masih 0.
         buwuhTotal: 0,
       }
-    : { ...EMPTY_DETAIL, id };
+    : { ...EMPTY_DETAIL, ...instantFallback, id }
 
-  // Backend belum menyediakan endpoint log aktivitas, jadi tetap kosong.
-  const activities: ActivityLog[] = [];
+  const activities: ActivityLog[] = []
 
   return {
     invitation,
     activities,
-    isFound: Boolean(raw),
+    isFound: isInstant ? true : Boolean(raw),
     rawInvitation: raw ?? null,
     isLoading:
       enabled &&
+      !isInstant &&
       (invitationQuery.isLoading ||
         guestStatsQuery.isLoading ||
         rsvpStatsQuery.isLoading),
-    isError: invitationQuery.isError,
-    error: invitationQuery.error,
-  };
+    isError: isInstant ? false : invitationQuery.isError,
+    error: isInstant ? null : invitationQuery.error,
+  }
 }
 
 /**
@@ -132,22 +147,43 @@ export function useInvitationDetail(id: string) {
  * - USER : Petugas penerima tamu (Hanya bisa lihat tamu & Scan QR presensi)
  */
 export function useCurrentInvitationRole(invitationId: string) {
-  const { user } = useAuth();
-  const { invitation, isFound } = useInvitationDetail(invitationId);
-  const { data: members = [] } = useMembers(invitationId);
+  const isInstant = instantAuthStorage.isInstantAccess()
+  const { user } = useAuth()
+  const { invitation, isFound } = useInvitationDetail(invitationId)
+  const { data: members = [] } = useMembers(invitationId)
+
+  if (isInstant) {
+    return {
+      role: 'USER' as InvitationRole,
+      isOwner: false,
+      canManageMembers: false,
+      canEditContent: false,
+      canManageGuests: false,
+      canScanQr: false,
+    }
+  }
 
   // Periksa apakah user yang sedang login adalah pemilik undangan atau terdaftar sebagai member
-  const isOwner = Boolean(user && invitation && isFound && !members.some((m) => m.email.toLowerCase() === user.email.toLowerCase()));
-  const myMember = members.find((m) => m.email.toLowerCase() === user?.email?.toLowerCase());
+  const isOwner = Boolean(
+    user &&
+      invitation &&
+      isFound &&
+      !members.some(
+        (m) => m.email.toLowerCase() === user.email.toLowerCase(),
+      ),
+  )
+  const myMember = members.find(
+    (m) => m.email.toLowerCase() === user?.email?.toLowerCase(),
+  )
 
-  const role: InvitationRole = isOwner ? "OWNER" : (myMember?.role ?? "USER");
+  const role: InvitationRole = isOwner ? 'OWNER' : (myMember?.role ?? 'USER')
 
   return {
     role,
-    isOwner: role === "OWNER",
-    canManageMembers: role === "OWNER",
-    canEditContent: role === "OWNER" || role === "ADMIN",
-    canManageGuests: role === "OWNER" || role === "ADMIN",
-    canScanQr: true, // Seluruh role (OWNER, ADMIN, USER) berhak scan QR presensi
-  };
+    isOwner: role === 'OWNER',
+    canManageMembers: role === 'OWNER',
+    canEditContent: role === 'OWNER' || role === 'ADMIN',
+    canManageGuests: role === 'OWNER' || role === 'ADMIN',
+    canScanQr: true, // Seluruh role normal (OWNER, ADMIN, USER) berhak scan QR presensi
+  }
 }

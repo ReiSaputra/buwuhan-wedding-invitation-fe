@@ -19,15 +19,16 @@ type StandaloneBuwuhanPayload = Pick<
   BuwuhanPayload,
   | 'giverName'
   | 'giverAddress'
+  | 'invitationTitle'
   | 'note'
   | 'receivedAt'
   | 'items'
 >
 
 /**
- * Menghapus properti invitationId dan invitationTitle dari payload.
+ * Mempersiapkan payload catatan buwuh mandiri.
  * Catatan standalone selalu dimiliki langsung oleh user login dan
- * tidak boleh dihubungkan ke undangan.
+ * tidak boleh dihubungkan ke invitationId yang ketat, namun dapat menyimpan nama acara manual.
  */
 function createStandalonePayload(
   payload: BuwuhanPayload,
@@ -35,6 +36,7 @@ function createStandalonePayload(
   return {
     giverName: payload.giverName,
     giverAddress: payload.giverAddress ?? null,
+    invitationTitle: payload.invitationTitle ?? null,
     note: payload.note ?? null,
     receivedAt: payload.receivedAt,
     items: payload.items,
@@ -110,7 +112,14 @@ export function useStandaloneBuwuhan() {
   })
 
   const records = useMemo(
-    () => listQuery.data ?? [],
+    () =>
+      (listQuery.data ?? []).filter((r) => {
+        const item = r as unknown as Record<string, unknown>
+        const hasInvitation = Boolean(
+          r.invitationId || item.invitation_id || item.invitation,
+        )
+        return !hasInvitation
+      }),
     [listQuery.data],
   )
 

@@ -24,7 +24,7 @@ import {
   useUpdateInvitation,
   useUpdateInvitationStatus,
 } from '@/hooks/useInvitationMutations'
-import type { ApiInvitationStatus, InvitationPayload } from '@/types/invitation-api'
+import type { ApiEventCategory, ApiInvitationStatus, InvitationPayload } from '@/types/invitation-api'
 import { cn } from '@/lib/cn'
 
 const STATUS_OPTIONS: Array<{
@@ -54,22 +54,35 @@ export default function PanelEditPage() {
   const [selectedStatus, setSelectedStatus] = useState<ApiInvitationStatus>(
     rawInvitation?.status ?? 'DRAFT',
   )
+  const [activeCategory, setActiveCategory] = useState<ApiEventCategory>(
+    rawInvitation?.eventCategory ?? 'WEDDING',
+  )
   const [isFormDirty, setIsFormDirty] = useState(false)
   const [isGalleryDirty, setIsGalleryDirty] = useState(false)
   const [isLoveStoryDirty, setIsLoveStoryDirty] = useState(false)
   const [isSavingAndProceeding, setIsSavingAndProceeding] = useState(false)
 
   // Sinkronkan status lokal saat data awal dari server tiba
-  // Sinkronkan status lokal saat data awal dari server tiba.
-useEffect(() => {
-  if (!rawInvitation?.status) return
+  useEffect(() => {
+    if (!rawInvitation?.status) return
 
-  const timeoutId = window.setTimeout(() => {
-    setSelectedStatus(rawInvitation.status)
-  }, 0)
+    const timeoutId = window.setTimeout(() => {
+      setSelectedStatus(rawInvitation.status)
+    }, 0)
 
-  return () => window.clearTimeout(timeoutId)
-}, [rawInvitation?.status])
+    return () => window.clearTimeout(timeoutId)
+  }, [rawInvitation?.status])
+
+  // Sinkronkan jenis undangan lokal saat data awal dari server tiba
+  useEffect(() => {
+    if (!rawInvitation?.eventCategory) return
+
+    const timeoutId = window.setTimeout(() => {
+      setActiveCategory(rawInvitation.eventCategory!)
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [rawInvitation?.eventCategory])
 
   // Status publikasi dianggap kotor jika pilihan user berbeda dengan data di database
   const isStatusDirty = Boolean(
@@ -142,6 +155,7 @@ useEffect(() => {
     formRef.current?.reset()
     if (rawInvitation) {
       setSelectedStatus(rawInvitation.status)
+      setActiveCategory(rawInvitation.eventCategory ?? 'WEDDING')
     }
     setIsFormDirty(false)
     setIsGalleryDirty(false)
@@ -191,7 +205,14 @@ useEffect(() => {
           Edit Undangan
         </h1>
         <p className="mt-1 text-xs text-muted">
-          Perbarui data mempelai, tanggal, dan lokasi acara pernikahan.
+          {activeCategory === 'KHITANAN' &&
+            'Perbarui data ananda, tanggal, dan lokasi acara tasyakuran walimatul khitan.'}
+          {activeCategory === 'AQIQAH' &&
+            'Perbarui data kelahiran ananda, tanggal, dan lokasi acara aqiqah.'}
+          {activeCategory === 'RASULAN' &&
+            'Perbarui rincian kegiatan, tanggal, dan lokasi acara tradisi rasulan / sedekah bumi.'}
+          {(!activeCategory || activeCategory === 'WEDDING') &&
+            'Perbarui data mempelai, tanggal, dan lokasi acara resepsi serta akad nikah.'}
         </p>
       </div>
 
@@ -256,6 +277,7 @@ useEffect(() => {
           isSubmitting={isSavingGeneral}
           hideSubmitButton
           onDirtyChange={setIsFormDirty}
+          onCategoryChange={setActiveCategory}
         />
       </div>
 
@@ -266,10 +288,11 @@ useEffect(() => {
         onDirtyChange={setIsGalleryDirty}
       />
 
-      {/* Pengelola kisah cinta (Love Story) */}
+      {/* Pengelola linimasa cerita & momen perjalanan (Story Timeline) */}
       <LoveStoryManager
         invitationId={id}
         stories={rawInvitation.loveStories ?? []}
+        eventCategory={activeCategory}
         onDirtyChange={setIsLoveStoryDirty}
       />
 

@@ -15,6 +15,7 @@ import { parseApiError } from "@/lib/errorHandler";
 import { cn } from "@/lib/cn";
 import { useTemplates } from "@/hooks/useTemplates";
 import type {
+  ApiEventCategory,
   ApiInvitation,
   CelebrantGender,
   InvitationPayload,
@@ -24,7 +25,7 @@ export type InvitationCategory = "wedding" | "khitanan" | "rasulan" | "aqiqah";
 
 const INVITATION_CATEGORIES: Array<{
   id: InvitationCategory;
-  apiCategory: "WEDDING" | "KHITANAN" | "RASULAN" | "AQIQAH";
+  apiCategory: ApiEventCategory;
   title: string;
   subtitle: string;
   badge: string;
@@ -97,6 +98,8 @@ export type InvitationFormProps = {
   hideSubmitButton?: boolean;
   /** Callback saat status perubahan data (isDirty) berubah */
   onDirtyChange?: (isDirty: boolean) => void;
+  /** Callback saat jenis/kategori undangan berubah secara interaktif */
+  onCategoryChange?: (category: ApiEventCategory) => void;
   /** Kategori awal yang dipilih (opsional) */
   defaultCategory?: InvitationCategory;
 };
@@ -246,6 +249,7 @@ export const InvitationForm = forwardRef<
     isSubmitting = false,
     hideSubmitButton = false,
     onDirtyChange,
+    onCategoryChange,
     defaultCategory,
   }: InvitationFormProps,
   ref,
@@ -290,6 +294,13 @@ export const InvitationForm = forwardRef<
 
   const currentCategory = selectedCategory ?? "wedding";
 
+  // Beritahu komponen induk saat jenis/kategori undangan berubah secara interaktif
+  useEffect(() => {
+    const matched = INVITATION_CATEGORIES.find((c) => c.id === currentCategory);
+    const apiCat: ApiEventCategory = matched?.apiCategory ?? "WEDDING";
+    onCategoryChange?.(apiCat);
+  }, [currentCategory, onCategoryChange]);
+
   /**
    * Menghitung apakah ada perubahan data pada formulir dibanding data awal.
    */
@@ -304,19 +315,29 @@ export const InvitationForm = forwardRef<
         Boolean(form.brideName) ||
         Boolean(form.brideFather) ||
         Boolean(form.brideMother) ||
+        Boolean(form.celebrantName) ||
+        Boolean(form.celebrantNickname) ||
+        Boolean(form.celebrantFather) ||
+        Boolean(form.celebrantMother) ||
+        Boolean(form.celebrantBirthDate) ||
+        Boolean(form.celebrantChildOrder) ||
         Boolean(form.eventDate) ||
         Boolean(startTime) ||
         Boolean(endTime) ||
         Boolean(form.venue) ||
         Boolean(form.address) ||
+        Boolean(form.additionalNote) ||
+        Boolean(form.dressCode) ||
         Boolean(form.templateId)
       );
     }
 
     const init = toFormState(initialValue);
+    const initCategory = detectCategory(initialValue);
     const [initStart, initEnd] = parseEventTime(initialValue.eventTime);
 
     return (
+      currentCategory !== initCategory ||
       form.title !== init.title ||
       form.slug !== init.slug ||
       form.groomName !== init.groomName ||
@@ -325,14 +346,23 @@ export const InvitationForm = forwardRef<
       form.brideName !== init.brideName ||
       form.brideFather !== init.brideFather ||
       form.brideMother !== init.brideMother ||
+      form.celebrantName !== init.celebrantName ||
+      form.celebrantNickname !== init.celebrantNickname ||
+      form.celebrantFather !== init.celebrantFather ||
+      form.celebrantMother !== init.celebrantMother ||
+      form.celebrantGender !== init.celebrantGender ||
+      form.celebrantBirthDate !== init.celebrantBirthDate ||
+      form.celebrantChildOrder !== init.celebrantChildOrder ||
       form.eventDate !== init.eventDate ||
       startTime !== initStart ||
       endTime !== initEnd ||
       form.venue !== init.venue ||
       form.address !== init.address ||
+      form.additionalNote !== init.additionalNote ||
+      form.dressCode !== init.dressCode ||
       form.templateId !== init.templateId
     );
-  }, [form, startTime, endTime, initialValue]);
+  }, [form, currentCategory, startTime, endTime, initialValue]);
 
   // Beritahu parent saat isDirty berubah
   useEffect(() => {
@@ -529,11 +559,13 @@ export const InvitationForm = forwardRef<
    */
   function resetForm() {
     if (initialValue) {
+      setSelectedCategory(detectCategory(initialValue));
       setForm(toFormState(initialValue));
       const [initStart, initEnd] = parseEventTime(initialValue.eventTime);
       setStartTime(initStart);
       setEndTime(initEnd);
     } else {
+      setSelectedCategory(defaultCategory ?? null);
       setForm(EMPTY_FORM);
       setStartTime("");
       setEndTime("");

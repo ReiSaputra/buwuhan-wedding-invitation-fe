@@ -5,6 +5,7 @@ import { NavGroup } from './NavGroup'
 import type { NavEntry } from '@/config/navigation'
 import type { CurrentUser } from '@/types/dashboard'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { instantAuthStorage } from '@/lib/instantAuthStorage'
 
 export type SidebarProps = {
   /** Subtitle atau nama konteks panel aktif (misal nama undangan) */
@@ -18,12 +19,10 @@ export type SidebarProps = {
 }
 
 /**
- * Komponen Sidebar navigasi utama aplikasi Buwuh Panel.
- * Menampilkan logo brand, daftar menu navigasi bersarang/grup, dan widget akun user.
- * 
- * @param props - Properti Sidebar (subtitle, items, footer, onClose)
+ * Komponen Sidebar Navigasi Aplikasi.
+ * Menampilkan logo brand, grup navigasi hierarkis, serta profil pengguna aktif di footer.
  */
-export function Sidebar({ items, footer, onClose }: SidebarProps) {
+export function Sidebar({ subtitle, items, footer, onClose }: SidebarProps) {
   const user: CurrentUser = useCurrentUser()
 
   /**
@@ -47,12 +46,22 @@ export function Sidebar({ items, footer, onClose }: SidebarProps) {
     )
   }
 
+  const isInstantAccess = instantAuthStorage.isInstantAccess()
+
+  let brandTo = '/dashboard'
+  if (isInstantAccess) {
+    const access = instantAuthStorage.getAccess()
+    if (access?.invitationId) {
+      brandTo = `/dashboard/undangan/${access.invitationId}/catatan-buwuh`
+    }
+  }
+
   return (
     <aside className="sidebar-gradient relative flex h-full w-68 shrink-0 flex-col px-4 py-5 text-white shadow-xl">
       {/* Brand Header */}
       <div className="flex items-center justify-between px-2 pb-5">
         <Link
-          to="/dashboard"
+          to={brandTo}
           onClick={onClose}
           className="group flex items-center gap-3 focus:outline-none"
         >
@@ -63,6 +72,11 @@ export function Sidebar({ items, footer, onClose }: SidebarProps) {
             <span className="font-display text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
               Buwuh Panel
             </span>
+            {subtitle && (
+              <span className="block text-[11px] font-normal text-white/70 truncate max-w-[150px]">
+                {subtitle}
+              </span>
+            )}
           </div>
         </Link>
 
@@ -106,13 +120,19 @@ export function Sidebar({ items, footer, onClose }: SidebarProps) {
               <p className="text-[10px] text-white/70 truncate">{user.role}</p>
             </div>
           </div>
-          <Link
-            to="/dashboard/langganan"
-            onClick={onClose}
-            className="shrink-0 rounded-md bg-white/20 px-2 py-1 text-[10px] font-bold text-white hover:bg-white/30 transition uppercase"
-          >
-            {user.plan}
-          </Link>
+          {isInstantAccess ? (
+            <span className="shrink-0 rounded-md bg-white/20 px-2 py-1 text-[10px] font-bold text-white uppercase">
+              PETUGAS
+            </span>
+          ) : (
+            <Link
+              to="/dashboard/langganan"
+              onClick={onClose}
+              className="shrink-0 rounded-md bg-white/20 px-2 py-1 text-[10px] font-bold text-white hover:bg-white/30 transition uppercase"
+            >
+              {user.plan}
+            </Link>
+          )}
         </div>
       </div>
     </aside>

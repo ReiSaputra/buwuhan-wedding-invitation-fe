@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { deleteData, fetchData, patchData, postData } from '@/lib/api'
+import { instantAuthStorage } from '@/lib/instantAuthStorage'
 import type {
   AcceptInviteResult,
   CreateMemberPayload,
@@ -10,19 +11,29 @@ import type {
 
 export interface InstantLinkPayload {
   name: string
-  role?: 'ADMIN' | 'USER'
+  role?: 'USER'
 }
 
 export interface InstantLinkResult {
   memberId: string
   name: string
-  role: 'ADMIN' | 'USER'
+  role: 'USER'
   accessLink: string
   expiresAt: string
 }
 
+export interface InstantAccessMetadata {
+  type: 'INSTANT'
+  scope: 'BUWUHAN_ONLY'
+  invitationId: string
+  memberId: string
+  invitationRole: 'USER'
+  canDeleteBuwuhan: boolean
+}
+
 export interface InstantAccessResult {
   sessionToken: string
+  access?: InstantAccessMetadata
   member: {
     id: string
     name: string
@@ -41,10 +52,12 @@ const membersKey = (invitationId: string) => ['members', invitationId] as const
  * GET /invitations/:invitationId/members
  */
 export function useMembers(invitationId?: string) {
+  const isInstant = instantAuthStorage.isInstantAccess()
+
   return useQuery({
     queryKey: membersKey(invitationId ?? ''),
     queryFn: () => fetchData<Member[]>(`/invitations/${invitationId}/members`),
-    enabled: Boolean(invitationId),
+    enabled: Boolean(invitationId) && !isInstant,
   })
 }
 

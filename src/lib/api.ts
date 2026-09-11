@@ -1,5 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import type { BackendSuccessEnvelope } from "@/types/auth";
+import { instantAuthStorage } from "@/lib/instantAuthStorage";
 
 /**
  * Variabel in-memory closure untuk menyimpan Access Token sementara.
@@ -61,8 +62,20 @@ export const api = axios.create({
  */
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    if (inMemoryAccessToken && !config.headers.Authorization) {
-      config.headers.Authorization = `Bearer ${inMemoryAccessToken}`;
+    const isInstant = instantAuthStorage.isInstantAccess();
+    const token = isInstant
+      ? instantAuthStorage.getToken()
+      : inMemoryAccessToken;
+
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (isInstant) {
+      const memberName = instantAuthStorage.getMemberName();
+      if (memberName && !config.headers['X-Actor-Name']) {
+        config.headers['X-Actor-Name'] = memberName;
+      }
     }
     return config;
   },
@@ -107,6 +120,13 @@ api.interceptors.response.use(
 
     // Jika tidak ada config atau error bukan 401, teruskan error
     if (!originalRequest || error.response?.status !== 401) {
+      return Promise.reject(error);
+    }
+
+    const isInstant = instantAuthStorage.isInstantAccess();
+
+    // Jangan coba refresh token untuk sesi instan (karena tidak memakai cookie refresh-token)
+    if (isInstant) {
       return Promise.reject(error);
     }
 

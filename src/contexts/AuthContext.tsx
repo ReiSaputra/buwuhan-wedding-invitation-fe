@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { api, setAccessToken as setGlobalAccessToken, setOnAuthFailed } from '@/lib/api'
+import { instantAuthStorage } from '@/lib/instantAuthStorage'
 import type {
   AuthUser,
   LoginInput,
@@ -141,6 +142,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function initSession() {
       try {
+        const isInstant = instantAuthStorage.isInstantAccess()
+        const instantToken = instantAuthStorage.getToken()
+        const instantMemberName = instantAuthStorage.getMemberName() || 'Petugas'
+        const instantMemberId = instantAuthStorage.getMemberId() || ''
+
+        if (isInstant && instantToken) {
+          updateAccessToken(instantToken)
+          setUser({
+            id: instantMemberId,
+            fullName: instantMemberName,
+            email: '',
+            role: 'USER',
+            plan: 'FREE',
+          })
+          return
+        }
+
         await refreshSession()
       } finally {
         if (isMounted) {
@@ -163,6 +181,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const login = useCallback(
     async (input: LoginInput) => {
+      // Bersihkan sesi instan jika ada sebelum login dengan akun reguler
+      instantAuthStorage.clearSession()
+
       const res = await api.post<BackendSuccessEnvelope<LoginResponseData>>('/auth/login', {
         email: input.email.trim(),
         password: input.password,
@@ -199,6 +220,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const register = useCallback(
     async (input: RegisterInput) => {
+      instantAuthStorage.clearSession()
+
       await api.post<BackendSuccessEnvelope<RegisterResponseData>>('/auth/register', {
         fullName: input.fullName.trim(),
         email: input.email.trim(),
@@ -223,10 +246,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const logout = useCallback(async () => {
     try {
-      await api.post('/auth/logout', {})
+      const isInstant = instantAuthStorage.isInstantAccess()
+      if (!isInstant) {
+        await api.post('/auth/logout', {})
+      }
     } catch (err) {
       console.warn('Gagal memanggil endpoint logout di backend:', err)
     } finally {
+      instantAuthStorage.clearSession()
       updateAccessToken(null)
       setUser(null)
     }
