@@ -82,9 +82,11 @@ export function TemplateFormModal({
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
 
   // Isi ulang form setiap kali modal dibuka atau target template berganti
-  useEffect(() => {
-    if (!isOpen) return
+  // Isi ulang form setiap kali modal dibuka atau target template berganti.
+useEffect(() => {
+  if (!isOpen) return
 
+  const timeoutId = window.setTimeout(() => {
     setErrors({})
     setSlugTouched(isEdit)
     setForm(
@@ -93,13 +95,18 @@ export function TemplateFormModal({
             name: template.name,
             slug: template.slug,
             tier: template.tier,
-            eventCategory: (template.eventCategory as EventCategory) || 'WEDDING',
+            eventCategory:
+              (template.eventCategory as EventCategory) ||
+              'WEDDING',
             previewImageUrl: template.previewImageUrl ?? '',
             isActive: template.isActive,
           }
         : EMPTY_FORM,
     )
-  }, [isOpen, template, isEdit])
+  }, 0)
+
+  return () => window.clearTimeout(timeoutId)
+}, [isOpen, template, isEdit])
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))

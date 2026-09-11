@@ -5,12 +5,12 @@ import { THEME_ELEGAN, type TemplateTheme } from '@/templates/template-themes'
 export type CoverSectionProps = {
   /** Nama tamu undangan yang sedang membuka halaman */
   guestName: string
-  /** Nama mempelai pria */
-  groomName: string
-  /** Nama mempelai wanita */
-  brideName: string
-  /** Tanggal acara pernikahan */
-  eventDate?: string
+  /** Nama pasangan atau tokoh utama acara */
+displayName: string
+/** Label kategori acara */
+eventLabel: string
+/** Tanggal acara */
+eventDate?: string
   /** Callback saat tombol 'Buka Undangan' diklik */
   onOpen: () => void
   /** Tema visual dari template yang sedang dirender */
@@ -25,9 +25,9 @@ export type CoverSectionProps = {
  */
 export function CoverSection({
   guestName,
-  groomName,
-  brideName,
-  eventDate = 'Minggu, 18 Januari 2026',
+displayName,
+eventLabel,
+eventDate = 'Minggu, 18 Januari 2026',
   onOpen,
   theme = THEME_ELEGAN,
 }: CoverSectionProps) {
@@ -55,7 +55,7 @@ export function CoverSection({
           className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] ${theme.coverBadge}`}
         >
           <Sparkles size={11} />
-          The Wedding Of
+          {eventLabel}
         </span>
       </motion.div>
 
@@ -81,10 +81,8 @@ export function CoverSection({
           className="transform-gpu"
         >
           <h1 className={`text-4xl sm:text-5xl leading-tight ${theme.coverTitle}`}>
-            <span>{groomName}</span>
-            <span className={`mx-2.5 ${theme.coverAmp}`}>&amp;</span>
-            <span>{brideName}</span>
-          </h1>
+  {displayName || 'Undangan'}
+</h1>
           <p className={`mt-2 text-xs sm:text-sm font-medium tracking-widest uppercase ${theme.coverDate}`}>
             {eventDate}
           </p>

@@ -181,7 +181,7 @@ export default function BuwuhPage() {
             <thead className="border-b border-slate-100 bg-slate-50 font-bold uppercase tracking-wider text-slate-500">
               <tr>
                 <th className={thClass}>Pemberi / Tamu</th>
-                <th className={thClass}>Acara Undangan</th>
+                <th className={thClass}>Sumber Catatan</th>
                 <th className={thClass}>Alamat Pemberi</th>
                 <th className={thClass}>Rincian Bantuan</th>
                 <th className={thClass}>Nominal Uang</th>
@@ -215,7 +215,7 @@ export default function BuwuhPage() {
                         )}
                       </td>
                       <td className={tdClass}>
-                        {record.invitationId && record.invitationId !== 'standalone' ? (
+                        {record.invitationId ? (
                           <Link
                             to={`/dashboard/undangan/${record.invitationId}/catatan-buwuh`}
                             className="font-medium text-primary hover:underline"

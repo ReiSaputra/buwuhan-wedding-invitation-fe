@@ -177,8 +177,9 @@ export default function PanelRsvpPage() {
     }))
     try {
       await exportRsvpData(id, 'xlsx', fallbackRows)
+      console.info('Export berhasil! Data RSVP telah diunduh.')
     } catch {
-      alert('Gagal mengekspor data konfirmasi kehadiran')
+      alert('Gagal mengekspor data konfirmasi kehadiran. Silakan periksa koneksi dan coba lagi.')
     }
   }
 

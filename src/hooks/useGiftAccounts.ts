@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { deleteData, fetchData, patchData, postData } from '@/lib/api'
-import type { GiftAccount, GiftAccountPayload } from '@/types/panel'
+import { deleteData, fetchData, patchData, postData, api } from '@/lib/api'
+import type { GiftAccount, GiftAccountPayload, PublicGiftAccount } from '@/types/panel'
+import type { BackendSuccessEnvelope } from '@/types/auth'
 
 export interface PublicGiftData {
-  accounts: GiftAccount[]
+  accounts: PublicGiftAccount[]
   giftAddress?: string | null
 }
 
@@ -78,10 +79,10 @@ export function useGiftAccounts(invitationId: string) {
 }
 
 /**
- * Hook untuk mengambil daftar rekening dan alamat kado pada halaman undangan publik.
+ * Hook publik untuk mengambil daftar rekening kado & e-wallet tamu (tanpa autentikasi).
  *
  * Endpoint:
- * - GET /public/invitations/:slug/gift-accounts
+ * - GET /v1/api/public/invitations/:slug/gift-accounts
  *
  * @param slug - Slug tautan undangan publik
  */
@@ -90,28 +91,29 @@ export function usePublicGiftAccounts(slug: string) {
 
   const query = useQuery({
     queryKey: ['public-invitation', slug, 'gift-accounts'],
-    queryFn: async (): Promise<PublicGiftData> => {
-      const res = await fetchData<PublicGiftData | GiftAccount[]>(
-        `/public/invitations/${slug}/gift-accounts`,
-      )
-
-      if (Array.isArray(res)) {
-        return { accounts: res, giftAddress: null }
-      }
-
-      return {
-        accounts: res?.accounts ?? [],
-        giftAddress: res?.giftAddress ?? null,
+    queryFn: async (): Promise<PublicGiftAccount[]> => {
+      try {
+        const response = await api.get<BackendSuccessEnvelope<PublicGiftAccount[]>>(
+          `/public/invitations/${slug}/gift-accounts`
+        )
+        return response.data?.data ?? []
+      } catch (err: unknown) {
+        // Jika 404 (slug tidak ditemukan atau masih DRAFT), kembalikan array kosong secara aman
+        const status = (err as { response?: { status?: number } })?.response?.status
+        if (status === 404) {
+          return []
+        }
+        throw err
       }
     },
     enabled,
-    staleTime: 1000 * 30, // 30 detik
+    staleTime: 1000 * 60 * 5, // 5 menit
   })
 
   return {
-    accounts: query.data?.accounts ?? [],
-    giftAddress: query.data?.giftAddress ?? null,
+    accounts: query.data ?? [],
     isLoading: query.isLoading,
     isError: query.isError,
+    error: query.error,
   }
 }

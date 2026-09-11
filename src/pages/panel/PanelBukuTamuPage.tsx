@@ -253,8 +253,9 @@ export default function PanelBukuTamuPage() {
     }));
     try {
       await exportGuestsData(id, "xlsx", fallbackRows);
+      console.info('Export berhasil! Data buku tamu telah diunduh.');
     } catch {
-      alert("Gagal mengekspor data tamu");
+      alert("Gagal mengekspor data tamu. Silakan periksa koneksi dan coba lagi.");
     }
   }
 

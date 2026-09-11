@@ -58,14 +58,12 @@ export interface DeleteAccountPayload {
 }
 
 /**
- * Informasi sesi login aktif dari GET /users/me/sessions
+ * Informasi sesi login aktif dari GET /v1/api/auth/sessions
  */
 export interface UserSession {
   id: string
-  device: string
-  browser?: string
-  os?: string
-  ipAddress: string
-  lastActiveAt: string
+  userAgent: string | null
+  ipAddress: string | null
+  createdAt: string
   isCurrent: boolean
 }

@@ -13,7 +13,8 @@ export default function VerifyEmailPage() {
 
   const [resendEmail, setResendEmail] = useState('')
   const [resendSuccess, setResendSuccess] = useState(false)
-  const [isAutoVerifying, setIsAutoVerifying] = useState(false)
+  const [isAutoVerifying, setIsAutoVerifying] =
+  useState(Boolean(token))
   const [verifyStatus, setVerifyStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -24,7 +25,6 @@ export default function VerifyEmailPage() {
     if (!token) return
 
     let isMounted = true
-    setIsAutoVerifying(true)
 
     async function executeVerification() {
       try {

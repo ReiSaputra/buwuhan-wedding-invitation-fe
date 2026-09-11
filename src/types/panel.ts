@@ -54,7 +54,7 @@ export type GuestBookEntry = {
 }
 
 /**
- * Rekening bank / dompet digital penerima amplop digital.
+ * Rekening bank / dompet digital penerima amplop digital (Panel Pemilik).
  */
 export type GiftAccount = {
   id: string
@@ -63,9 +63,23 @@ export type GiftAccount = {
   accountNumber: string
   accountHolder: string
   type: string
+  order?: number
   qrCodeUrl?: string | null
   createdAt?: string
   updatedAt?: string
+}
+
+/**
+ * Rekening kado & e-wallet publik yang disanitasi dari GET /public/invitations/:slug/gift-accounts
+ */
+export interface PublicGiftAccount {
+  id: string
+  bankName: string
+  accountNumber: string
+  accountHolder: string
+  type: 'BANK' | 'EWALLET' | string
+  order: number
+  qrCodeUrl?: string | null
 }
 
 /**

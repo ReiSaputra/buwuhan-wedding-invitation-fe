@@ -13,8 +13,10 @@ export type EventDetailsSectionProps = {
   venue: string
   /** Alamat lengkap tempat acara */
   address: string
-  /** Nama kedua mempelai, dipakai untuk judul di Google Calendar */
-  coupleNames: string
+  /** Nama pasangan atau tokoh utama, dipakai untuk Google Calendar */
+displayName: string
+/** Label kategori acara */
+eventLabel: string
 }
 
 /**
@@ -52,7 +54,8 @@ export function EventDetailsSection({
   eventTime,
   venue,
   address,
-  coupleNames,
+displayName,
+eventLabel,
 }: EventDetailsSectionProps) {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -95,10 +98,15 @@ export function EventDetailsSection({
     const endDate = toCalendarDate(eventDate, 1)
     if (!startDate) return
 
-    const title = encodeURIComponent(`Pernikahan ${coupleNames}`)
-    const details = encodeURIComponent(
-      `Menghadiri pernikahan ${coupleNames}${fullLocation ? ` di ${fullLocation}` : ''}.`,
-    )
+    const title = encodeURIComponent(
+  `${eventLabel} ${displayName}`,
+)
+
+const details = encodeURIComponent(
+  `Menghadiri acara ${eventLabel.toLowerCase()} ${displayName}${
+    fullLocation ? ` di ${fullLocation}` : ''
+  }.`,
+)
     const location = encodeURIComponent(fullLocation)
     const dates = `${startDate}/${endDate}`
 
@@ -174,7 +182,7 @@ export function EventDetailsSection({
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full bg-inv-gold/15 px-3.5 py-1 text-xs font-bold text-inv-gold uppercase">
               <Calendar size={13} />
-              <span>Resepsi Pernikahan</span>
+              <span>Acara {eventLabel}</span>
             </div>
 
             <h3 className="font-display text-2xl font-bold text-inv-ink">

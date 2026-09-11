@@ -136,7 +136,13 @@ export function BuwuhanFormModal({
         }
       })
 
-    if (!giverName.trim() || payloadItems.length === 0) return
+    if (
+  !giverName.trim() ||
+  giverAddress.trim().length > 500 ||
+  payloadItems.length === 0
+) {
+  return
+}
 
     onSubmit({
       giverName: giverName.trim(),
@@ -190,14 +196,25 @@ export function BuwuhanFormModal({
             />
           </label>
           <label className="space-y-1.5">
-            <span className="text-[11px] font-bold text-slate-600">Alamat Pemberi</span>
-            <input
-              className={inputClass}
-              value={giverAddress}
-              onChange={(event) => setGiverAddress(event.target.value)}
-              placeholder="Contoh: Ds. Kedungwaru, Kec. Tulungagung"
-            />
-          </label>
+  <span className="text-[11px] font-bold text-slate-600">
+    Alamat / Asal Domisili
+  </span>
+
+  <input
+    type="text"
+    className={inputClass}
+    value={giverAddress}
+    onChange={(event) =>
+      setGiverAddress(event.target.value.slice(0, 500))
+    }
+    placeholder="Contoh: Ds. Kedungwaru, Kec. Tulungagung"
+    maxLength={500}
+  />
+
+  <span className="block text-right text-[10px] text-slate-400">
+    {giverAddress.length}/500
+  </span>
+</label>
         </div>
 
         <div className="space-y-2.5">

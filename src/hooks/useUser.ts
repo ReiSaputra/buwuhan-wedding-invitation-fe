@@ -48,21 +48,10 @@ function getInitialCachedSessions(): UserSession[] {
   return [
     {
       id: 'sess-current',
-      device: 'Google Chrome / Windows 11',
-      browser: 'Chrome 128',
-      os: 'Windows 11',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0.0.0',
       ipAddress: '180.252.12.34',
-      lastActiveAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       isCurrent: true,
-    },
-    {
-      id: 'sess-mobile',
-      device: 'Safari Mobile / iPhone 15 Pro',
-      browser: 'Mobile Safari',
-      os: 'iOS 17.5',
-      ipAddress: '114.125.88.19',
-      lastActiveAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-      isCurrent: false,
     },
   ]
 }

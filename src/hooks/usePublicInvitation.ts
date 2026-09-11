@@ -71,24 +71,50 @@ export function usePublicInvitation() {
   })
 
   const invitation = query.data ?? null
-  const groom = findCouple(invitation?.couples, 'GROOM')
-  const bride = findCouple(invitation?.couples, 'BRIDE')
+const groom = findCouple(invitation?.couples, 'GROOM')
+const bride = findCouple(invitation?.couples, 'BRIDE')
+
+const eventCategory = invitation?.eventCategory ?? 'WEDDING'
+const showCelebrant =
+  invitation?.showCelebrant ?? eventCategory !== 'WEDDING'
+const showCouples =
+  invitation?.showCouples ?? eventCategory === 'WEDDING'
+const celebrant = invitation?.celebrant ?? null
+
+const eventLabel = {
+  WEDDING: 'Pernikahan',
+  KHITANAN: 'Khitanan',
+  RASULAN: 'Rasulan',
+  AQIQAH: 'Aqiqah',
+}[eventCategory]
+
+const coupleNames =
+  groom && bride ? `${groom.name} & ${bride.name}` : ''
+
+const displayName =
+  showCelebrant && celebrant ? celebrant.name : coupleNames
 
   // Seluruh data siap tampil dikumpulkan jadi satu objek agar bisa
   // diteruskan utuh sebagai props ke komponen template.
   const viewModel: PublicInvitationViewModel = {
     slug,
-    id: invitation?.id ?? '',
-    invitation,
+id: invitation?.id ?? '',
+invitation,
+eventCategory,
+showCouples,
+showCelebrant,
+celebrant,
+eventLabel,
+displayName,
 
-    // Data mempelai terpisah
-    groom,
-    bride,
+// Data mempelai terpisah
+groom,
+bride,
 
     // Nilai siap tampil, dengan pengaman bila data belum ada
     groomName: groom?.name ?? '',
     brideName: bride?.name ?? '',
-    coupleNames: groom && bride ? `${groom.name} & ${bride.name}` : '',
+    coupleNames,
     eventDateText: formatLongDateId(invitation?.eventDate),
     eventDate: invitation?.eventDate ?? null,
     eventTime: invitation?.eventTime ?? '',

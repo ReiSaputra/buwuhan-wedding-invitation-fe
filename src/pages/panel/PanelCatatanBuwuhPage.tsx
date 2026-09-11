@@ -79,12 +79,17 @@ export default function PanelCatatanBuwuhPage() {
   const stats = useMemo(() => calculateBuwuhStats(records), [records])
 
   const getSearchText = useCallback(
-    (record: ApiBuwuhan) =>
-      `${record.giverName} ${record.note ?? ''} ${record.items
-        .map((i) => `${i.itemName} ${getBuwuhanCategory(i)} ${i.unit}`)
-        .join(' ')}`,
-    [],
-  )
+  (record: ApiBuwuhan) =>
+    `${record.giverName} ${record.giverAddress ?? ''} ${
+      record.note ?? ''
+    } ${record.items
+      .map(
+        (item) =>
+          `${item.itemName} ${getBuwuhanCategory(item)} ${item.unit}`,
+      )
+      .join(' ')}`,
+  [],
+)
 
   const table = useTableState({ rows: records, pageSize: 8, getSearchText })
 
@@ -109,8 +114,10 @@ export default function PanelCatatanBuwuhPage() {
     }))
     try {
       await exportBuwuhanData(id, 'xlsx', fallbackRows)
+      // Feedback opsional kepada pengguna setelah download terpicu
+      console.info('Export berhasil! Data catatan buwuh telah diunduh.')
     } catch {
-      alert('Gagal mengekspor catatan buwuh')
+      alert('Gagal mengekspor catatan buwuh. Silakan periksa koneksi dan coba lagi.')
     }
   }
 
@@ -222,10 +229,20 @@ export default function PanelCatatanBuwuhPage() {
                           {getInitial(record.giverName)}
                         </div>
                         <div className="min-w-0 max-w-[200px]">
-                          <span className="block text-xs font-bold text-ink">{record.giverName}</span>
-                          {record.note && (
-                            <span className="block break-words text-[11px] leading-snug text-slate-400">"{record.note}"</span>
-                          )}
+                          <span className="block text-xs font-bold text-ink">
+  {record.giverName}
+</span>
+
+<span className="block break-words text-[11px] leading-snug text-slate-500">
+  {record.giverAddress || '-'}
+</span>
+
+{record.note && (
+  <span className="block break-words text-[11px] leading-snug text-slate-400">
+    "{record.note}"
+  </span>
+)}
+                          
                         </div>
                       </div>
                     </td>

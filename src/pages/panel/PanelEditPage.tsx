@@ -60,11 +60,16 @@ export default function PanelEditPage() {
   const [isSavingAndProceeding, setIsSavingAndProceeding] = useState(false)
 
   // Sinkronkan status lokal saat data awal dari server tiba
-  useEffect(() => {
-    if (rawInvitation?.status) {
-      setSelectedStatus(rawInvitation.status)
-    }
-  }, [rawInvitation?.status])
+  // Sinkronkan status lokal saat data awal dari server tiba.
+useEffect(() => {
+  if (!rawInvitation?.status) return
+
+  const timeoutId = window.setTimeout(() => {
+    setSelectedStatus(rawInvitation.status)
+  }, 0)
+
+  return () => window.clearTimeout(timeoutId)
+}, [rawInvitation?.status])
 
   // Status publikasi dianggap kotor jika pilihan user berbeda dengan data di database
   const isStatusDirty = Boolean(

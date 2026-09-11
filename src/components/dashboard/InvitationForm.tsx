@@ -14,11 +14,15 @@ import { slugify } from "@/hooks/useInvitationMutations";
 import { parseApiError } from "@/lib/errorHandler";
 import { cn } from "@/lib/cn";
 import { useTemplates } from "@/hooks/useTemplates";
-import type { ApiInvitation, InvitationPayload } from "@/types/invitation-api";
+import type {
+  ApiInvitation,
+  CelebrantGender,
+  InvitationPayload,
+} from "@/types/invitation-api";
 
 export type InvitationCategory = "wedding" | "khitanan" | "rasulan" | "aqiqah";
 
-export const INVITATION_CATEGORIES: Array<{
+const INVITATION_CATEGORIES: Array<{
   id: InvitationCategory;
   apiCategory: "WEDDING" | "KHITANAN" | "RASULAN" | "AQIQAH";
   title: string;
@@ -106,6 +110,14 @@ type FormState = {
   brideName: string;
   brideFather: string;
   brideMother: string;
+  // Field khusus untuk non-wedding (Khitanan, Rasulan, Aqiqah)
+  celebrantName: string;
+  celebrantNickname: string;
+  celebrantFather: string;
+  celebrantMother: string;
+  celebrantGender: string;
+  celebrantBirthDate: string;
+  celebrantChildOrder: string;
   eventDate: string;
   eventTime: string;
   venue: string;
@@ -124,6 +136,13 @@ const EMPTY_FORM: FormState = {
   brideName: "",
   brideFather: "",
   brideMother: "",
+  celebrantName: "",
+  celebrantNickname: "",
+  celebrantFather: "",
+  celebrantMother: "",
+  celebrantGender: "MALE",
+  celebrantBirthDate: "",
+  celebrantChildOrder: "",
   eventDate: "",
   eventTime: "",
   venue: "",
@@ -167,6 +186,7 @@ function detectCategory(data?: ApiInvitation | null): InvitationCategory {
 function toFormState(data: ApiInvitation): FormState {
   const groom = data.couples?.find((c) => c.type === "GROOM");
   const bride = data.couples?.find((c) => c.type === "BRIDE");
+  const cel = data.celebrant;
 
   return {
     title: data.title ?? "",
@@ -177,6 +197,13 @@ function toFormState(data: ApiInvitation): FormState {
     brideName: bride?.name ?? "",
     brideFather: bride?.fatherName ?? "",
     brideMother: bride?.motherName ?? "",
+    celebrantName: cel?.name ?? "",
+    celebrantNickname: cel?.nickname ?? "",
+    celebrantFather: cel?.fatherName ?? "",
+    celebrantMother: cel?.motherName ?? "",
+    celebrantGender: (cel?.gender as string) ?? "MALE",
+    celebrantBirthDate: cel?.birthDate ? cel.birthDate.slice(0, 10) : "",
+    celebrantChildOrder: cel?.childOrder ? String(cel.childOrder) : "",
     eventDate: data.eventDate ? data.eventDate.slice(0, 10) : "",
     eventTime: data.eventTime ?? "",
     venue: data.venue ?? "",
@@ -327,7 +354,7 @@ export const InvitationForm = forwardRef<
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
 
-  /**
+    /**
    * Memeriksa isian formulir mengikuti aturan validasi sesuai jenis undangan.
    */
   function validate(): FormErrors {
@@ -353,6 +380,14 @@ export const InvitationForm = forwardRef<
         next.brideName = "Nama mempelai wanita wajib diisi";
       if (!form.brideFather.trim()) next.brideFather = "Nama ayah wajib diisi";
       if (!form.brideMother.trim()) next.brideMother = "Nama ibu wajib diisi";
+    } else {
+      // Validasi untuk kategori non-wedding (Khitanan, Rasulan, Aqiqah)
+      if (!form.celebrantName.trim())
+        next.celebrantName = "Nama tokoh / anak yang dirayakan wajib diisi";
+      if (!form.celebrantFather.trim())
+        next.celebrantFather = "Nama ayah kandung wajib diisi";
+      if (!form.celebrantMother.trim())
+        next.celebrantMother = "Nama ibu kandung wajib diisi";
     }
 
     if (form.venue.trim().length > 255)
@@ -390,12 +425,20 @@ export const InvitationForm = forwardRef<
           motherName: form.brideMother.trim(),
         },
       ];
-    } else if (currentCategory === "khitanan") {
-      payload.eventCategory = "KHITANAN";
-    } else if (currentCategory === "rasulan") {
-      payload.eventCategory = "RASULAN";
-    } else if (currentCategory === "aqiqah") {
-      payload.eventCategory = "AQIQAH";
+    } else {
+      // Kategori non-wedding (KHITANAN, RASULAN, AQIQAH)
+      payload.eventCategory = currentCategory.toUpperCase() as "KHITANAN" | "RASULAN" | "AQIQAH";
+      payload.celebrant = {
+        name: form.celebrantName.trim(),
+        nickname: form.celebrantNickname.trim() || null,
+        fatherName: form.celebrantFather.trim(),
+        motherName: form.celebrantMother.trim(),
+        gender: form.celebrantGender
+  ? (form.celebrantGender as CelebrantGender)
+  : null,
+        birthDate: form.celebrantBirthDate ? new Date(form.celebrantBirthDate).toISOString() : null,
+        childOrder: form.celebrantChildOrder ? parseInt(form.celebrantChildOrder, 10) : null,
+      };
     }
 
     if (form.eventDate) {
@@ -720,153 +763,234 @@ export const InvitationForm = forwardRef<
         )}
       </div>
 
-      {/* =========================================================================
-            SECTION MEMPELAI HANYA UNTUK PERNIKAHAN
-        ========================================================================= */}
+      {/* Form Mempelai untuk Pernikahan (Wedding) */}
       {currentCategory === "wedding" && (
-        <>
+        <div className="grid gap-4 sm:grid-cols-2">
           {/* Mempelai Pria */}
           <div className={sectionClass}>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-primary">
-              <span>Mempelai Pria</span>
-            </p>
-
+            <h4 className="text-xs font-bold text-ink">Mempelai Pria</h4>
             <div>
-              <label htmlFor="groom-name" className={labelClass}>
-                Nama Lengkap Mempelai Pria
+              <label htmlFor="inv-groom-name" className={labelClass}>
+                <span>Nama Lengkap Pria</span>
               </label>
               <input
-                id="groom-name"
+                id="inv-groom-name"
                 type="text"
                 value={form.groomName}
                 onChange={(e) => updateField("groomName", e.target.value)}
-                placeholder="Hanung Saputra, S.Kom."
-                className={cn(fieldClass, errors.groomName && "border-red-300")}
+                placeholder="Contoh: Hanung Pradana, S.Kom"
+                className={cn(fieldClass, errors.groomName && "border-red-300 focus:ring-red-200")}
               />
-              {errors.groomName && (
-                <p className="mt-1 text-[11px] font-medium text-danger">
-                  {errors.groomName}
-                </p>
-              )}
+              {errors.groomName && <p className="mt-1 text-[11px] font-medium text-danger">{errors.groomName}</p>}
             </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label htmlFor="groom-father" className={labelClass}>
-                  Nama Ayah
-                </label>
-                <input
-                  id="groom-father"
-                  type="text"
-                  value={form.groomFather}
-                  onChange={(e) => updateField("groomFather", e.target.value)}
-                  placeholder="Joko Supriyanto"
-                  className={cn(
-                    fieldClass,
-                    errors.groomFather && "border-red-300",
-                  )}
-                />
-                {errors.groomFather && (
-                  <p className="mt-1 text-[11px] font-medium text-danger">
-                    {errors.groomFather}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label htmlFor="groom-mother" className={labelClass}>
-                  Nama Ibu
-                </label>
-                <input
-                  id="groom-mother"
-                  type="text"
-                  value={form.groomMother}
-                  onChange={(e) => updateField("groomMother", e.target.value)}
-                  placeholder="Sri Rahayu"
-                  className={cn(
-                    fieldClass,
-                    errors.groomMother && "border-red-300",
-                  )}
-                />
-                {errors.groomMother && (
-                  <p className="mt-1 text-[11px] font-medium text-danger">
-                    {errors.groomMother}
-                  </p>
-                )}
-              </div>
+            <div>
+              <label htmlFor="inv-groom-father" className={labelClass}>
+                <span>Nama Ayah</span>
+              </label>
+              <input
+                id="inv-groom-father"
+                type="text"
+                value={form.groomFather}
+                onChange={(e) => updateField("groomFather", e.target.value)}
+                placeholder="Nama ayah kandung"
+                className={cn(fieldClass, errors.groomFather && "border-red-300 focus:ring-red-200")}
+              />
+              {errors.groomFather && <p className="mt-1 text-[11px] font-medium text-danger">{errors.groomFather}</p>}
+            </div>
+            <div>
+              <label htmlFor="inv-groom-mother" className={labelClass}>
+                <span>Nama Ibu</span>
+              </label>
+              <input
+                id="inv-groom-mother"
+                type="text"
+                value={form.groomMother}
+                onChange={(e) => updateField("groomMother", e.target.value)}
+                placeholder="Nama ibu kandung"
+                className={cn(fieldClass, errors.groomMother && "border-red-300 focus:ring-red-200")}
+              />
+              {errors.groomMother && <p className="mt-1 text-[11px] font-medium text-danger">{errors.groomMother}</p>}
             </div>
           </div>
 
           {/* Mempelai Wanita */}
           <div className={sectionClass}>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-pink-600">
-              <span>Mempelai Wanita</span>
-            </p>
-
+            <h4 className="text-xs font-bold text-ink">Mempelai Wanita</h4>
             <div>
-              <label htmlFor="bride-name" className={labelClass}>
-                Nama Lengkap Mempelai Wanita
+              <label htmlFor="inv-bride-name" className={labelClass}>
+                <span>Nama Lengkap Wanita</span>
               </label>
               <input
-                id="bride-name"
+                id="inv-bride-name"
                 type="text"
                 value={form.brideName}
                 onChange={(e) => updateField("brideName", e.target.value)}
-                placeholder="Ratna Dewi, S.Pd."
-                className={cn(fieldClass, errors.brideName && "border-red-300")}
+                placeholder="Contoh: Ratna Kumalasari, S.E"
+                className={cn(fieldClass, errors.brideName && "border-red-300 focus:ring-red-200")}
               />
-              {errors.brideName && (
-                <p className="mt-1 text-[11px] font-medium text-danger">
-                  {errors.brideName}
-                </p>
+              {errors.brideName && <p className="mt-1 text-[11px] font-medium text-danger">{errors.brideName}</p>}
+            </div>
+            <div>
+              <label htmlFor="inv-bride-father" className={labelClass}>
+                <span>Nama Ayah</span>
+              </label>
+              <input
+                id="inv-bride-father"
+                type="text"
+                value={form.brideFather}
+                onChange={(e) => updateField("brideFather", e.target.value)}
+                placeholder="Nama ayah kandung"
+                className={cn(fieldClass, errors.brideFather && "border-red-300 focus:ring-red-200")}
+              />
+              {errors.brideFather && <p className="mt-1 text-[11px] font-medium text-danger">{errors.brideFather}</p>}
+            </div>
+            <div>
+              <label htmlFor="inv-bride-mother" className={labelClass}>
+                <span>Nama Ibu</span>
+              </label>
+              <input
+                id="inv-bride-mother"
+                type="text"
+                value={form.brideMother}
+                onChange={(e) => updateField("brideMother", e.target.value)}
+                placeholder="Nama ibu kandung"
+                className={cn(fieldClass, errors.brideMother && "border-red-300 focus:ring-red-200")}
+              />
+              {errors.brideMother && <p className="mt-1 text-[11px] font-medium text-danger">{errors.brideMother}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Form Tokoh / Subjek Acara untuk Khitanan, Rasulan, & Aqiqah */}
+      {currentCategory !== "wedding" && (
+        <div className={cn(sectionClass, "space-y-4")}>
+          <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+            <div>
+              <h4 className="text-xs font-bold text-ink">
+                Data Tokoh / Subjek Acara ({activeCatInfo.title})
+              </h4>
+              <p className="text-[11px] text-muted">
+                Informasi nama ananda atau figur utama yang dirayakan beserta orang tua.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="inv-cel-name" className={labelClass}>
+                <span>Nama Lengkap *</span>
+              </label>
+              <input
+                id="inv-cel-name"
+                type="text"
+                value={form.celebrantName}
+                onChange={(e) => updateField("celebrantName", e.target.value)}
+                placeholder="Contoh: Rayyan Al-Fatih"
+                className={cn(fieldClass, errors.celebrantName && "border-red-300 focus:ring-red-200")}
+              />
+              {errors.celebrantName && (
+                <p className="mt-1 text-[11px] font-medium text-danger">{errors.celebrantName}</p>
               )}
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label htmlFor="bride-father" className={labelClass}>
-                  Nama Ayah
-                </label>
-                <input
-                  id="bride-father"
-                  type="text"
-                  value={form.brideFather}
-                  onChange={(e) => updateField("brideFather", e.target.value)}
-                  placeholder="Bambang Sutrisno"
-                  className={cn(
-                    fieldClass,
-                    errors.brideFather && "border-red-300",
-                  )}
-                />
-                {errors.brideFather && (
-                  <p className="mt-1 text-[11px] font-medium text-danger">
-                    {errors.brideFather}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label htmlFor="bride-mother" className={labelClass}>
-                  Nama Ibu
-                </label>
-                <input
-                  id="bride-mother"
-                  type="text"
-                  value={form.brideMother}
-                  onChange={(e) => updateField("brideMother", e.target.value)}
-                  placeholder="Siti Aminah"
-                  className={cn(
-                    fieldClass,
-                    errors.brideMother && "border-red-300",
-                  )}
-                />
-                {errors.brideMother && (
-                  <p className="mt-1 text-[11px] font-medium text-danger">
-                    {errors.brideMother}
-                  </p>
-                )}
-              </div>
+            <div>
+              <label htmlFor="inv-cel-nickname" className={labelClass}>
+                <span>Nama Panggilan (Opsional)</span>
+              </label>
+              <input
+                id="inv-cel-nickname"
+                type="text"
+                value={form.celebrantNickname}
+                onChange={(e) => updateField("celebrantNickname", e.target.value)}
+                placeholder="Contoh: Rayyan"
+                className={fieldClass}
+              />
             </div>
           </div>
-        </>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="inv-cel-father" className={labelClass}>
+                <span>Nama Ayah Kandung *</span>
+              </label>
+              <input
+                id="inv-cel-father"
+                type="text"
+                value={form.celebrantFather}
+                onChange={(e) => updateField("celebrantFather", e.target.value)}
+                placeholder="Contoh: Hendra Wijaya"
+                className={cn(fieldClass, errors.celebrantFather && "border-red-300 focus:ring-red-200")}
+              />
+              {errors.celebrantFather && (
+                <p className="mt-1 text-[11px] font-medium text-danger">{errors.celebrantFather}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="inv-cel-mother" className={labelClass}>
+                <span>Nama Ibu Kandung *</span>
+              </label>
+              <input
+                id="inv-cel-mother"
+                type="text"
+                value={form.celebrantMother}
+                onChange={(e) => updateField("celebrantMother", e.target.value)}
+                placeholder="Contoh: Siti Rahmawati"
+                className={cn(fieldClass, errors.celebrantMother && "border-red-300 focus:ring-red-200")}
+              />
+              {errors.celebrantMother && (
+                <p className="mt-1 text-[11px] font-medium text-danger">{errors.celebrantMother}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label htmlFor="inv-cel-gender" className={labelClass}>
+                <span>Jenis Kelamin</span>
+              </label>
+              <select
+                id="inv-cel-gender"
+                value={form.celebrantGender}
+                onChange={(e) => updateField("celebrantGender", e.target.value)}
+                className={fieldClass}
+              >
+                <option value="MALE">Laki-laki (Putra)</option>
+                <option value="FEMALE">Perempuan (Putri)</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="inv-cel-birthdate" className={labelClass}>
+                <span>Tanggal Lahir (Opsional)</span>
+              </label>
+              <input
+                id="inv-cel-birthdate"
+                type="date"
+                value={form.celebrantBirthDate}
+                onChange={(e) => updateField("celebrantBirthDate", e.target.value)}
+                className={fieldClass}
+              >
+              </input>
+            </div>
+
+            <div>
+              <label htmlFor="inv-cel-order" className={labelClass}>
+                <span>Putra/Putri Ke- (Opsional)</span>
+              </label>
+              <input
+                id="inv-cel-order"
+                type="number"
+                min={1}
+                value={form.celebrantChildOrder}
+                onChange={(e) => updateField("celebrantChildOrder", e.target.value)}
+                placeholder="Contoh: 1"
+                className={fieldClass}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Tanggal & waktu */}

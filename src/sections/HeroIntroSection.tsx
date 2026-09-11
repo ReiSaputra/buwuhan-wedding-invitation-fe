@@ -2,8 +2,9 @@ import { motion } from 'framer-motion'
 import { Quote } from 'lucide-react'
 
 export type HeroIntroSectionProps = {
-  groomName: string
-  brideName: string
+  displayName: string
+  eventLabel: string
+  isWedding: boolean
   eventDateStr: string
 }
 
@@ -14,7 +15,12 @@ export type HeroIntroSectionProps = {
  * 
  * @param props - Properti HeroIntroSection
  */
-export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroIntroSectionProps) {
+export function HeroIntroSection({
+  displayName,
+  eventLabel,
+  isWedding,
+  eventDateStr,
+}: HeroIntroSectionProps) {
   return (
     <section id="salam" className="relative py-20 px-6 text-center bg-inv-page overflow-hidden">
       {/* Background patterns */}
@@ -32,7 +38,10 @@ export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroInt
             Assalamu’alaikum Warahmatullahi Wabarakatuh
           </span>
           <p className="font-serif text-sm sm:text-base text-inv-ink italic leading-relaxed pt-2">
-            Dengan memohon rahmat dan ridho Allah Subhanahu Wa Ta’ala, kami bermaksud mengundang Bapak/Ibu/Saudara/i sekalian untuk menghadiri dan memberikan doa restu pada acara pernikahan kami:
+            Dengan memohon rahmat dan ridho Allah Subhanahu Wa Ta’ala,
+kami bermaksud mengundang Bapak/Ibu/Saudara/i sekalian untuk
+menghadiri dan memberikan doa pada acara{' '}
+{eventLabel.toLowerCase()} kami:
           </p>
         </motion.div>
 
@@ -52,7 +61,9 @@ export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroInt
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center p-6 text-inv-on-accent text-center">
               <div>
-                <p className="font-display text-2xl font-bold">{groomName} &amp; {brideName}</p>
+                <p className="font-display text-2xl font-bold">
+  {displayName}
+</p>
                 <p className="text-xs text-inv-on-accent/80 uppercase tracking-widest mt-0.5">{eventDateStr}</p>
               </div>
             </div>
@@ -69,11 +80,16 @@ export function HeroIntroSection({ groomName, brideName, eventDateStr }: HeroInt
         >
           <Quote size={28} className="mx-auto text-inv-gold/40 mb-3" />
           <p className="font-serif text-sm sm:text-base leading-relaxed text-inv-ink italic">
-            "Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang."
-          </p>
-          <p className="mt-3 text-xs font-bold text-inv-accent uppercase tracking-wider">
-            — QS. Ar-Rum: 21 —
-          </p>
+  {isWedding
+    ? '“Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang.”'
+    : '“Dengan penuh rasa syukur, kami memohon doa agar acara ini membawa keberkahan, kebahagiaan, dan kebaikan bagi keluarga kami.”'}
+</p>
+
+{isWedding && (
+  <p className="mt-3 text-xs font-bold text-inv-accent uppercase tracking-wider">
+    — QS. Ar-Rum: 21 —
+  </p>
+)}
         </motion.div>
       </div>
     </section>

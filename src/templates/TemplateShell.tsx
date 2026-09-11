@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { CoverSection } from '@/sections/CoverSection'
 import { HeroIntroSection } from '@/sections/HeroIntroSection'
 import { CoupleSection } from '@/sections/CoupleSection'
+import { CelebrantSection } from '@/sections/CelebrantSection'
 import { EventDetailsSection } from '@/sections/EventDetailsSection'
 import { LoveStoryGallerySection } from '@/sections/LoveStoryGallerySection'
 import { WishesSection } from '@/sections/WishesSection'
@@ -29,11 +30,17 @@ export function TemplateShell({ data, theme }: TemplateShellProps) {
   const { guestName } = useGuest()
   const {
     groom,
-    bride,
-    groomName,
-    brideName,
-    coupleNames,
-    eventDateText,
+bride,
+groomName,
+brideName,
+coupleNames,
+celebrant,
+showCelebrant,
+showCouples,
+eventCategory,
+eventLabel,
+displayName,
+eventDateText,
     eventDate,
     eventTime,
     venue,
@@ -76,7 +83,12 @@ export function TemplateShell({ data, theme }: TemplateShellProps) {
     }
   }
 
-  const displayNames = coupleNames || `${groomName} ${brideName}`.trim()
+  const displayNames =
+  displayName ||
+  coupleNames ||
+  `${groomName} ${brideName}`.trim()
+
+const isWedding = eventCategory === 'WEDDING'
 
   return (
     <div data-template={theme.key} className={theme.page}>
@@ -89,13 +101,13 @@ export function TemplateShell({ data, theme }: TemplateShellProps) {
 
       {!isOpened && (
         <CoverSection
-          theme={theme}
-          guestName={guestName}
-          groomName={groomName}
-          brideName={brideName}
-          eventDate={eventDateText}
-          onOpen={handleOpenInvitation}
-        />
+  theme={theme}
+  guestName={guestName}
+  displayName={displayNames}
+  eventLabel={eventLabel}
+  eventDate={eventDateText}
+  onOpen={handleOpenInvitation}
+/>
       )}
 
       {isOpened && (
@@ -106,22 +118,33 @@ export function TemplateShell({ data, theme }: TemplateShellProps) {
           />
 
           {theme.heroWrapper ? (
-            <div className={theme.heroWrapper}>
-              <HeroIntroSection
-                groomName={groomName}
-                brideName={brideName}
-                eventDateStr={eventDateText}
-              />
-            </div>
-          ) : (
-            <HeroIntroSection
-              groomName={groomName}
-              brideName={brideName}
-              eventDateStr={eventDateText}
-            />
-          )}
+  <div className={theme.heroWrapper}>
+    <HeroIntroSection
+      displayName={displayNames}
+      eventLabel={eventLabel}
+      isWedding={isWedding}
+      eventDateStr={eventDateText}
+    />
+  </div>
+) : (
+  <HeroIntroSection
+    displayName={displayNames}
+    eventLabel={eventLabel}
+    isWedding={isWedding}
+    eventDateStr={eventDateText}
+  />
+)}
 
-          <CoupleSection groom={groom} bride={bride} />
+          {showCouples && (
+  <CoupleSection groom={groom} bride={bride} />
+)}
+
+{showCelebrant && celebrant && (
+  <CelebrantSection
+    celebrant={celebrant}
+    eventLabel={eventLabel}
+  />
+)}
 
           <EventDetailsSection
             eventDate={eventDate}
@@ -129,7 +152,8 @@ export function TemplateShell({ data, theme }: TemplateShellProps) {
             eventTime={eventTime}
             venue={venue}
             address={address}
-            coupleNames={displayNames}
+            displayName={displayNames}
+eventLabel={eventLabel}
           />
 
           <LoveStoryGallerySection

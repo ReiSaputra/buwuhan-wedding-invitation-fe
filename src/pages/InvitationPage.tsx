@@ -15,8 +15,9 @@ export default function InvitationPage() {
     isLoading: isInvitationLoading,
     isNotFound,
     templateSlug,
-    coupleNames,
-    eventDateText,
+    displayName,
+eventLabel,
+eventDateText,
     venue,
     galleryPhotos,
     viewModel,
@@ -28,9 +29,9 @@ export default function InvitationPage() {
 
     // Judul tab & meta Open Graph mengikuti data undangan yang sedang dibuka
   usePageMeta({
-    title: coupleNames
-      ? `Undangan Pernikahan ${coupleNames}`
-      : 'Undangan Pernikahan Buwuhan',
+    title: displayName
+  ? `Undangan ${eventLabel} ${displayName}`
+  : 'Undangan Buwuhan',
     description: eventDateText
       ? `Dengan penuh rasa syukur, kami mengundang Anda hadir pada ${eventDateText}${venue ? ` di ${venue}` : ''}.`
       : undefined,
@@ -44,7 +45,7 @@ export default function InvitationPage() {
         <div className="text-center space-y-3">
           <Heart size={36} className="mx-auto text-gold animate-pulse" />
           <p className="font-display text-lg font-semibold text-sage">
-            Mempersiapkan Undangan Pernikahan...
+            Mempersiapkan Undangan...
           </p>
         </div>
       </div>
@@ -61,7 +62,7 @@ export default function InvitationPage() {
           </h1>
           <p className="text-sm leading-relaxed text-slate-600">
             Tautan undangan ini tidak valid atau sudah tidak berlaku. Silakan periksa
-            kembali tautan yang Anda terima dari mempelai.
+            kembali tautan yang Anda terima dari penyelenggara acara.
           </p>
         </div>
       </div>
@@ -70,6 +71,5 @@ export default function InvitationPage() {
 
   // Pemilihan desain mengikuti slug template dari backend, dan seluruh
   // data undangan diteruskan sebagai props tunggal ke template terpilih
-  console.log('[DEBUG] templateSlug dari API =', JSON.stringify(templateSlug))
   return <TemplateRenderer slug={templateSlug} data={viewModel} />
 }

@@ -41,12 +41,25 @@ export function useSubscription() {
   const isAwaitingPayment = checkoutPending && subscriptionQuery.data?.status !== 'ACTIVE'
 
   // Hentikan polling dan segarkan data begitu langganan berubah menjadi ACTIVE.
-  useEffect(() => {
-    if (checkoutPending && subscriptionQuery.data?.status === 'ACTIVE') {
-      setCheckoutPending(false);
-      invalidateAll();
-    }
-  }, [checkoutPending, subscriptionQuery.data?.status]);
+  // Saat pembayaran akhirnya terkonfirmasi, segarkan profil & dashboard
+// supaya badge paket ikut berubah. Tidak ada setState di sini.
+useEffect(() => {
+  if (
+    checkoutPending &&
+    subscriptionQuery.data?.status === 'ACTIVE'
+  ) {
+    void queryClient.invalidateQueries({
+      queryKey: ['currentUser'],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['dashboard'],
+    })
+  }
+}, [
+  checkoutPending,
+  subscriptionQuery.data?.status,
+  queryClient,
+])
 
   // Query: Riwayat Invoice Tagihan
   const invoicesQuery = useQuery({
@@ -76,7 +89,6 @@ useEffect(() => {
   }
 }, [checkoutPending, subscriptionQuery.data?.status, queryClient])
 
-  // Mutation: Ajukan Upgrade Tier
   // Mutation: Ajukan Upgrade Tier
 const upgradeMutation = useMutation({
   mutationFn: (payload: UpgradePayload) =>

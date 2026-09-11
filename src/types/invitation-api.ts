@@ -34,6 +34,30 @@ export interface ApiLoveStory {
 }
 
 export type ApiEventCategory = 'WEDDING' | 'KHITANAN' | 'RASULAN' | 'AQIQAH';
+export type CelebrantGender = 'MALE' | 'FEMALE';
+
+/** Data subjek/tokoh utama acara non-wedding (Khitanan, Rasulan, Aqiqah) */
+export interface CelebrantData {
+  id?: string;
+  name: string;
+  nickname?: string | null;
+  fatherName: string;
+  motherName: string;
+  gender?: CelebrantGender | null;
+  birthDate?: string | null;
+  childOrder?: number | null;
+}
+
+/** Payload pembuatan/pembaruan data celebrant */
+export interface CelebrantInput {
+  name: string;
+  nickname?: string | null;
+  fatherName: string;
+  motherName: string;
+  gender?: CelebrantGender | null;
+  birthDate?: string | null;
+  childOrder?: number | null;
+}
 
 /** GET /invitations/:id  →  data */
 export interface ApiInvitation {
@@ -42,6 +66,9 @@ export interface ApiInvitation {
   slug: string;
   eventCategory?: ApiEventCategory | null;
   status: ApiInvitationStatus;
+  showCouples?: boolean;
+  showCelebrant?: boolean;
+  celebrant?: CelebrantData | null;
   publishedAt: string | null;
   eventDate: string | null;
   eventTime: string | null;
@@ -71,8 +98,14 @@ export interface ApiInvitation {
 export interface PublicInvitationViewModel {
   slug: string;
   id: string;
-  invitation: ApiInvitation | null;
-  groom: ApiCouple | null;
+invitation: ApiInvitation | null;
+eventCategory: ApiEventCategory;
+showCouples: boolean;
+showCelebrant: boolean;
+celebrant: CelebrantData | null;
+eventLabel: string;
+displayName: string;
+groom: ApiCouple | null;
   bride: ApiCouple | null;
   groomName: string;
   brideName: string;
@@ -110,6 +143,7 @@ export interface InvitationPayload {
   slug: string;
   eventCategory?: ApiEventCategory;
   couples?: CoupleInputPayload[];
+  celebrant?: CelebrantInput;
   eventDate?: string;
   eventTime?: string;
   venue?: string;
@@ -349,7 +383,7 @@ export interface ApiBuwuhanItem {
 /** GET /invitations/:id/buwuhans → data[] */
 export interface ApiBuwuhan {
   id: string
-  invitationId: string
+  invitationId: string | null
   invitationTitle?: string | null
   giverName: string
   giverAddress: string | null
@@ -358,9 +392,9 @@ export interface ApiBuwuhan {
   createdAt: string
   updatedAt: string
   recordedBy?: {
-    memberId: string
-    name: string
-  } | null
+  memberId: string | null
+  name: string | null
+} | null
   items: ApiBuwuhanItem[]
 }
 

@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Gift, Copy, Check, CreditCard, QrCode, Maximize2, X, Download } from 'lucide-react'
 import { usePublicGiftAccounts } from '@/hooks/useGiftAccounts'
-import type { GiftAccount } from '@/types/panel'
+import type { GiftAccount, PublicGiftAccount } from '@/types/panel'
 
 export interface GiftSectionProps {
   slug?: string
-  initialAccounts?: GiftAccount[]
+  initialAccounts?: (GiftAccount | PublicGiftAccount)[]
   initialGiftAddress?: string | null
 }
 
@@ -24,16 +24,15 @@ export function GiftSection({
   const [copiedAddress, setCopiedAddress] = useState(false)
   const [selectedQris, setSelectedQris] = useState<{ url: string; title: string } | null>(null)
 
-  const { accounts: fetchedAccounts, giftAddress: fetchedAddress, isLoading } =
-    usePublicGiftAccounts(slug)
+  const { accounts: fetchedAccounts, isLoading } = usePublicGiftAccounts(slug)
 
-  // Prioritaskan akun yang dioper langsung dari ViewModel, fallback ke query publik
+  // Prioritaskan akun dari initial/server-rendered props, fallback ke query publik
   const accounts =
     initialAccounts && initialAccounts.length > 0
       ? initialAccounts
       : fetchedAccounts
 
-  const giftAddress = initialGiftAddress ?? fetchedAddress
+  const giftAddress = initialGiftAddress ?? null
 
   // Sembunyikan section bila tidak ada data amplop maupun alamat kado (setelah selesai loading)
   if (!isLoading && accounts.length === 0 && !giftAddress) return null

@@ -20,6 +20,16 @@ function buildCoupleName(couples: ApiInvitation["couples"]): string {
   return groom || bride || "Tanpa Nama";
 }
 
+function buildInvitationSubject(
+  invitation: ApiInvitation,
+): string {
+  if (invitation.showCelebrant && invitation.celebrant) {
+    return invitation.celebrant.name
+  }
+
+  return buildCoupleName(invitation.couples)
+}
+
 /**
  * Objek cadangan yang dipakai selama data belum selesai dimuat,
  * supaya komponen panel tidak perlu memeriksa null di mana-mana.
@@ -83,7 +93,7 @@ export function useInvitationDetail(id: string) {
         slug: raw.slug,
         title: raw.title,
         panelName: raw.title,
-        coupleName: buildCoupleName(raw.couples),
+        coupleName: buildInvitationSubject(raw),
         eventDate: raw.eventDate ? raw.eventDate.slice(0, 10) : null,
         eventTime: raw.eventTime,
         venue: raw.venue,

@@ -35,6 +35,35 @@ import {
 } from 'lucide-react'
 
 /**
+ * Helper untuk mem-parsing string user-agent menjadi informasi perangkat yang ringkas dan ramah.
+ */
+function formatDeviceInfo(userAgent: string | null | undefined): { name: string; isMobile: boolean } {
+  if (!userAgent) return { name: 'Perangkat Tidak Dikenal', isMobile: false }
+  
+  const ua = userAgent.toLowerCase()
+  const isMobile = ua.includes('mobile') || ua.includes('android') || ua.includes('iphone') || ua.includes('ipad')
+
+  let browser = 'Browser Web'
+  if (ua.includes('edg/')) browser = 'Microsoft Edge'
+  else if (ua.includes('chrome')) browser = 'Google Chrome'
+  else if (ua.includes('safari') && !ua.includes('chrome')) browser = 'Safari'
+  else if (ua.includes('firefox')) browser = 'Mozilla Firefox'
+  else if (ua.includes('opera') || ua.includes('opr/')) browser = 'Opera'
+
+  let os = ''
+  if (ua.includes('windows')) os = 'Windows'
+  else if (ua.includes('macintosh') || ua.includes('mac os')) os = 'macOS'
+  else if (ua.includes('android')) os = 'Android'
+  else if (ua.includes('iphone') || ua.includes('ipad')) os = 'iOS'
+  else if (ua.includes('linux')) os = 'Linux'
+
+  return {
+    name: os ? `${browser} di ${os}` : browser,
+    isMobile,
+  }
+}
+
+/**
  * Halaman Pengaturan Akun Dashboard.
  * Menyediakan form pengaturan profil pengguna, avatar, keamanan & ubah kata sandi,
  * manajemen sesi login aktif, preferensi notifikasi WhatsApp, serta zona hapus akun.
@@ -89,18 +118,22 @@ export default function PengaturanPage() {
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('')
   const [deleteErrorMsg, setDeleteErrorMsg] = useState<string | null>(null)
 
-  // Synchronize state when data loads
-  useEffect(() => {
-    if (userProfile) {
-      setFullName(userProfile.fullName || '')
-      setNickname(userProfile.nickname || '')
-      setPhone(userProfile.phone || '')
-      setAvatarUrl(userProfile.avatarUrl || '')
-      setNotifyRsvpWa(userProfile.notifyRsvpWa ?? true)
-      setNotifyBuwuhWa(userProfile.notifyBuwuhWa ?? true)
-      setNotifyMarketing(userProfile.notifyMarketing ?? false)
-    }
-  }, [userProfile])
+  // Synchronize form state when profile data loads.
+useEffect(() => {
+  if (!userProfile) return
+
+  const timeoutId = window.setTimeout(() => {
+    setFullName(userProfile.fullName || '')
+    setNickname(userProfile.nickname || '')
+    setPhone(userProfile.phone || '')
+    setAvatarUrl(userProfile.avatarUrl || '')
+    setNotifyRsvpWa(userProfile.notifyRsvpWa ?? true)
+    setNotifyBuwuhWa(userProfile.notifyBuwuhWa ?? true)
+    setNotifyMarketing(userProfile.notifyMarketing ?? false)
+  }, 0)
+
+  return () => window.clearTimeout(timeoutId)
+}, [userProfile])
 
   /**
    * Simpan profil utama
@@ -568,62 +601,68 @@ export default function PengaturanPage() {
               </div>
             )}
 
-            <div className="mt-4 space-y-3">
-              {sessions.map((sess) => (
-                <div
-                  key={sess.id}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border transition ${
-                    sess.isCurrent
-                      ? 'border-indigo-200 bg-indigo-50/40'
-                      : 'border-slate-100 bg-slate-50/70 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-700 shadow-2xs">
-                      {sess.device.toLowerCase().includes('phone') || sess.device.toLowerCase().includes('safari mobile') ? (
-                        <Smartphone size={20} />
-                      ) : (
-                        <Laptop size={20} />
+                        <div className="mt-4 space-y-3">
+              {sessions.length === 0 ? (
+                <p className="text-xs text-muted text-center py-4">Tidak ada sesi aktif ditemukan.</p>
+              ) : (
+                sessions.map((sess) => {
+                  const deviceInfo = formatDeviceInfo(sess.userAgent)
+                  return (
+                    <div
+                      key={sess.id}
+                      className={`flex items-center justify-between p-3.5 rounded-xl border transition ${
+                        sess.isCurrent
+                          ? 'border-indigo-200 bg-indigo-50/40'
+                          : 'border-slate-100 bg-slate-50/70 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-700 shadow-2xs">
+                          {deviceInfo.isMobile ? <Smartphone size={20} /> : <Laptop size={20} />}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <strong className="text-xs sm:text-sm font-bold text-ink">
+                              {deviceInfo.name}
+                            </strong>
+                            {sess.isCurrent && (
+                              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                                Sesi Saat Ini
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted">
+                            IP: {sess.ipAddress || 'Tidak diketahui'} &bull; Masuk sejak:{' '}
+                            {sess.createdAt ? new Date(sess.createdAt).toLocaleString('id-ID') : '-'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {!sess.isCurrent && (
+                        <button
+                          type="button"
+                          disabled={isDeletingSession}
+                          onClick={async () => {
+                            if (window.confirm('Keluarkan akun dari perangkat ini?')) {
+                              try {
+                                await deleteSession(sess.id)
+                                setSessionSuccessMsg('Sesi pada perangkat tersebut telah berhasil diputus.')
+                                setTimeout(() => setSessionSuccessMsg(null), 3000)
+                              } catch {
+                                alert('Gagal memutuskan sesi perangkat.')
+                              }
+                            }
+                          }}
+                          className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
+                          title="Putus Sesi Ini"
+                        >
+                          <Trash2 size={15} />
+                        </button>
                       )}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <strong className="text-xs sm:text-sm font-bold text-ink">{sess.device}</strong>
-                        {sess.isCurrent && (
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                            Sesi Saat Ini
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-muted">
-                        IP: {sess.ipAddress} &bull; Terakhir aktif: {new Date(sess.lastActiveAt).toLocaleString('id-ID')}
-                      </p>
-                    </div>
-                  </div>
-
-                  {!sess.isCurrent && (
-                    <button
-                      type="button"
-                      disabled={isDeletingSession}
-                      onClick={async () => {
-                        if (window.confirm('Keluarkan sesi pada perangkat ini?')) {
-                          try {
-                            await deleteSession(sess.id)
-                            setSessionSuccessMsg('Sesi pada perangkat tersebut telah diputus.')
-                            setTimeout(() => setSessionSuccessMsg(null), 3000)
-                          } catch {
-                            alert('Gagal memutuskan sesi perangkat.')
-                          }
-                        }
-                      }}
-                      className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
-                      title="Putus Sesi Ini"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  )}
-                </div>
-              ))}
+                  )
+                })
+              )}
             </div>
           </div>
         </div>

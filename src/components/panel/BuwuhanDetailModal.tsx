@@ -75,12 +75,10 @@ export function BuwuhanDetailModal({
               <h3 className="font-display text-lg font-extrabold tracking-tight text-ink">
                 {buwuhan.giverName}
               </h3>
-              {buwuhan.giverAddress && (
-                <p className="flex items-center gap-1 text-xs text-slate-500">
-                  <MapPin size={12} className="shrink-0" />
-                  {buwuhan.giverAddress}
-                </p>
-              )}
+              <p className="flex items-center gap-1 text-xs text-slate-500">
+  <MapPin size={12} className="shrink-0" />
+  {buwuhan.giverAddress || '-'}
+</p>
               <div className="flex flex-wrap items-center gap-1.5">
                 <Badge variant="outline" icon={<CalendarClock size={11} />}>
                   Diterima {formatDateCompact(buwuhan.receivedAt)} · {formatTimeCompact(buwuhan.receivedAt)}
@@ -121,9 +119,9 @@ export function BuwuhanDetailModal({
                         {formatNumber(item.quantity)} {item.unit}
                       </td>
                       <td className={`${tdClass} text-right font-semibold text-ink`}>
-                        {item.estimatedValue === null
+                        {item.estimatedValue === null || item.estimatedValue === undefined
                           ? '—'
-                          : formatRupiah(item.estimatedValue)}
+                          : formatRupiah(Math.round(Number(item.estimatedValue)))}
                       </td>
                     </tr>
                   ))}

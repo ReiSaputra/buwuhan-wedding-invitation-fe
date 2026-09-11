@@ -74,7 +74,10 @@ export function useGifts(invitationId: string) {
     onSuccess: invalidateAll,
   })
 
-  const gifts = listQuery.data ?? []
+  const gifts = useMemo(
+  () => listQuery.data ?? [],
+  [listQuery.data],
+)
 
   // Hitung stats fallback jika endpoint stats belum aktif
   const stats = useMemo<GiftStats>(() => {
