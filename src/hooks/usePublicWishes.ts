@@ -38,11 +38,15 @@ export function formatTimeAgo(isoDate: string): string {
  * @param slug - Slug undangan yang sedang dibuka
  * @returns Daftar ucapan dan flag status permintaan
  */
-export function usePublicWishes(slug: string) {
+export function usePublicWishes(slug: string, limit = 50, page = 1) {
   const query = useQuery({
-    queryKey: ['public-wishes', slug],
-    queryFn: () => fetchData<ApiWishItem[]>(`/public/invitations/${slug}/wishes?limit=50`),
+    queryKey: ['public-wishes', slug, limit, page],
+    queryFn: () =>
+      fetchData<ApiWishItem[]>(
+        `/public/invitations/${slug}/wishes?limit=${limit}&page=${page}`,
+      ),
     enabled: Boolean(slug),
+    staleTime: 1000 * 30,
   })
 
   return {

@@ -85,10 +85,17 @@ export default function PanelBukuTamuPage() {
     isError,
     isMutating,
   } = useGuestBook(id);
-  const { getGuestShareData, sendEmail, isSendingEmail } = useGuestActions(id);
+  const {
+    getGuestShareData,
+    sendEmail,
+    isSendingEmail,
+    sendEmailBulk,
+    isSendingEmailBulk,
+  } = useGuestActions(id);
   const [sendingEmailGuestId, setSendingEmailGuestId] = useState<string | null>(
     null,
   );
+  const [isBulkEmailModalOpen, setIsBulkEmailModalOpen] = useState(false);
   const quota = useQuota({ guests: entries.length });
 
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "ALL">(
@@ -296,6 +303,16 @@ export default function PanelBukuTamuPage() {
             </Button>
             {canManageGuests && (
               <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<Mail size={14} />}
+                  onClick={() => setIsBulkEmailModalOpen(true)}
+                  disabled={entries.filter((e) => Boolean(e.email)).length === 0}
+                  title="Kirim email undangan serentak ke semua tamu yang memiliki email"
+                >
+                  Broadcast Email
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -730,6 +747,72 @@ export default function PanelBukuTamuPage() {
               disabled={isMutating}
             >
               {isMutating ? "Menghapus…" : "Ya, Hapus Tamu"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Broadcast Email Undangan Massal (POST /guests/send-email-bulk) */}
+      <Modal
+        isOpen={isBulkEmailModalOpen}
+        onClose={() => setIsBulkEmailModalOpen(false)}
+        title="Kirim Undangan Email Serentak (Broadcast)"
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Sistem akan mengirimkan pesan email undangan digital beserta tiket QR code ke{" "}
+            <strong>{entries.filter((e) => Boolean(e.email)).length} tamu</strong> yang telah memiliki alamat email terdaftar.
+          </p>
+
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 text-[11px] text-indigo-900">
+            Pastikan seluruh data nama dan waktu acara pada panel edit sudah lengkap sebelum memulai pengiriman massal.
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsBulkEmailModalOpen(false)}
+              disabled={isSendingEmailBulk}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              disabled={isSendingEmailBulk}
+              onClick={async () => {
+                try {
+                  const res = await sendEmailBulk();
+                  setIsBulkEmailModalOpen(false);
+                  setPopupState({
+                    isOpen: true,
+                    status: "success",
+                    title: "Broadcast Email Selesai",
+                    message: `Berhasil mengirim ${res.totalSent} email (${res.totalFailed} gagal terkirim).`,
+                  });
+                } catch (err) {
+                  setPopupState({
+                    isOpen: true,
+                    status: "error",
+                    title: "Gagal Mengirim Broadcast",
+                    message:
+                      parseApiError(err).generalMessage ||
+                      "Terjadi kesalahan saat pengiriman email massal.",
+                  });
+                }
+              }}
+            >
+              {isSendingEmailBulk ? (
+                <span className="flex items-center gap-1.5">
+                  <Loader2 size={14} className="animate-spin" /> Mengirim...
+                </span>
+              ) : (
+                "Mulai Broadcast"
+              )}
             </Button>
           </div>
         </div>

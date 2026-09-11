@@ -11,6 +11,7 @@ import {
   useDeleteAccount,
   useUserSessions,
   useRevokeOtherSessions,
+  useDeleteUserSession,
 } from '@/hooks/useUser'
 import {
   User,
@@ -46,6 +47,7 @@ export default function PengaturanPage() {
   const { mutateAsync: deleteAccount, isPending: isDeletingAccount } = useDeleteAccount()
   const { data: sessions = [] } = useUserSessions()
   const { mutateAsync: revokeSessions, isPending: isRevokingSessions } = useRevokeOtherSessions()
+  const { mutateAsync: deleteSession, isPending: isDeletingSession } = useDeleteUserSession()
 
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications' | 'danger'>('profile')
 
@@ -598,6 +600,28 @@ export default function PengaturanPage() {
                       </p>
                     </div>
                   </div>
+
+                  {!sess.isCurrent && (
+                    <button
+                      type="button"
+                      disabled={isDeletingSession}
+                      onClick={async () => {
+                        if (window.confirm('Keluarkan sesi pada perangkat ini?')) {
+                          try {
+                            await deleteSession(sess.id)
+                            setSessionSuccessMsg('Sesi pada perangkat tersebut telah diputus.')
+                            setTimeout(() => setSessionSuccessMsg(null), 3000)
+                          } catch {
+                            alert('Gagal memutuskan sesi perangkat.')
+                          }
+                        }
+                      }}
+                      className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
+                      title="Putus Sesi Ini"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

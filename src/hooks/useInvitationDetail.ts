@@ -29,7 +29,7 @@ const EMPTY_DETAIL: InvitationDetail = {
   slug: "",
   title: "",
   panelName: "Undangan",
-  coupleName: "Memuat…",
+  coupleName: "Undangan",
   eventDate: null,
   eventTime: null,
   venue: null,

@@ -223,15 +223,48 @@ export default function PanelScanQrPage() {
                   )}
                 </div>
                 <div className="flex gap-2 pt-1">
+                  {pendingGuest.isAttended ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isMutating}
+                      className="border-rose-200 text-rose-600 hover:bg-rose-50"
+                      onClick={async () => {
+                        try {
+                          await checkOutByGuestId(pendingGuest.id);
+                          setFeedback({
+                            tone: "success",
+                            text: `Check-out berhasil: ${pendingGuest.name} dibatalkan status kehadirannya.`,
+                          });
+                        } catch {
+                          setFeedback({
+                            tone: "error",
+                            text: "Gagal membatalkan kehadiran tamu.",
+                          });
+                        } finally {
+                          setPendingGuest(null);
+                          setPendingQr("");
+                          setTimeout(() => setFeedback(null), 4000);
+                        }
+                      }}
+                    >
+                      <LogOut size={14} className="mr-1" />
+                      {isMutating ? "Memproses…" : "Batalkan Hadir (Check-out)"}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      disabled={isMutating}
+                      onClick={() => void handleConfirmCheckIn()}
+                    >
+                      {isMutating ? "Memproses…" : "Konfirmasi Hadir"}
+                    </Button>
+                  )}
                   <Button
-                    variant="primary"
-                    size="sm"
-                    disabled={isMutating}
-                    onClick={() => void handleConfirmCheckIn()}
-                  >
-                    {isMutating ? "Memproses…" : "Konfirmasi Hadir"}
-                  </Button>
-                  <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => {

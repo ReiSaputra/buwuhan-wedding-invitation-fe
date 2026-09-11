@@ -21,6 +21,8 @@ export type AuthContextType = {
   logout: () => Promise<void>
   /** Fungsi untuk memperbarui token sesi secara manual jika dibutuhkan */
   refreshSession: () => Promise<boolean>
+  /** Fungsi untuk menetapkan sesi autentikasi kustom (Magic Link petugas instan) */
+  setAuthSession: (token: string, user: AuthUser) => void
 }
 
 /**

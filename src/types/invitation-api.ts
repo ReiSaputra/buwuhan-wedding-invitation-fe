@@ -357,6 +357,10 @@ export interface ApiBuwuhan {
   receivedAt: string
   createdAt: string
   updatedAt: string
+  recordedBy?: {
+    memberId: string
+    name: string
+  } | null
   items: ApiBuwuhanItem[]
 }
 

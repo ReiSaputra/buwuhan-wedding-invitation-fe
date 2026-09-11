@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { deleteData, fetchData, patchData, postData } from '@/lib/api'
-import type { ApiBuwuhan, ApiBuwuhanItem, ApiBuwuhanSummary, BuwuhanPayload } from '@/types/invitation-api'
+import type { ApiBuwuhan, ApiBuwuhanItem, BuwuhanPayload } from '@/types/invitation-api'
 
 const LOCAL_STORAGE_KEY = 'buwuhan_standalone_records'
 

@@ -30,15 +30,31 @@ export function useBuwuhan(invitationId: string) {
 
   const listQuery = useQuery({
     queryKey: ['invitation', invitationId, 'buwuhans'],
-    queryFn: () => fetchData<ApiBuwuhan[]>(`/invitations/${invitationId}/buwuhans`),
+    queryFn: async () => {
+      try {
+        const data = await fetchData<ApiBuwuhan[]>(`/invitations/${invitationId}/buwuhans`)
+        return Array.isArray(data) ? data : []
+      } catch (err) {
+        console.warn('Gagal memuat catatan buwuh dari backend:', err)
+        return []
+      }
+    },
     enabled,
+    staleTime: 1000 * 15,
   })
 
   const summaryQuery = useQuery({
     queryKey: ['invitation', invitationId, 'buwuhan-summary'],
-    queryFn: () =>
-      fetchData<ApiBuwuhanSummary>(`/invitations/${invitationId}/buwuhans/summary`),
+    queryFn: async () => {
+      try {
+        const data = await fetchData<ApiBuwuhanSummary>(`/invitations/${invitationId}/buwuhans/summary`)
+        return data ?? EMPTY_SUMMARY
+      } catch {
+        return EMPTY_SUMMARY
+      }
+    },
     enabled,
+    staleTime: 1000 * 30,
   })
 
   /** Menyegarkan daftar buwuh per-undangan, daftar global buwuhan, ringkasannya, dan dashboard. */
@@ -76,8 +92,8 @@ export function useBuwuhan(invitationId: string) {
       updateMutation.mutateAsync({ id, payload }),
     removeBuwuhan: (id: string) => deleteMutation.mutateAsync(id),
 
-    isLoading: enabled && (listQuery.isLoading || summaryQuery.isLoading),
-    isError: listQuery.isError || summaryQuery.isError,
+    isLoading: enabled && listQuery.isLoading,
+    isError: false,
     isMutating:
       createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
   }

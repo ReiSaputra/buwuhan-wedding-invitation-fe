@@ -52,6 +52,10 @@ const JoinInvitationPage = lazy(
   () => import("@/pages/panel/JoinInvitationPage"),
 );
 
+const InstantAccessPage = lazy(
+  () => import("@/pages/panel/InstantAccessPage"),
+);
+
 // Halaman Admin Platform Buwuhan
 const AdminDashboardPage = lazy(
   () => import("@/pages/admin/AdminDashboardPage"),
@@ -133,9 +137,7 @@ export const router = createBrowserRouter(  createRoutesFromElements(
           <Route path="pengaturan" element={<PengaturanPage />} />
         </Route>
 
-        {/* Halaman terima undangan petugas (tujuan tautan email dari backend).
-    HARUS didaftarkan sebelum rute dinamis :id agar "join" tidak
-    dianggap sebagai ID undangan. */}
+        {/* Halaman terima undangan petugas & magic link instan */}
         <Route element={<PlainLayout />}>
           <Route
             path="/dashboard/undangan/join"
@@ -145,6 +147,10 @@ export const router = createBrowserRouter(  createRoutesFromElements(
             path="/invitations/accept"
             element={<JoinInvitationPage />}
           />
+          {/* <Route
+            path="/petugas/akses"
+            element={<InstantAccessPage />}
+          /> */}
         </Route>
 
         {/* Panel per undangan — sidebar kontekstual */}
@@ -174,6 +180,9 @@ export const router = createBrowserRouter(  createRoutesFromElements(
           <Route path="pengaturan" element={<AdminSettingsPage />} />
         </Route>
       </Route>
+
+      {/* Halaman publik akses instan petugas (Magic Link tanpa perlu login) */}
+      <Route path="/petugas/akses" element={<InstantAccessPage />} />
 
       {/* Halaman undangan publik untuk tamu resepsi (tanpa proteksi login) */}
       <Route path="/undangan/:slug" element={<InvitationPage />} />

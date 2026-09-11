@@ -210,6 +210,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   /**
+   * Menetapkan sesi autentikasi kustom (Magic Link petugas instan).
+   */
+  const setAuthSession = useCallback((token: string, userObj: AuthUser) => {
+    updateAccessToken(token)
+    setUser(userObj)
+  }, [updateAccessToken])
+
+  /**
    * Menangani proses logout ke endpoint POST /auth/logout.
    * Menghapus token di memori dan meminta backend membersihkan cookie httpOnly.
    */
@@ -236,6 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         refreshSession,
+        setAuthSession,
       }}
     >
       {children}

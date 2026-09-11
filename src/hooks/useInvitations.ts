@@ -20,18 +20,26 @@ export function useInvitations() {
 
   const rawData: ApiInvitation[] = query.data ?? []
 
-  const invitations: InvitationSummary[] = rawData.map((item: ApiInvitation) => ({
-    id: item.id,
-    slug: item.slug,
-    title: item.title,
-    coupleName: item.title,
-    eventDate: item.eventDate ? item.eventDate.slice(0, 10) : null,
-    eventTime: item.eventTime,
-    thumbnailUrl: null, // Tidak dikirim oleh GET /invitations
-    status: item.status,
-    guestCount: 0, // Tidak dikirim oleh GET /invitations
-    checkedInCount: 0, // Tidak dikirim oleh GET /invitations
-  }))
+  const invitations: InvitationSummary[] = rawData.map((item: ApiInvitation) => {
+    // Ambil foto pertama dari galeri foto, atau dari preview template, atau dari additionalInfo cover
+    const coverUrl =
+      item.galleryPhotos?.[0]?.imageUrl ||
+      (item.additionalInfo as Record<string, unknown> | null)?.coverImageUrl as string | undefined ||
+      null
+
+    return {
+      id: item.id,
+      slug: item.slug,
+      title: item.title,
+      coupleName: item.title,
+      eventDate: item.eventDate ? item.eventDate.slice(0, 10) : null,
+      eventTime: item.eventTime,
+      thumbnailUrl: coverUrl,
+      status: item.status,
+      guestCount: 0,
+      checkedInCount: 0,
+    }
+  })
 
   return {
     invitations,

@@ -11,7 +11,10 @@ import {
   useUpdateMemberRole,
   useRemoveMember,
   useResendMemberInvite,
+  useGenerateInstantLink,
+  type InstantLinkResult,
 } from "@/hooks/useMembers";
+import { Link2, Copy, Check } from "lucide-react";
 import { getMemberStatus } from "@/types/member";
 import type {
   Member,
@@ -80,7 +83,13 @@ export default function PanelPetugasPage() {
     useUpdateMemberRole(id);
   const { mutateAsync: deleteStaff } = useRemoveMember(id);
   const { mutateAsync: resendInvite, isPending: isResending } =
-  useResendMemberInvite(id);
+    useResendMemberInvite(id);
+  const { mutateAsync: generateInstantLink, isPending: isGeneratingLink } =
+    useGenerateInstantLink(id);
+
+  const [inviteMethod, setInviteMethod] = useState<"email" | "instant">("email");
+  const [generatedLinkData, setGeneratedLinkData] = useState<InstantLinkResult | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [toast, setToast] = useState<string | null>(null);
@@ -101,6 +110,9 @@ export default function PanelPetugasPage() {
     setName("");
     setEmail("");
     setRole("USER");
+    setInviteMethod("email");
+    setGeneratedLinkData(null);
+    setCopiedLink(false);
     setModalError(null);
     setIsModalOpen(true);
   }
@@ -131,6 +143,15 @@ export default function PanelPetugasPage() {
       if (editingStaff) {
         // Backend hanya mendukung perubahan peran (PATCH .../members/:id)
         await updateStaff({ memberId: editingStaff.id, role });
+        setIsModalOpen(false);
+      } else if (inviteMethod === "instant") {
+        const res = await generateInstantLink({
+          name: name.trim(),
+          role: role === "OWNER" ? "USER" : role,
+        });
+        setGeneratedLinkData(res);
+        setToast(`Tautan akses cepat untuk ${name.trim()} berhasil dibuat!`);
+        setTimeout(() => setToast(null), 5000);
       } else {
         const payload: CreateMemberPayload = {
           name: name.trim(),
@@ -140,8 +161,8 @@ export default function PanelPetugasPage() {
         await addStaff(payload);
         setToast(`Email undangan telah dikirim ke ${email.trim()}`);
         setTimeout(() => setToast(null), 5000);
+        setIsModalOpen(false);
       }
-      setIsModalOpen(false);
     } catch (err: unknown) {
       setModalError((err as Error)?.message || "Gagal menyimpan data petugas");
     }
@@ -522,114 +543,196 @@ export default function PanelPetugasPage() {
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="mt-4 space-y-4">
-              {modalError && (
-                <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700">
-                  {modalError}
+                        {generatedLinkData ? (
+              <div className="mt-4 space-y-4">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+                  <div className="flex items-center gap-2 font-bold text-sm">
+                    <CheckCircle2 size={18} className="text-emerald-600" />
+                    <span>Tautan Magic Link Siap Dibagikan</span>
+                  </div>
+                  <p className="mt-1 text-xs text-emerald-700">
+                    Petugas <strong>{generatedLinkData.name}</strong> dapat langsung bertugas dengan membuka tautan ini tanpa perlu mendaftar akun.
+                  </p>
                 </div>
-              )}
 
-              <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">
-                  Nama Petugas
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  disabled={Boolean(editingStaff)}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Contoh: Ahmad Fauzi"
-                  className="w-full rounded-xl border border-slate-200 p-2.5 text-xs sm:text-sm text-ink focus:border-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
-                  required
-                />
-              </div>
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Tautan Akses Cepat</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={generatedLinkData.accessLink}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700 font-mono select-all focus:outline-none"
+                    />
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedLinkData.accessLink);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2500);
+                      }}
+                      icon={copiedLink ? <Check size={14} /> : <Copy size={14} />}
+                    >
+                      {copiedLink ? "Disalin" : "Salin"}
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted">
+                    Berlaku 30 hari. Bagikan tautan ini ke petugas melalui WhatsApp.
+                  </p>
+                </div>
 
-              <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">
-                  Alamat Email
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  disabled={Boolean(editingStaff)}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="ahmad@example.com"
-                  className="w-full rounded-xl border border-slate-200 p-2.5 text-xs sm:text-sm text-ink focus:border-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">
-                  Pilih Peran
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {ASSIGNABLE_ROLES.map((r) => {
-                    const cfg = ROLE_LABELS[r];
-                    const isSelected = role === r;
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setRole(r)}
-                        className={`flex flex-col text-left p-3 rounded-xl border transition cursor-pointer ${
-                          isSelected
-                            ? "border-primary bg-indigo-50/50 ring-1 ring-primary"
-                            : "border-slate-200 bg-white hover:bg-slate-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 font-bold text-xs text-ink">
-                          <cfg.icon
-                            size={14}
-                            className={
-                              isSelected ? "text-primary" : "text-slate-500"
-                            }
-                          />
-                          <span>{cfg.label.split(" (")[0]}</span>
-                        </div>
-                        <p className="mt-1 text-[11px] text-muted line-clamp-2">
-                          {cfg.desc}
-                        </p>
-                      </button>
-                    );
-                  })}
+                <div className="flex justify-end pt-3 border-t border-slate-100">
+                  <Button variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
+                    Tutup
+                  </Button>
                 </div>
               </div>
+            ) : (
+              <form onSubmit={handleFormSubmit} className="mt-4 space-y-4">
+                {modalError && (
+                  <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700">
+                    {modalError}
+                  </div>
+                )}
 
-              <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3 text-[11px] text-sky-800">
-                Setelah disimpan, sistem otomatis mengirim email undangan berisi
-                tautan aktivasi yang berlaku 7 hari. Petugas harus membuka
-                tautan tersebut agar statusnya menjadi Aktif.
-              </div>
+                {/* Tab Pilihan Metode Undangan (Hanya saat Tambah Baru) */}
+                {!editingStaff && (
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <button
+                      type="button"
+                      onClick={() => setInviteMethod("email")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl border transition cursor-pointer ${
+                        inviteMethod === "email"
+                          ? "border-primary bg-indigo-50/50 text-primary"
+                          : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                      }`}
+                    >
+                      <Send size={14} />
+                      <span>Kirim Undangan Email</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInviteMethod("instant")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl border transition cursor-pointer ${
+                        inviteMethod === "instant"
+                          ? "border-primary bg-indigo-50/50 text-primary"
+                          : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                      }`}
+                    >
+                      <Link2 size={14} />
+                      <span>Magic Link (Instan)</span>
+                    </button>
+                  </div>
+                )}
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsModalOpen(false)}
-                >
-                  Batal
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="sm"
-                  disabled={isAdding || isUpdating}
-                >
-                  {isAdding || isUpdating ? (
-                    <span className="flex items-center gap-1.5">
-                      <Loader2 size={14} className="animate-spin" />{" "}
-                      Menyimpan...
-                    </span>
-                  ) : editingStaff ? (
-                    "Simpan Perubahan"
-                  ) : (
-                    "Kirim Undangan"
-                  )}
-                </Button>
-              </div>
-            </form>
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">
+                    Nama Petugas
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    disabled={Boolean(editingStaff)}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Contoh: Ahmad Fauzi"
+                    className="w-full rounded-xl border border-slate-200 p-2.5 text-xs sm:text-sm text-ink focus:border-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                    required
+                  />
+                </div>
+
+                {inviteMethod === "email" && (
+                  <div>
+                    <label className="block text-xs font-bold text-ink mb-1.5">
+                      Alamat Email
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      disabled={Boolean(editingStaff)}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="ahmad@example.com"
+                      className="w-full rounded-xl border border-slate-200 p-2.5 text-xs sm:text-sm text-ink focus:border-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">
+                    Pilih Peran
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {ASSIGNABLE_ROLES.map((r) => {
+                      const cfg = ROLE_LABELS[r];
+                      const isSelected = role === r;
+                      return (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setRole(r)}
+                          className={`flex flex-col text-left p-3 rounded-xl border transition cursor-pointer ${
+                            isSelected
+                              ? "border-primary bg-indigo-50/50 ring-1 ring-primary"
+                              : "border-slate-200 bg-white hover:bg-slate-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 font-bold text-xs text-ink">
+                            <cfg.icon
+                              size={14}
+                              className={
+                                isSelected ? "text-primary" : "text-slate-500"
+                              }
+                            />
+                            <span>{cfg.label.split(" (")[0]}</span>
+                          </div>
+                          <p className="mt-1 text-[11px] text-muted line-clamp-2">
+                            {cfg.desc}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3 text-[11px] text-sky-800">
+                  {inviteMethod === "instant"
+                    ? "Sistem akan membuat tautan unik yang langsung memberikan akses scan QR dan kelola acara tanpa mewajibkan petugas membuat akun."
+                    : "Sistem otomatis mengirim email undangan berisi tautan aktivasi yang berlaku 7 hari."}
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="sm"
+                    disabled={isAdding || isUpdating || isGeneratingLink}
+                  >
+                    {isAdding || isUpdating || isGeneratingLink ? (
+                      <span className="flex items-center gap-1.5">
+                        <Loader2 size={14} className="animate-spin" />{" "}
+                        Menyimpan...
+                      </span>
+                    ) : editingStaff ? (
+                      "Simpan Perubahan"
+                    ) : inviteMethod === "instant" ? (
+                      "Buat Magic Link"
+                    ) : (
+                      "Kirim Undangan"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

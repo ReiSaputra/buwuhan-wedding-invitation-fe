@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { TableCard } from '@/components/ui/TableCard'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { Pagination } from '@/components/ui/Pagination'
-import { useInvitationDetail } from '@/hooks/useInvitationDetail'
+import { useInvitationDetail, useCurrentInvitationRole } from '@/hooks/useInvitationDetail'
 import { useBuwuhan } from '@/hooks/useBuwuhan'
 import { useTableState } from '@/hooks/useTableState'
 import { exportBuwuhanData } from '@/lib/export'
@@ -29,33 +29,33 @@ function CategoryIcon({ category }: { category: BuwuhanCategory }) {
   return <Gift size={13} className="shrink-0 text-indigo-600" />
 }
 
-/** Komponen badge penanda 3 jenis bantuan utama */
-function CategoryBadge({ category }: { category: BuwuhanCategory }) {
-  if (category === 'Uang') {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 shadow-2xs">
-        <Banknote size={12} className="text-emerald-600" />
-        Uang
-      </span>
-    )
-  }
+// /** Komponen badge penanda 3 jenis bantuan utama */
+// function CategoryBadge({ category }: { category: BuwuhanCategory }) {
+//   if (category === 'Uang') {
+//     return (
+//       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 shadow-2xs">
+//         <Banknote size={12} className="text-emerald-600" />
+//         Uang
+//       </span>
+//     )
+//   }
 
-  if (category === 'Beras') {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 shadow-2xs">
-        <Wheat size={12} className="text-amber-600" />
-        Beras
-      </span>
-    )
-  }
+//   if (category === 'Beras') {
+//     return (
+//       <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 shadow-2xs">
+//         <Wheat size={12} className="text-amber-600" />
+//         Beras
+//       </span>
+//     )
+//   }
 
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/80 bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 shadow-2xs">
-      <Gift size={12} className="text-indigo-600" />
-      Barang
-    </span>
-  )
-}
+//   return (
+//     <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/80 bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 shadow-2xs">
+//       <Gift size={12} className="text-indigo-600" />
+//       Barang
+//     </span>
+//   )
+// }
 
 /**
  * Halaman Catatan Buwuh pada panel undangan: mencatat bantuan tamu yang diklasifikasikan
@@ -64,6 +64,9 @@ function CategoryBadge({ category }: { category: BuwuhanCategory }) {
 export default function PanelCatatanBuwuhPage() {
   const { id = '' } = useParams()
   const { invitation } = useInvitationDetail(id)
+  const { role: currentRole, canManageGuests } = useCurrentInvitationRole(id)
+  const currentMemberId = typeof window !== 'undefined' ? localStorage.getItem('buwuhan_current_member_id') : null
+  const isOwnerOrAdmin = currentRole === 'OWNER' || currentRole === 'ADMIN' || canManageGuests
   const { records, addBuwuhan, updateBuwuhan, removeBuwuhan, isLoading, isError, isMutating } =
     useBuwuhan(id)
 
@@ -197,6 +200,7 @@ export default function PanelCatatanBuwuhPage() {
                 <th className={thClass}>Alamat Pemberi</th>
                 <th className={thClass}>Rincian Bantuan</th>
                 <th className={thClass}>Nominal Uang</th>
+                <th className={thClass}>Pencatat (Audit)</th>
                 <th className={thClass}>Tanggal</th>
                 <th className={`${thClass} text-right`}>Aksi</th>
               </tr>
@@ -204,16 +208,12 @@ export default function PanelCatatanBuwuhPage() {
             <tbody className="divide-y divide-slate-100">
               {table.pageRows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center text-muted">
+                  <td colSpan={7} className="px-6 py-16 text-center text-muted">
                     Belum ada catatan buwuh yang tercatat.
                   </td>
                 </tr>
               )}
               {table.pageRows.map((record) => {
-                const categories = Array.from(
-                  new Set(record.items.map((item) => getBuwuhanCategory(item))),
-                )
-
                 return (
                   <tr key={record.id} className="transition hover:bg-slate-50/70">
                     <td className={tdClass}>
@@ -257,10 +257,24 @@ export default function PanelCatatanBuwuhPage() {
                     <td className={`${tdClass} font-bold text-ink`}>
                       {formatRupiah(sumMoneyOnly(record))}
                     </td>
+                                        {/* Kolom Pencatat (Audit Log) */}
+                    <td className={tdClass}>
+                      {record.recordedBy?.name ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 shadow-2xs">
+                          Petugas: {record.recordedBy.name}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 shadow-2xs">
+                          Owner (Pemilik)
+                        </span>
+                      )}
+                    </td>
+
                     <td className={`${tdClass} text-slate-600`}>
                       <span className="block text-xs">{formatDateCompact(record.receivedAt)}</span>
                       <span className="block text-[11px] text-slate-400">{formatTimeCompact(record.receivedAt)}</span>
                     </td>
+
                     <td className={tdClass}>
                       <div className="flex items-center justify-end gap-1.5">
                         <button
@@ -272,25 +286,35 @@ export default function PanelCatatanBuwuhPage() {
                         >
                           <Eye size={15} />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditing(record)
-                            setIsFormOpen(true)
-                          }}
-                          className="cursor-pointer rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-ink"
-                          aria-label={`Ubah catatan ${record.giverName}`}
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleting(record)}
-                          className="cursor-pointer rounded-xl p-2 text-slate-400 transition hover:bg-rose-50 hover:text-danger"
-                          aria-label={`Hapus catatan ${record.giverName}`}
-                        >
-                          <Trash2 size={15} />
-                        </button>
+
+                        {/* Tombol Ubah: Owner/Admin bisa edit semua, Petugas HANYA bisa edit catatannya sendiri */}
+                        {(isOwnerOrAdmin || (currentMemberId && record.recordedBy?.memberId === currentMemberId)) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditing(record)
+                              setIsFormOpen(true)
+                            }}
+                            className="cursor-pointer rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-ink"
+                            aria-label={`Ubah catatan ${record.giverName}`}
+                            title="Ubah data catatan"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                        )}
+
+                        {/* Tombol Hapus: Sembunyikan untuk Petugas, HANYA tampil untuk Owner & Admin */}
+                        {isOwnerOrAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => setDeleting(record)}
+                            className="cursor-pointer rounded-xl p-2 text-slate-400 transition hover:bg-rose-50 hover:text-danger"
+                            aria-label={`Hapus catatan ${record.giverName}`}
+                            title="Hapus catatan"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

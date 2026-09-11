@@ -141,14 +141,27 @@ export function BuwuhanDetailModal({
               </table>
             </div>
 
-            {/* Jejak waktu */}
-            <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-2xl border border-border bg-slate-50/60 px-4 py-3 text-[11px] text-slate-500">
-              <span>
-                Dicatat: {formatDateCompact(buwuhan.createdAt)} · {formatTimeCompact(buwuhan.createdAt)}
-              </span>
-              <span>
-                Diubah: {formatDateCompact(buwuhan.updatedAt)} · {formatTimeCompact(buwuhan.updatedAt)}
-              </span>
+            {/* Jejak waktu & Audit Pencatat */}
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-slate-50/60 px-4 py-3 text-[11px] text-slate-600">
+              <div className="flex flex-wrap gap-x-6 gap-y-1">
+                <span>
+                  Dicatat: {formatDateCompact(buwuhan.createdAt)} · {formatTimeCompact(buwuhan.createdAt)}
+                </span>
+                <span>
+                  Diubah: {formatDateCompact(buwuhan.updatedAt)} · {formatTimeCompact(buwuhan.updatedAt)}
+                </span>
+              </div>
+              <div>
+                {buwuhan.recordedBy?.name ? (
+                  <span className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full text-[10px]">
+                    Petugas: {buwuhan.recordedBy.name}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 font-medium text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full text-[10px]">
+                    Owner (Pemilik)
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 border-t border-border pt-4">

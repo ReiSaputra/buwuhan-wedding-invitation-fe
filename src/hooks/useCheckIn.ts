@@ -68,8 +68,9 @@ export function useCheckIn(invitationId: string, invitationSlug?: string) {
     if (!invitationSlug) {
       throw new Error("Slug undangan belum tersedia");
     }
+    const cleanCode = qrCode.trim();
     return fetchData<ApiGuestItem>(
-      `/public/invitations/${encodeURIComponent(invitationSlug)}/guests/verify/${encodeURIComponent(qrCode)}`,
+      `/public/invitations/${encodeURIComponent(invitationSlug)}/guests/verify/${encodeURIComponent(cleanCode)}`,
     );
   }
 

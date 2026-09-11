@@ -8,6 +8,33 @@ import type {
   ResendInviteResult,
 } from '@/types/member'
 
+export interface InstantLinkPayload {
+  name: string
+  role?: 'ADMIN' | 'USER'
+}
+
+export interface InstantLinkResult {
+  memberId: string
+  name: string
+  role: 'ADMIN' | 'USER'
+  accessLink: string
+  expiresAt: string
+}
+
+export interface InstantAccessResult {
+  sessionToken: string
+  member: {
+    id: string
+    name: string
+    role: 'ADMIN' | 'USER'
+  }
+  invitation: {
+    id: string
+    title: string
+    slug: string
+  }
+}
+
 const membersKey = (invitationId: string) => ['members', invitationId] as const
 
 /**
@@ -111,5 +138,34 @@ export function useAcceptMemberInvite() {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       queryClient.invalidateQueries({ queryKey: ['invitations'] })
     },
+  })
+}
+
+/**
+ * POST /invitations/:invitationId/members/instant-link — hanya OWNER.
+ * Membuat tautan akses cepat (Magic Link) untuk petugas tanpa perlu email.
+ */
+export function useGenerateInstantLink(invitationId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: InstantLinkPayload) =>
+      postData<InstantLinkResult, InstantLinkPayload>(
+        `/invitations/${invitationId}/members/instant-link`,
+        payload,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: membersKey(invitationId) })
+    },
+  })
+}
+
+/**
+ * POST /members/instant-access — Publik.
+ * Menukar token magic link menjadi sesi JWT petugas tanpa akun.
+ */
+export function useInstantMemberAccess() {
+  return useMutation({
+    mutationFn: (token: string) =>
+      postData<InstantAccessResult, { token: string }>('/members/instant-access', { token }),
   })
 }

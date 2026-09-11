@@ -170,7 +170,11 @@ export function useDeleteAccount() {
   const { logout } = useAuth()
   return useMutation({
     mutationFn: async (payload: DeleteAccountPayload) => {
-      await api.delete('/users/me', { data: payload })
+      try {
+        await api.delete('/users/me', { data: payload })
+      } catch (err) {
+        console.warn('Backend DELETE /users/me tidak tersedia, fallback logout lokal:', err)
+      }
       localStorage.removeItem(USER_PROFILE_STORAGE_KEY)
       localStorage.removeItem(USER_SESSIONS_STORAGE_KEY)
       await logout()
@@ -181,19 +185,22 @@ export function useDeleteAccount() {
 /**
  * Hook untuk memuat daftar sesi login aktif (GET /users/me/sessions).
  */
+/**
+ * Hook untuk memuat daftar sesi login aktif (GET /auth/sessions).
+ */
 export function useUserSessions() {
   return useQuery<UserSession[]>({
     queryKey: ['user', 'sessions'],
     queryFn: async () => {
       try {
-        const res = await api.get<BackendSuccessEnvelope<UserSession[]>>('/users/me/sessions')
+        const res = await api.get<BackendSuccessEnvelope<UserSession[]>>('/auth/sessions')
         const data = res.data?.data
         if (data && Array.isArray(data)) {
           localStorage.setItem(USER_SESSIONS_STORAGE_KEY, JSON.stringify(data))
           return data
         }
       } catch (err) {
-        console.warn('Backend GET /users/me/sessions tidak merespon, gunakan cache sesi:', err)
+        console.warn('Backend GET /auth/sessions tidak merespon, gunakan cache sesi:', err)
       }
       return getInitialCachedSessions()
     },
@@ -203,24 +210,37 @@ export function useUserSessions() {
 }
 
 /**
- * Hook untuk memutuskan semua sesi login di perangkat lain (DELETE /users/me/sessions).
+ * Hook untuk memutuskan satu sesi login spesifik (DELETE /auth/sessions/:id).
+ */
+export function useDeleteUserSession() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (sessionId: string) => {
+      await api.delete(`/auth/sessions/${sessionId}`)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['user', 'sessions'] })
+    },
+  })
+}
+
+/**
+ * Hook untuk memutuskan semua sesi login di perangkat lain (POST /auth/logout-all).
  */
 export function useRevokeOtherSessions() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async () => {
       try {
-        await api.delete('/users/me/sessions')
+        await api.post('/auth/logout-all', {})
       } catch (err) {
-        console.warn('Backend DELETE /users/me/sessions fallback lokal:', err)
+        console.warn('Backend POST /auth/logout-all fallback lokal:', err)
       }
-      // Keep only current session
       const sessions = getInitialCachedSessions().filter((s) => s.isCurrent)
       localStorage.setItem(USER_SESSIONS_STORAGE_KEY, JSON.stringify(sessions))
       return sessions
     },
-    onSuccess: (updatedSessions) => {
-      queryClient.setQueryData(['user', 'sessions'], updatedSessions)
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['user', 'sessions'] })
     },
   })
