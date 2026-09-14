@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Baby, CalendarDays, Users } from 'lucide-react'
+import { Sparkles, Baby, CalendarDays, User } from 'lucide-react'
 import type { CelebrantData } from '@/types/invitation-api'
 
 export type CelebrantSectionProps = {
@@ -41,74 +41,79 @@ export function CelebrantSection({
     ? `${childLabel} ke-${celebrant.childOrder}`
     : childLabel
 
+  const isAqiqah = eventLabel.toUpperCase() === 'AQIQAH'
+  const isKhitanan = eventLabel.toUpperCase() === 'KHITANAN'
+
   return (
     <section
       id="tokoh-acara"
       className="relative overflow-hidden bg-inv-page-alt px-6 py-20"
     >
-      <div className="mx-auto max-w-3xl space-y-8 text-center">
+      <div className="mx-auto max-w-4xl space-y-12 text-center">
+        <div className="space-y-2">
+          <span className="text-xs font-bold uppercase tracking-[0.25em] text-inv-accent">
+            {isKhitanan
+              ? 'Walimatul Khitan'
+              : isAqiqah
+                ? 'Tasyakuran Aqiqah'
+                : `Acara ${eventLabel}`}
+          </span>
+          <h2 className="font-display text-3xl font-bold text-inv-ink sm:text-4xl">
+            {isKhitanan
+              ? 'Tasyakuran Khitanan Ananda'
+              : isAqiqah
+                ? 'Karunia & Doa untuk Ananda'
+                : 'Maha Suci Allah yang Melimpahkan Rahmat-Nya'}
+          </h2>
+        </div>
+
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-40px' }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="space-y-2 transform-gpu"
+          className="mx-auto max-w-lg rounded-3xl border border-inv-gold/30 bg-inv-card p-8 sm:p-10 shadow-lg space-y-5 transform-gpu"
         >
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-inv-accent">
-            Tokoh Utama {eventLabel}
-          </span>
+          {/* Avatar Icon Dekoratif */}
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-tr from-inv-accent/20 to-inv-gold/20 p-1.5 shadow-inner">
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-inv-page text-inv-accent shadow-xs">
+              {isAqiqah ? (
+                <Baby size={38} className="text-inv-accent" />
+              ) : isKhitanan ? (
+                <User size={38} className="text-inv-accent" />
+              ) : (
+                <Sparkles size={34} className="text-inv-gold" />
+              )}
+            </div>
+          </div>
 
-          <h2 className="font-display text-3xl font-bold text-inv-ink sm:text-4xl">
-            {celebrant.name}
-          </h2>
+          <div className="space-y-1.5">
+            <h3 className="font-display text-2xl sm:text-3xl font-bold text-inv-ink">
+              {celebrant.name}
+            </h3>
 
-          {celebrant.nickname && (
-            <p className="text-sm font-semibold text-inv-accent">
-              ({celebrant.nickname})
-            </p>
+            {celebrant.nickname && (
+              <p className="text-sm font-semibold text-inv-accent">
+                ({celebrant.nickname})
+              </p>
+            )}
+          </div>
+
+          <p className="text-sm sm:text-base text-slate-700 leading-relaxed max-w-md mx-auto pt-1">
+            {childOrder} dari Bapak{' '}
+            <strong className="text-inv-ink font-bold">{celebrant.fatherName}</strong>{' '}
+            dan Ibu{' '}
+            <strong className="text-inv-ink font-bold">{celebrant.motherName}</strong>
+          </p>
+
+          {birthDate && (
+            <div className="pt-2 flex items-center justify-center">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-inv-page px-4 py-1.5 text-xs font-medium text-slate-600 border border-inv-line/80 shadow-2xs">
+                <CalendarDays size={14} className="text-inv-accent" />
+                <span>Lahir: {birthDate}</span>
+              </span>
+            </div>
           )}
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{
-            duration: 0.5,
-            delay: 0.1,
-            ease: 'easeOut',
-          }}
-          className="mx-auto max-w-xl rounded-3xl border border-inv-gold/30 bg-inv-card p-6 shadow-md sm:p-8 transform-gpu"
-        >
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-inv-gold/15 text-inv-gold">
-            <Baby size={36} aria-hidden="true" />
-          </div>
-
-          <div className="grid gap-4 text-left sm:grid-cols-2">
-            <div className="rounded-2xl bg-inv-page p-4">
-              <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-inv-accent">
-                <Users size={15} aria-hidden="true" />
-                Orang Tua
-              </div>
-
-              <p className="text-sm leading-relaxed text-inv-ink">
-                {childOrder} dari Bapak{' '}
-                <strong>{celebrant.fatherName}</strong> dan Ibu{' '}
-                <strong>{celebrant.motherName}</strong>
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-inv-page p-4">
-              <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-inv-accent">
-                <CalendarDays size={15} aria-hidden="true" />
-                Tanggal Lahir
-              </div>
-
-              <p className="text-sm leading-relaxed text-inv-ink">
-                {birthDate ?? 'Tidak dicantumkan'}
-              </p>
-            </div>
-          </div>
         </motion.div>
       </div>
     </section>

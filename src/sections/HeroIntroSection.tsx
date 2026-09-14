@@ -45,30 +45,32 @@ menghadiri dan memberikan doa pada acara{' '}
           </p>
         </motion.div>
 
-        {/* Frame Foto Pasangan / Ornamen */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
-          className="relative mx-auto max-w-sm rounded-3xl overflow-hidden p-2 bg-gradient-to-b from-gold/40 via-white to-sage/30 shadow-xl transform-gpu"
-        >
-          <div className="rounded-2xl overflow-hidden bg-slate-100 aspect-[4/3] relative">
-            <img
-              src="/images/rings.jpg"
-              alt="Cincin Pernikahan"
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center p-6 text-inv-on-accent text-center">
-              <div>
-                <p className="font-display text-2xl font-bold">
-  {displayName}
-</p>
-                <p className="text-xs text-inv-on-accent/80 uppercase tracking-widest mt-0.5">{eventDateStr}</p>
+        {/* Frame Foto Pasangan / Ornamen - Hanya untuk Pernikahan */}
+        {isWedding && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
+            className="relative mx-auto max-w-sm rounded-3xl overflow-hidden p-2 bg-gradient-to-b from-gold/40 via-white to-sage/30 shadow-xl transform-gpu"
+          >
+            <div className="rounded-2xl overflow-hidden bg-slate-100 aspect-[4/3] relative">
+              <img
+                src="/images/rings.jpg"
+                alt="Cincin Pernikahan"
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center p-6 text-inv-on-accent text-center">
+                <div>
+                  <p className="font-display text-2xl font-bold">
+                    {displayName}
+                  </p>
+                  <p className="text-xs text-inv-on-accent/80 uppercase tracking-widest mt-0.5">{eventDateStr}</p>
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* Ayat Suci Box */}
         <motion.div

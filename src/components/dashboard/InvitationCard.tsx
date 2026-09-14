@@ -154,7 +154,7 @@ export function InvitationCard({
         {eventTime && (
           <span className="flex items-center gap-1">
             <Clock size={13} className="text-slate-400" />
-            {eventTime} WIB
+            {eventTime.includes('WIB') ? eventTime : `${eventTime} WIB`}
           </span>
         )}
       </div>
