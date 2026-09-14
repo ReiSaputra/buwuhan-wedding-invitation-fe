@@ -1,22 +1,22 @@
-import { useEffect, useState, useRef } from 'react'
-import { CoverSection } from '@/sections/CoverSection'
-import { HeroIntroSection } from '@/sections/HeroIntroSection'
-import { CoupleSection } from '@/sections/CoupleSection'
-import { CelebrantSection } from '@/sections/CelebrantSection'
-import { EventDetailsSection } from '@/sections/EventDetailsSection'
-import { LoveStoryGallerySection } from '@/sections/LoveStoryGallerySection'
-import { WishesSection } from '@/sections/WishesSection'
-import { GiftSection } from '@/sections/GiftSection'
-import { FloatingNav } from '@/sections/FloatingNav'
-import { useGuest } from '@/hooks/useGuest'
-import type { TemplateProps } from '@/templates/template-props'
-import type { TemplateTheme } from '@/templates/template-themes'
-import { Sparkles } from 'lucide-react'
+import { useEffect, useState, useRef } from "react";
+import { CoverSection } from "@/sections/CoverSection";
+import { HeroIntroSection } from "@/sections/HeroIntroSection";
+import { CoupleSection } from "@/sections/CoupleSection";
+import { CelebrantSection } from "@/sections/CelebrantSection";
+import { EventDetailsSection } from "@/sections/EventDetailsSection";
+import { LoveStoryGallerySection } from "@/sections/LoveStoryGallerySection";
+import { WishesSection } from "@/sections/WishesSection";
+import { GiftSection } from "@/sections/GiftSection";
+import { FloatingNav } from "@/sections/FloatingNav";
+import { useGuest } from "@/hooks/useGuest";
+import type { TemplateProps } from "@/templates/template-props";
+import type { TemplateTheme } from "@/templates/template-themes";
+import { Sparkles } from "lucide-react";
 
 export type TemplateShellProps = TemplateProps & {
   /** Tema visual yang menentukan seluruh warna dan tipografi template */
-  theme: TemplateTheme
-}
+  theme: TemplateTheme;
+};
 
 /**
  * Kerangka bersama seluruh template undangan.
@@ -27,20 +27,20 @@ export type TemplateShellProps = TemplateProps & {
  * baris JSX.
  */
 export function TemplateShell({ data, theme }: TemplateShellProps) {
-  const { guestName } = useGuest()
+  const { guestName } = useGuest();
   const {
     groom,
-bride,
-groomName,
-brideName,
-coupleNames,
-celebrant,
-showCelebrant,
-showCouples,
-eventCategory,
-eventLabel,
-displayName,
-eventDateText,
+    bride,
+    groomName,
+    brideName,
+    coupleNames,
+    celebrant,
+    showCelebrant,
+    showCouples,
+    eventCategory,
+    eventLabel,
+    displayName,
+    eventDateText,
     eventDate,
     eventTime,
     venue,
@@ -50,45 +50,43 @@ eventDateText,
     giftAccounts,
     giftAddress,
     slug,
-  } = data
+  } = data;
 
-  const [isOpened, setIsOpened] = useState(false)
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [isOpened, setIsOpened] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Kunci scroll saat cover masih aktif
   useEffect(() => {
-    document.body.classList.toggle('is-locked', !isOpened)
-    return () => document.body.classList.remove('is-locked')
-  }, [isOpened])
+    document.body.classList.toggle("is-locked", !isOpened);
+    return () => document.body.classList.remove("is-locked");
+  }, [isOpened]);
 
   function handleOpenInvitation() {
-    setIsOpened(true)
-    setIsMusicPlaying(true)
+    setIsOpened(true);
+    setIsMusicPlaying(true);
     if (audioRef.current) {
       audioRef.current.play().catch(() => {
-        setIsMusicPlaying(false)
-      })
+        setIsMusicPlaying(false);
+      });
     }
   }
 
   function handleToggleMusic() {
-    if (!audioRef.current) return
+    if (!audioRef.current) return;
     if (isMusicPlaying) {
-      audioRef.current.pause()
-      setIsMusicPlaying(false)
+      audioRef.current.pause();
+      setIsMusicPlaying(false);
     } else {
-      audioRef.current.play().catch(() => {})
-      setIsMusicPlaying(true)
+      audioRef.current.play().catch(() => {});
+      setIsMusicPlaying(true);
     }
   }
 
   const displayNames =
-  displayName ||
-  coupleNames ||
-  `${groomName} ${brideName}`.trim()
+    displayName || coupleNames || `${groomName} ${brideName}`.trim();
 
-const isWedding = eventCategory === 'WEDDING'
+  const isWedding = eventCategory === "WEDDING";
 
   return (
     <div data-template={theme.key} className={theme.page}>
@@ -101,13 +99,13 @@ const isWedding = eventCategory === 'WEDDING'
 
       {!isOpened && (
         <CoverSection
-  theme={theme}
-  guestName={guestName}
-  displayName={displayNames}
-  eventLabel={eventLabel}
-  eventDate={eventDateText}
-  onOpen={handleOpenInvitation}
-/>
+          theme={theme}
+          guestName={guestName}
+          displayName={displayNames}
+          eventLabel={eventLabel}
+          eventDate={eventDateText}
+          onOpen={handleOpenInvitation}
+        />
       )}
 
       {isOpened && (
@@ -118,33 +116,28 @@ const isWedding = eventCategory === 'WEDDING'
           />
 
           {theme.heroWrapper ? (
-  <div className={theme.heroWrapper}>
-    <HeroIntroSection
-      displayName={displayNames}
-      eventLabel={eventLabel}
-      isWedding={isWedding}
-      eventDateStr={eventDateText}
-    />
-  </div>
-) : (
-  <HeroIntroSection
-    displayName={displayNames}
-    eventLabel={eventLabel}
-    isWedding={isWedding}
-    eventDateStr={eventDateText}
-  />
-)}
+            <div className={theme.heroWrapper}>
+              <HeroIntroSection
+                displayName={displayNames}
+                eventLabel={eventLabel}
+                isWedding={isWedding}
+                eventDateStr={eventDateText}
+              />
+            </div>
+          ) : (
+            <HeroIntroSection
+              displayName={displayNames}
+              eventLabel={eventLabel}
+              isWedding={isWedding}
+              eventDateStr={eventDateText}
+            />
+          )}
 
-          {showCouples && (
-  <CoupleSection groom={groom} bride={bride} />
-)}
+          {showCouples && <CoupleSection groom={groom} bride={bride} />}
 
-{showCelebrant && celebrant && (
-  <CelebrantSection
-    celebrant={celebrant}
-    eventLabel={eventLabel}
-  />
-)}
+          {showCelebrant && celebrant && (
+            <CelebrantSection celebrant={celebrant} eventLabel={eventLabel} />
+          )}
 
           <EventDetailsSection
             eventDate={eventDate}
@@ -153,7 +146,7 @@ const isWedding = eventCategory === 'WEDDING'
             venue={venue}
             address={address}
             displayName={displayNames}
-eventLabel={eventLabel}
+            eventLabel={eventLabel}
           />
 
           <LoveStoryGallerySection
@@ -170,21 +163,31 @@ eventLabel={eventLabel}
             initialGiftAddress={giftAddress}
           />
 
-          <footer className={`py-16 px-6 text-center space-y-4 ${theme.footer}`}>
+          <footer
+            className={`py-16 px-6 text-center space-y-4 ${theme.footer}`}
+          >
             <p className={`text-xs ${theme.footerText}`}>
-              Merupakan suatu kehormatan &amp; kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
+              Merupakan suatu kehormatan &amp; kebahagiaan bagi kami apabila
+              Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
             </p>
             <h3 className={`text-3xl ${theme.footerTitle}`}>{displayNames}</h3>
-            <div className={`pt-6 flex items-center justify-center gap-1.5 text-xs ${theme.footerMeta}`}>
+            <div
+              className={`pt-6 flex items-center justify-center gap-1.5 text-xs ${theme.footerMeta}`}
+            >
               <span>Powered by</span>
-              <strong className="font-semibold flex items-center gap-1">
+              <a
+                href="http://buwuh.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold flex items-center gap-1 hover:underline"
+              >
                 {theme.footerSparkles && <Sparkles size={12} />}
-                Buwuhan Wedding Platform
-              </strong>
+                Buwuh.Com
+              </a>
             </div>
           </footer>
         </main>
       )}
     </div>
-  )
+  );
 }
