@@ -1,0 +1,18 @@
+# ============================================================
+# Buwuhan Wedding Invitation — Apache SPA Fallback Config
+# Wajib ada agar React Router berfungsi di DirectPanel/Apache.
+# Semua request yang bukan file/folder statis diarahkan ke index.html.
+# ============================================================
+
+Options -MultiViews
+RewriteEngine On
+
+# Paksa HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# SPA fallback: jika request bukan file atau direktori yang ada, serve index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ /index.html [L]
+
