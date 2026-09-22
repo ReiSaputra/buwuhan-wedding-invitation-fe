@@ -61,7 +61,7 @@ export default function PanelPlaceholderPage({ title }: PanelPlaceholderPageProp
             <span>{title}</span>
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted">
-            Kelola modul {title} untuk acara pernikahan {invitation.coupleName}.
+            Kelola modul {title} untuk acara {invitation.coupleName || invitation.title}.
           </p>
         </div>
 

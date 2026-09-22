@@ -193,7 +193,7 @@ export default function PanelRsvpPage() {
           { label: 'Kehadiran' },
         ]}
         title="Konfirmasi Kehadiran"
-        subtitle={`Pantau rekap kehadiran tamu untuk acara pernikahan ${invitation.coupleName}`}
+        subtitle={`Pantau rekap kehadiran tamu untuk acara ${invitation.coupleName || invitation.title}`}
         actions={
           <Button
             variant="outline"
@@ -425,13 +425,13 @@ export default function PanelRsvpPage() {
                           // Hanya tamu yang sudah merespons punya baris RSVP untuk dihapus
                           ...(guest.rsvpId
                             ? [
-                                {
-                                  label: 'Hapus Data RSVP',
-                                  icon: <Trash2 size={14} />,
-                                  onClick: () => setDeletingGuest(guest),
-                                  isDanger: true,
-                                },
-                              ]
+                              {
+                                label: 'Hapus Data RSVP',
+                                icon: <Trash2 size={14} />,
+                                onClick: () => setDeletingGuest(guest),
+                                isDanger: true,
+                              },
+                            ]
                             : []),
                         ]}
                       />

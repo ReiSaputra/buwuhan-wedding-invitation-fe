@@ -33,9 +33,13 @@ export interface CreateMemberPayload {
   role?: InvitationRole
 }
 
-export interface UpdateMemberRolePayload {
-  role: InvitationRole
+export interface UpdateMemberPayload {
+  role?: InvitationRole
+  isRevoked?: boolean
+  status?: MemberStatus
 }
+
+export type UpdateMemberRolePayload = UpdateMemberPayload
 
 export interface AcceptInviteResult {
   memberId: string

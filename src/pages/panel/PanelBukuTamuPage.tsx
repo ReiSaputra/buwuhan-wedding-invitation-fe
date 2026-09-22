@@ -290,7 +290,7 @@ export default function PanelBukuTamuPage() {
           { label: "Buku Tamu" },
         ]}
         title="Buku Tamu & Kehadiran"
-        subtitle={`Catatan tamu hadir dan buku ucapan untuk pernikahan ${invitation.coupleName}`}
+        subtitle={`Catatan tamu hadir dan buku ucapan untuk ${invitation.coupleName || invitation.title}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -551,22 +551,22 @@ export default function PanelBukuTamuPage() {
                             />
                           )}
                         </button>
-                          <button
-                            type="button"
-                            onClick={() => handleSendSingleEmail(entry)}
-                            disabled={
-                              isSendingEmail && sendingEmailGuestId === entry.id
-                            }
-                            className={iconButtonClass}
-                            title="Kirim Email Undangan"
-                          >
-                            {isSendingEmail &&
+                        <button
+                          type="button"
+                          onClick={() => handleSendSingleEmail(entry)}
+                          disabled={
+                            isSendingEmail && sendingEmailGuestId === entry.id
+                          }
+                          className={iconButtonClass}
+                          title="Kirim Email Undangan"
+                        >
+                          {isSendingEmail &&
                             sendingEmailGuestId === entry.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
-                            ) : (
-                              <Mail className="h-4 w-4 text-indigo-600" />
-                            )}
-                          </button>
+                            <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                          ) : (
+                            <Mail className="h-4 w-4 text-indigo-600" />
+                          )}
+                        </button>
 
                         {/* Tombol Lihat Ucapan */}
                         <button
@@ -630,12 +630,12 @@ export default function PanelBukuTamuPage() {
         initialValue={
           editingEntry
             ? {
-                name: editingEntry.name,
-                category: editingEntry.category,
-                phone: editingEntry.phone,
-                email: editingEntry.email,
-                note: editingEntry.message,
-              }
+              name: editingEntry.name,
+              category: editingEntry.category,
+              phone: editingEntry.phone,
+              email: editingEntry.email,
+              note: editingEntry.message,
+            }
             : null
         }
       />

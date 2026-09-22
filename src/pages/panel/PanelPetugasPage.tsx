@@ -10,7 +10,7 @@ import {
   useMembers,
   useMemberDetail,
   useInviteMember,
-  useUpdateMemberRole,
+  useUpdateMember,
   useRemoveMember,
   useResendMemberInvite,
   useGenerateInstantLink,
@@ -27,7 +27,6 @@ import {
   Users,
   UserPlus,
   QrCode,
-  DollarSign,
   ShieldCheck,
   Trash2,
   Edit2,
@@ -37,6 +36,9 @@ import {
   Send,
   X,
   Loader2,
+  PauseCircle,
+  PlayCircle,
+  UserCheck,
 } from "lucide-react";
 
 /**
@@ -81,38 +83,39 @@ export default function PanelPetugasPage() {
   const { canManageMembers } = useCurrentInvitationRole(id);
   const { data: staffs = [], isLoading, isError } = useMembers(id);
   const { mutateAsync: addStaff, isPending: isAdding } = useInviteMember(id);
-  const { mutateAsync: updateStaff, isPending: isUpdating } =
-    useUpdateMemberRole(id);
+  const { mutateAsync: updateStaff, isPending: isUpdating } = useUpdateMember(id);
   const { mutateAsync: deleteStaff, isPending: isDeletingStaff } = useRemoveMember(id);
-  const { mutateAsync: resendInvite, isPending: isResending } =
-    useResendMemberInvite(id);
-  const { mutateAsync: generateInstantLink, isPending: isGeneratingLink } =
-    useGenerateInstantLink(id);
+  const { mutateAsync: resendInvite, isPending: isResending } = useResendMemberInvite(id);
+  const { mutateAsync: generateInstantLink, isPending: isGeneratingLink } = useGenerateInstantLink(id);
 
   const [inviteMethod, setInviteMethod] = useState<"email" | "instant">("email");
   const [generatedLinkData, setGeneratedLinkData] = useState<InstantLinkResult | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("ALL");
+  const [filterTab, setFilterTab] = useState<string>("ALL");
   const [toast, setToast] = useState<string | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Member | null>(null);
   const [deletingStaff, setDeletingStaff] = useState<Member | null>(null);
+  const [statusToggleStaff, setStatusToggleStaff] = useState<Member | null>(null);
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [selectedDetailMemberId, setSelectedDetailMemberId] = useState<string | null>(null);
 
-  // Form State — backend member tidak menyimpan nomor telepon
+  // Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InvitationRole>("USER");
+  const [editStatus, setEditStatus] = useState<"ACTIVE" | "REVOKED">("ACTIVE");
 
   function openAddModal() {
     setEditingStaff(null);
     setName("");
     setEmail("");
     setRole("USER");
+    setEditStatus("ACTIVE");
     setInviteMethod("email");
     setGeneratedLinkData(null);
     setCopiedLink(false);
@@ -125,6 +128,7 @@ export default function PanelPetugasPage() {
     setName(staff.name);
     setEmail(staff.email);
     setRole(staff.role);
+    setEditStatus(staff.isRevoked ? "REVOKED" : "ACTIVE");
     setModalError(null);
     setIsModalOpen(true);
   }
@@ -137,15 +141,20 @@ export default function PanelPetugasPage() {
       setModalError("Nama petugas wajib diisi");
       return;
     }
-    if (inviteMethod === "email" && (!email.trim() || !email.includes("@"))) {
+    if (inviteMethod === "email" && !editingStaff && (!email.trim() || !email.includes("@"))) {
       setModalError("Masukkan alamat email petugas yang valid");
       return;
     }
 
     try {
       if (editingStaff) {
-        // Backend hanya mendukung perubahan peran (PATCH .../members/:id)
-        await updateStaff({ memberId: editingStaff.id, role });
+        await updateStaff({
+          memberId: editingStaff.id,
+          role,
+          isRevoked: editStatus === "REVOKED",
+        });
+        setToast(`Data dan status petugas ${editingStaff.name} berhasil diperbarui.`);
+        setTimeout(() => setToast(null), 4000);
         setIsModalOpen(false);
       } else if (inviteMethod === "instant") {
         const res = await generateInstantLink({
@@ -171,13 +180,33 @@ export default function PanelPetugasPage() {
     }
   }
 
-
+  async function handleConfirmToggleStatus() {
+    if (!statusToggleStaff) return;
+    setIsTogglingStatus(true);
+    const newIsRevoked = !statusToggleStaff.isRevoked;
+    try {
+      await updateStaff({
+        memberId: statusToggleStaff.id,
+        role: statusToggleStaff.role,
+        isRevoked: newIsRevoked,
+      });
+      setToast(
+        newIsRevoked
+          ? `Status petugas "${statusToggleStaff.name}" diubah menjadi Pasif (Tugas Selesai).`
+          : `Akses petugas "${statusToggleStaff.name}" telah diaktifkan kembali.`,
+      );
+      setTimeout(() => setToast(null), 4000);
+      setStatusToggleStaff(null);
+    } catch (err: unknown) {
+      const parsed = parseApiError(err);
+      alert(parsed.generalMessage || "Gagal mengubah status petugas");
+    } finally {
+      setIsTogglingStatus(false);
+    }
+  }
 
   /**
-   * Backend tidak pernah mengirim token undangan ke frontend (token hanya
-   * disimpan dalam bentuk hash dan dikirim lewat email), sehingga tautan
-   * undangan tidak mungkin dibentuk di sisi klien. Satu-satunya cara adalah
-   * meminta backend mengirim ulang emailnya.
+   * Mengirim ulang email undangan untuk petugas yang masih menunggu aktivasi.
    */
   async function handleResend(staff: Member) {
     try {
@@ -193,15 +222,26 @@ export default function PanelPetugasPage() {
     const matchQuery =
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchRole = roleFilter === "ALL" || s.role === roleFilter;
-    return matchQuery && matchRole;
+
+    const memberStatus = getMemberStatus(s);
+    let matchFilter = true;
+    if (filterTab === "ACTIVE") {
+      matchFilter = memberStatus === "ACTIVE";
+    } else if (filterTab === "REVOKED") {
+      matchFilter = memberStatus === "REVOKED";
+    } else if (filterTab === "USER") {
+      matchFilter = s.role === "USER";
+    } else if (filterTab === "ADMIN") {
+      matchFilter = s.role === "ADMIN";
+    }
+
+    return matchQuery && matchFilter;
   });
 
   const totalScanners = staffs.filter((s) => s.role === "USER").length;
   const totalCashiers = staffs.filter((s) => s.role === "ADMIN").length;
-  const totalActive = staffs.filter(
-    (s) => getMemberStatus(s) === "ACTIVE",
-  ).length;
+  const totalActive = staffs.filter((s) => getMemberStatus(s) === "ACTIVE").length;
+  const totalRevoked = staffs.filter((s) => getMemberStatus(s) === "REVOKED").length;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -216,7 +256,7 @@ export default function PanelPetugasPage() {
         items={[
           { label: "Beranda", to: "/dashboard" },
           {
-            label: `Panel ${invitation.coupleName || invitation.panelName}`,
+            label: `Panel ${invitation.coupleName || invitation.panelName || invitation.title}`,
             to: `/dashboard/undangan/${id}`,
           },
           { label: "Petugas & Panitia" },
@@ -231,8 +271,8 @@ export default function PanelPetugasPage() {
             <span>Petugas & Hak Akses Panitia</span>
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted">
-            Undang co-host dan petugas penerima tamu lewat email untuk acara{" "}
-            {invitation.coupleName}.
+            Undang co-host dan petugas penerima tamu untuk acara{" "}
+            {invitation.coupleName || invitation.title}.
           </p>
         </div>
 
@@ -281,6 +321,20 @@ export default function PanelPetugasPage() {
         <div className="rounded-2xl bg-white p-4 border border-border shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">
+              Pasif / Selesai
+            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+              <PauseCircle size={16} />
+            </div>
+          </div>
+          <strong className="mt-2 block text-xl font-bold text-slate-600">
+            {totalRevoked} Orang
+          </strong>
+        </div>
+
+        <div className="rounded-2xl bg-white p-4 border border-border shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">
               Petugas Lapangan
             </span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
@@ -289,20 +343,6 @@ export default function PanelPetugasPage() {
           </div>
           <strong className="mt-2 block text-xl font-bold text-ink">
             {totalScanners} Orang
-          </strong>
-        </div>
-
-        <div className="rounded-2xl bg-white p-4 border border-border shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">
-              Co-host
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-              <DollarSign size={16} />
-            </div>
-          </div>
-          <strong className="mt-2 block text-xl font-bold text-ink">
-            {totalCashiers} Orang
           </strong>
         </div>
       </div>
@@ -324,30 +364,25 @@ export default function PanelPetugasPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-            <button
-              type="button"
-              onClick={() => setRoleFilter("ALL")}
-              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer shrink-0 ${
-                roleFilter === "ALL"
-                  ? "bg-primary text-white shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              Semua ({staffs.length})
-            </button>
-            {ASSIGNABLE_ROLES.map((r) => (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {[
+              { key: "ALL", label: `Semua (${staffs.length})` },
+              { key: "ACTIVE", label: `Aktif (${totalActive})` },
+              { key: "REVOKED", label: `Pasif (${totalRevoked})` },
+              { key: "ADMIN", label: `Co-host (${totalCashiers})` },
+              { key: "USER", label: `Penerima Tamu (${totalScanners})` },
+            ].map((tab) => (
               <button
-                key={r}
+                key={tab.key}
                 type="button"
-                onClick={() => setRoleFilter(r)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer shrink-0 ${
-                  roleFilter === r
+                onClick={() => setFilterTab(tab.key)}
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${
+                  filterTab === tab.key
                     ? "bg-primary text-white shadow-xs"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                {ROLE_LABELS[r]?.label.split(" (")[0]}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -459,9 +494,10 @@ export default function PanelPetugasPage() {
                         ) : (
                           <Badge
                             variant="default"
-                            className="bg-slate-100 text-slate-500"
+                            className="bg-slate-100 text-slate-600 border-slate-200 font-medium"
                           >
-                            Dicabut
+                            <PauseCircle size={11} className="mr-1 inline text-slate-500" />
+                            Pasif (Selesai)
                           </Badge>
                         )}
                       </td>
@@ -469,6 +505,27 @@ export default function PanelPetugasPage() {
                       <td className="px-4 py-3.5 text-right">
                         {canManageMembers ? (
                           <div className="flex items-center justify-end gap-1.5">
+                            {/* Tombol Toggle Status: Aktif -> Pasif / Pasif -> Aktif */}
+                            {memberStatus === "ACTIVE" ? (
+                              <button
+                                type="button"
+                                onClick={() => setStatusToggleStaff(staff)}
+                                title="Ubah status jadi Pasif (Tugas Selesai)"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 transition cursor-pointer"
+                              >
+                                <PauseCircle size={14} />
+                              </button>
+                            ) : memberStatus === "REVOKED" ? (
+                              <button
+                                type="button"
+                                onClick={() => setStatusToggleStaff(staff)}
+                                title="Aktifkan kembali akses petugas"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition cursor-pointer"
+                              >
+                                <PlayCircle size={14} />
+                              </button>
+                            ) : null}
+
                             {memberStatus === "PENDING" && (
                               <button
                                 type="button"
@@ -488,7 +545,7 @@ export default function PanelPetugasPage() {
                             <button
                               type="button"
                               onClick={() => openEditModal(staff)}
-                              title="Ubah Peran"
+                              title="Ubah Petugas / Peran & Status"
                               className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-ink transition cursor-pointer"
                             >
                               <Edit2 size={14} />
@@ -497,7 +554,7 @@ export default function PanelPetugasPage() {
                             <button
                               type="button"
                               onClick={() => setDeletingStaff(staff)}
-                              title="Cabut Akses"
+                              title="Hapus / Cabut Hak Akses"
                               className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 transition cursor-pointer"
                             >
                               <Trash2 size={14} />
@@ -526,7 +583,7 @@ export default function PanelPetugasPage() {
               <div className="flex items-center gap-2 font-bold text-ink">
                 <Users size={18} className="text-primary" />
                 <span>
-                  {editingStaff ? "Ubah Peran Petugas" : "Tambah Petugas Baru"}
+                  {editingStaff ? "Ubah Petugas & Hak Akses" : "Tambah Petugas Baru"}
                 </span>
               </div>
               <button
@@ -538,7 +595,7 @@ export default function PanelPetugasPage() {
               </button>
             </div>
 
-                        {generatedLinkData ? (
+            {generatedLinkData ? (
               <div className="mt-4 space-y-4">
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
                   <div className="flex items-center gap-2 font-bold text-sm">
@@ -637,7 +694,7 @@ export default function PanelPetugasPage() {
                   />
                 </div>
 
-                {inviteMethod === "email" && (
+                {(inviteMethod === "email" || editingStaff) && (
                   <div>
                     <label className="block text-xs font-bold text-ink mb-1.5">
                       Alamat Email
@@ -651,6 +708,54 @@ export default function PanelPetugasPage() {
                       className="w-full rounded-xl border border-slate-200 p-2.5 text-xs sm:text-sm text-ink focus:border-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
                       required
                     />
+                  </div>
+                )}
+
+                {/* Pengaturan Status Petugas (Hanya saat Edit) */}
+                {editingStaff && (
+                  <div>
+                    <label className="block text-xs font-bold text-ink mb-1.5">
+                      Status Akses Petugas
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditStatus("ACTIVE")}
+                        className={`flex items-center gap-2 p-3 rounded-xl border text-left transition cursor-pointer ${
+                          editStatus === "ACTIVE"
+                            ? "border-emerald-300 bg-emerald-50/80 ring-1 ring-emerald-500 text-emerald-950"
+                            : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                        }`}
+                      >
+                        <UserCheck
+                          size={18}
+                          className={editStatus === "ACTIVE" ? "text-emerald-600" : "text-slate-400"}
+                        />
+                        <div>
+                          <strong className="block text-xs font-bold">Aktif</strong>
+                          <span className="text-[10px] text-muted block">Dapat bertugas & catat data</span>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setEditStatus("REVOKED")}
+                        className={`flex items-center gap-2 p-3 rounded-xl border text-left transition cursor-pointer ${
+                          editStatus === "REVOKED"
+                            ? "border-slate-400 bg-slate-100 ring-1 ring-slate-500 text-slate-900"
+                            : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                        }`}
+                      >
+                        <PauseCircle
+                          size={18}
+                          className={editStatus === "REVOKED" ? "text-slate-700" : "text-slate-400"}
+                        />
+                        <div>
+                          <strong className="block text-xs font-bold">Pasif (Selesai)</strong>
+                          <span className="text-[10px] text-muted block">Tugas selesai di hari-H</span>
+                        </div>
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -704,7 +809,9 @@ export default function PanelPetugasPage() {
                 )}
 
                 <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3 text-[11px] text-sky-800">
-                  {inviteMethod === "instant"
+                  {editingStaff
+                    ? "Pilih status Pasif jika petugas telah menyelesaikan tugasnya agar tidak dapat menambah atau mengubah data lagi."
+                    : inviteMethod === "instant"
                     ? "Sistem akan membuat tautan unik (Magic Link) yang langsung memberikan akses pencatatan buwuh tanpa mewajibkan petugas membuat akun."
                     : "Sistem otomatis mengirim email undangan berisi tautan aktivasi yang berlaku 7 hari."}
                 </div>
@@ -745,12 +852,113 @@ export default function PanelPetugasPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL KONFIRMASI CABUT AKSES PETUGAS                                      */}
+      {/* MODAL KONFIRMASI UBAH STATUS (AKTIF <-> PASIF)                           */}
+      {/* ========================================================================= */}
+      <Modal
+        isOpen={statusToggleStaff !== null}
+        onClose={() => setStatusToggleStaff(null)}
+        title={
+          statusToggleStaff?.isRevoked
+            ? "Aktifkan Kembali Petugas?"
+            : "Ubah Status Jadi Pasif (Tugas Selesai)?"
+        }
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <div
+            className={`rounded-2xl border p-4 flex items-start gap-3.5 ${
+              statusToggleStaff?.isRevoked
+                ? "border-emerald-100 bg-emerald-50/80"
+                : "border-amber-100 bg-amber-50/80"
+            }`}
+          >
+            <div
+              className={`p-2 rounded-xl shrink-0 ${
+                statusToggleStaff?.isRevoked
+                  ? "bg-emerald-100 text-emerald-600"
+                  : "bg-amber-100 text-amber-600"
+              }`}
+            >
+              {statusToggleStaff?.isRevoked ? (
+                <UserCheck size={20} />
+              ) : (
+                <PauseCircle size={20} />
+              )}
+            </div>
+            <div className="space-y-1">
+              <h4
+                className={`text-xs font-bold ${
+                  statusToggleStaff?.isRevoked
+                    ? "text-emerald-950"
+                    : "text-amber-950"
+                }`}
+              >
+                {statusToggleStaff?.isRevoked
+                  ? "Konfirmasi Pengaktifan Akses"
+                  : "Konfirmasi Selesai Bertugas"}
+              </h4>
+              <p
+                className={`text-xs leading-relaxed ${
+                  statusToggleStaff?.isRevoked
+                    ? "text-emerald-800"
+                    : "text-amber-800"
+                }`}
+              >
+                {statusToggleStaff?.isRevoked ? (
+                  <>
+                    Apakah Anda yakin ingin mengaktifkan kembali hak akses untuk{" "}
+                    <strong>"{statusToggleStaff?.name}"</strong>? Petugas akan dapat kembali mencatat buwuhan dan scan QR tamu.
+                  </>
+                ) : (
+                  <>
+                    Tandai tugas untuk <strong>"{statusToggleStaff?.name}"</strong> telah selesai. Petugas ini tidak akan dapat lagi masuk atau mencatat bantuan tamu. Data yang sudah dicatat sebelumnya tetap tersimpan aman.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setStatusToggleStaff(null)}
+              disabled={isTogglingStatus}
+            >
+              Batal
+            </Button>
+            <Button
+              variant={statusToggleStaff?.isRevoked ? "primary" : "outline"}
+              size="sm"
+              disabled={isTogglingStatus}
+              onClick={handleConfirmToggleStatus}
+              className={
+                !statusToggleStaff?.isRevoked
+                  ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500"
+                  : ""
+              }
+            >
+              {isTogglingStatus ? (
+                <span className="flex items-center gap-1.5">
+                  <Loader2 size={14} className="animate-spin" /> Memproses...
+                </span>
+              ) : statusToggleStaff?.isRevoked ? (
+                "Ya, Aktifkan Petugas"
+              ) : (
+                "Ya, Ubah Jadi Pasif"
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ========================================================================= */}
+      {/* MODAL KONFIRMASI CABUT / HAPUS PETUGAS                                    */}
       {/* ========================================================================= */}
       <Modal
         isOpen={deletingStaff !== null}
         onClose={() => setDeletingStaff(null)}
-        title="Cabut Hak Akses Petugas?"
+        title="Hapus Petugas?"
         maxWidth="sm"
       >
         <div className="space-y-4">
@@ -760,10 +968,10 @@ export default function PanelPetugasPage() {
             </div>
             <div className="space-y-1">
               <h4 className="text-xs font-bold text-rose-950">
-                Konfirmasi Pencabutan Akses
+                Konfirmasi Penghapusan Petugas
               </h4>
               <p className="text-xs text-rose-700 leading-relaxed">
-                Yakin ingin mencabut akses untuk <strong>"{deletingStaff?.name}"</strong>? Petugas ini tidak akan dapat lagi masuk ke panel atau mencatat bantuan tamu.
+                Yakin ingin menghapus <strong>"{deletingStaff?.name}"</strong> dari daftar petugas? Petugas ini tidak akan dapat lagi mengakses panel ini.
               </p>
             </div>
           </div>
@@ -785,17 +993,17 @@ export default function PanelPetugasPage() {
                 if (deletingStaff) {
                   try {
                     await deleteStaff(deletingStaff.id);
-                    setToast(`Akses untuk ${deletingStaff.name} berhasil dicabut`);
+                    setToast(`Petugas ${deletingStaff.name} berhasil dihapus`);
                     setTimeout(() => setToast(null), 4000);
                     setDeletingStaff(null);
                   } catch (err: unknown) {
                     const parsed = parseApiError(err);
-                    alert(parsed.generalMessage || "Gagal mencabut akses petugas");
+                    alert(parsed.generalMessage || "Gagal menghapus petugas");
                   }
                 }
               }}
             >
-              {isDeletingStaff ? "Mencabut…" : "Ya, Cabut Akses"}
+              {isDeletingStaff ? "Menghapus…" : "Ya, Hapus Petugas"}
             </Button>
           </div>
         </div>
@@ -880,7 +1088,7 @@ function MemberDetailModal({
               </p>
               {member.revokedAt && (
                 <p className="text-rose-600 font-semibold">
-                  ⛔ <strong>Akses Dicabut:</strong> {new Date(member.revokedAt).toLocaleString("id-ID")}
+                  ⛔ <strong>Status Akses:</strong> Pasif / Dicabut ({new Date(member.revokedAt).toLocaleString("id-ID")})
                 </p>
               )}
             </div>

@@ -4,9 +4,9 @@ import { instantAuthStorage } from '@/lib/instantAuthStorage'
 import type {
   AcceptInviteResult,
   CreateMemberPayload,
-  InvitationRole,
   Member,
   ResendInviteResult,
+  UpdateMemberPayload,
 } from '@/types/member'
 
 export interface InstantLinkPayload {
@@ -108,22 +108,30 @@ export function useResendMemberInvite(invitationId: string) {
   })
 }
 
+
 /**
  * PATCH /invitations/:invitationId/members/:id — hanya OWNER.
+ * Mendukung pembaruan peran (role) dan status (isRevoked / status pasif-aktif).
  */
-export function useUpdateMemberRole(invitationId: string) {
+export function useUpdateMember(invitationId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ memberId, role }: { memberId: string; role: InvitationRole }) =>
-      patchData<Member, { role: InvitationRole }>(
+    mutationFn: ({
+      memberId,
+      ...payload
+    }: UpdateMemberPayload & { memberId: string }) =>
+      patchData<Member, UpdateMemberPayload>(
         `/invitations/${invitationId}/members/${memberId}`,
-        { role },
+        payload,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: membersKey(invitationId) })
     },
   })
 }
+
+/** Alias untuk kompatibilitas */
+export const useUpdateMemberRole = useUpdateMember
 
 /**
  * DELETE /invitations/:invitationId/members/:id — hanya OWNER.

@@ -19,7 +19,7 @@ export default function UndanganPage() {
       <div className="rounded-2xl bg-white p-6 border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-ink">
-            Kelola Undangan Pernikahan
+            Kelola Undangan
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted">
             Atur detail acara, kelola data tamu undangan, pantau kehadiran, dan ubah tema tampilan sesuai keinginan.

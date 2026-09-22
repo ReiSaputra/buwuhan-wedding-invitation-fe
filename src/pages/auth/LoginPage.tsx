@@ -110,7 +110,7 @@ export default function LoginPage() {
           Sign In
         </h1>
         <p className="mt-2 text-xs sm:text-sm text-slate-500">
-          Masuk untuk mengelola undangan pernikahanmu.
+          Masuk untuk mengelola undangan digitalmu.
         </p>
       </div>
 
