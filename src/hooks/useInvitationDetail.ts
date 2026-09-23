@@ -22,14 +22,48 @@ function buildCoupleName(couples: ApiInvitation["couples"]): string {
   return groom || bride || "Tanpa Nama";
 }
 
-function buildInvitationSubject(
+/**
+ * Menyusun nama subjek/tuan rumah acara (Mempelai untuk wedding, Ananda untuk Khitanan/Aqiqah/Rasulan).
+ */
+export function buildInvitationSubject(
   invitation: ApiInvitation,
 ): string {
-  if (invitation.showCelebrant && invitation.celebrant) {
+  const cat = (invitation.eventCategory || '').toUpperCase()
+  const isNonWedding = cat === 'KHITANAN' || cat === 'AQIQAH' || cat === 'RASULAN'
+
+  if (isNonWedding) {
+    if (invitation.celebrant?.name) {
+      // Cukup namanya saja tanpa prefix kategori
+      const cleanName = invitation.celebrant.name
+        .replace(/^khitanan\s+/i, '')
+        .replace(/^tasyakuran\s+(walimatul\s+)?khitan\s+/i, '')
+        .replace(/^aqiqah\s+/i, '')
+        .replace(/^tasyakuran\s+aqiqah\s+/i, '')
+        .trim()
+      return cleanName || invitation.celebrant.name
+    }
+    if (invitation.title && !invitation.title.toLowerCase().startsWith('pernikahan')) {
+      const cleanTitle = invitation.title
+        .replace(/^khitanan\s+/i, '')
+        .replace(/^tasyakuran\s+(walimatul\s+)?khitan\s+/i, '')
+        .replace(/^aqiqah\s+/i, '')
+        .replace(/^tasyakuran\s+aqiqah\s+/i, '')
+        .trim()
+      return cleanTitle || invitation.title
+    }
+    return cat === 'KHITANAN' ? 'Khitanan' : cat === 'AQIQAH' ? 'Aqiqah' : 'Rasulan'
+  }
+
+  if (invitation.couples && invitation.couples.length > 0) {
+    const couple = buildCoupleName(invitation.couples)
+    if (couple !== 'Tanpa Nama') return couple
+  }
+
+  if (invitation.celebrant?.name) {
     return invitation.celebrant.name
   }
 
-  return buildCoupleName(invitation.couples)
+  return invitation.title || 'Tanpa Nama'
 }
 
 /**
@@ -134,6 +168,7 @@ export function useInvitationDetail(id: string) {
         confirmedCount: rsvpStatsQuery.data?.totalConfirmed ?? 0,
         checkedInCount: guestStatsQuery.data?.totalAttended ?? 0,
         buwuhTotal: buwuhanSummaryQuery.data?.totalEstimatedValue ?? 0,
+        eventCategory: raw.eventCategory ?? 'WEDDING',
       }
     : { ...EMPTY_DETAIL, ...instantFallback, id }
 

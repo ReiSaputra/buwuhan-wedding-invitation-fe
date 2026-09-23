@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { fetchData } from '@/lib/api'
+import { buildInvitationSubject } from '@/hooks/useInvitationDetail'
 import type { ApiInvitation } from '@/types/invitation-api'
 import type { InvitationSummary } from '@/types/dashboard'
 
@@ -30,11 +31,14 @@ export function useInvitations() {
       ((item.template as unknown as { previewImageUrl?: string; thumbnailUrl?: string } | null)?.thumbnailUrl) ||
       null
 
+    const subjectName = buildInvitationSubject(item)
+
     return {
       id: item.id,
       slug: item.slug,
       title: item.title,
-      coupleName: item.title,
+      coupleName: subjectName,
+      eventCategory: item.eventCategory ?? 'WEDDING',
       eventDate: item.eventDate ? item.eventDate.slice(0, 10) : null,
       eventTime: item.eventTime,
       thumbnailUrl: coverUrl,

@@ -23,6 +23,7 @@ export function useCreateInvitation() {
     onSuccess: () => {
       // Daftar undangan & statistik dashboard ikut berubah, jadi minta ulang.
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['invitations'] })
     },
   })
 }
@@ -40,6 +41,7 @@ export function useUpdateInvitation(id: string) {
       patchData<ApiInvitation, InvitationUpdatePayload>(`/invitations/${id}`, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['invitations'] })
       queryClient.invalidateQueries({ queryKey: ['invitation', id] })
     },
   })
@@ -62,6 +64,7 @@ export function useUpdateInvitationStatus(id: string) {
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['invitations'] })
       queryClient.invalidateQueries({ queryKey: ['invitation', id] })
     },
   })
@@ -79,6 +82,7 @@ export function useDeleteInvitation() {
     mutationFn: (id: string) => deleteData(`/invitations/${id}`),
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['invitations'] })
       queryClient.removeQueries({ queryKey: ['invitation', id] })
     },
   })

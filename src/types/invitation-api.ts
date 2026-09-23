@@ -175,6 +175,8 @@ export interface ApiDashboardInvitationItem {
   totalGuests: number;
   totalCheckedIn: number;
   checkInPercentage: number;
+  eventCategory?: ApiEventCategory | null;
+  celebrantName?: string | null;
 }
 
 export interface DashboardApiData {

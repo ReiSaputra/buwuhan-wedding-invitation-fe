@@ -21,6 +21,8 @@ export type CurrentUser = {
  */
 export type InvitationStatus = 'DRAFT' | 'ACTIVE' | 'COMPLETED'
 
+import type { ApiEventCategory } from './invitation-api'
+
 /**
  * Ringkasan data undangan digital untuk ditampilkan pada daftar/kartu dashboard.
  */
@@ -36,6 +38,7 @@ export type InvitationSummary = {
   checkedInCount: number
   themeName?: string
   title?: string
+  eventCategory?: ApiEventCategory | null
 }
 
 /**
@@ -70,6 +73,7 @@ export type InvitationDetail = {
   confirmedCount: number
   checkedInCount: number
   buwuhTotal: number
+  eventCategory?: ApiEventCategory | null
 }
 
 /**

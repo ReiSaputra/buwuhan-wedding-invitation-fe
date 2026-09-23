@@ -370,6 +370,39 @@ export const InvitationForm = forwardRef<
   }, [isDirty, onDirtyChange]);
 
   /**
+   * Mengubah kategori jenis undangan dan menyesuaikan judul jika diperlukan.
+   */
+  function handleSelectCategory(catId: InvitationCategory) {
+    setSelectedCategory(catId);
+    setForm((prev) => {
+      const isDefaultOrOldWedding =
+        !prev.title ||
+        prev.title.trim() === "Pernikahan" ||
+        prev.title.toLowerCase().startsWith("pernikahan");
+
+      let nextTitle = prev.title;
+      if (isDefaultOrOldWedding && catId !== "wedding") {
+        if (catId === "khitanan") {
+          nextTitle = prev.celebrantName ? prev.celebrantName : "Khitanan";
+        } else if (catId === "aqiqah") {
+          nextTitle = prev.celebrantName ? prev.celebrantName : "Aqiqah";
+        } else if (catId === "rasulan") {
+          nextTitle = "Rasulan";
+        }
+      } else if (catId === "wedding" && (!prev.title || prev.title === "Khitanan" || prev.title === "Aqiqah" || prev.title === "Rasulan")) {
+        const groomBride = [prev.groomName, prev.brideName].filter(Boolean).join(" & ");
+        nextTitle = groomBride ? `Pernikahan ${groomBride}` : "Pernikahan";
+      }
+
+      return {
+        ...prev,
+        title: nextTitle,
+        slug: !slugTouched ? slugify(nextTitle) : prev.slug,
+      };
+    });
+  }
+
+  /**
    * Memperbarui satu ruas formulir dan menghapus pesan galatnya.
    */
   function updateField(field: keyof FormState, value: string) {
@@ -378,6 +411,29 @@ export const InvitationForm = forwardRef<
       // Judul mengisi slug otomatis selama slug belum pernah diubah manual
       if (field === "title" && !slugTouched) {
         next.slug = slugify(value);
+      }
+      // Jika nama ananda/celebrant diisi dan judul masih generic, sesuaikan judul langsung dengan nama
+      if (field === "celebrantName" && currentCategory !== "wedding") {
+        const isGeneric =
+          !prev.title ||
+          prev.title === "Pernikahan" ||
+          prev.title === "Khitanan" ||
+          prev.title === "Aqiqah" ||
+          prev.title === "Rasulan" ||
+          prev.title.startsWith("Khitanan ") ||
+          prev.title.startsWith("Aqiqah ");
+        if (isGeneric) {
+          next.title = value.trim()
+            ? value.trim()
+            : currentCategory === "khitanan"
+              ? "Khitanan"
+              : currentCategory === "aqiqah"
+                ? "Aqiqah"
+                : "Rasulan";
+          if (!slugTouched) {
+            next.slug = slugify(next.title);
+          }
+        }
       }
       return next;
     });
@@ -434,8 +490,29 @@ export const InvitationForm = forwardRef<
    * Menyusun payload sesuai spesifikasi API backend POST /invitations dan PATCH /invitations/:id.
    */
   function buildPayload(): InvitationPayload {
+    let finalTitle = form.title.trim();
+
+    if (currentCategory === "khitanan") {
+      if (!finalTitle || finalTitle === "Pernikahan" || finalTitle.toLowerCase().startsWith("pernikahan")) {
+        finalTitle = form.celebrantName.trim() ? form.celebrantName.trim() : "Khitanan";
+      }
+    } else if (currentCategory === "aqiqah") {
+      if (!finalTitle || finalTitle === "Pernikahan" || finalTitle.toLowerCase().startsWith("pernikahan")) {
+        finalTitle = form.celebrantName.trim() ? form.celebrantName.trim() : "Aqiqah";
+      }
+    } else if (currentCategory === "rasulan") {
+      if (!finalTitle || finalTitle === "Pernikahan" || finalTitle.toLowerCase().startsWith("pernikahan")) {
+        finalTitle = "Rasulan";
+      }
+    } else if (currentCategory === "wedding") {
+      if (!finalTitle || finalTitle === "Khitanan" || finalTitle === "Aqiqah" || finalTitle === "Rasulan") {
+        const couples = [form.groomName.trim(), form.brideName.trim()].filter(Boolean).join(" & ");
+        finalTitle = couples ? `Pernikahan ${couples}` : "Pernikahan";
+      }
+    }
+
     const payload: InvitationPayload = {
-      title: form.title.trim(),
+      title: finalTitle,
       slug: form.slug.trim(),
     };
 
@@ -611,7 +688,7 @@ export const InvitationForm = forwardRef<
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => handleSelectCategory(cat.id)}
                 className={cn(
                   "group relative flex flex-col justify-between rounded-2xl border-2 p-4 text-left transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm hover:-translate-y-0.5",
                   cat.bgBorderClass,
@@ -697,7 +774,7 @@ export const InvitationForm = forwardRef<
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => handleSelectCategory(cat.id)}
                 className={cn(
                   "rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer",
                   currentCategory === cat.id

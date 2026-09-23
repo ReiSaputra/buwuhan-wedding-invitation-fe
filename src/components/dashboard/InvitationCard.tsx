@@ -131,9 +131,16 @@ export function InvitationCard({
   const info = (
     <div className="min-w-0 flex-1 space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-display text-lg font-bold text-ink hover:text-primary transition">
-          {coupleName}
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-display text-lg font-bold text-ink hover:text-primary transition">
+            {coupleName}
+          </h3>
+          {invitation.eventCategory && invitation.eventCategory !== 'WEDDING' && (
+            <span className="rounded-md bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 text-[10px] font-bold text-primary uppercase">
+              {invitation.eventCategory}
+            </span>
+          )}
+        </div>
 
         {daysLeft > 0 ? (
           <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-semibold text-primary">

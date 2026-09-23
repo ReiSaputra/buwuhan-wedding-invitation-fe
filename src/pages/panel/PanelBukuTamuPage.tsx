@@ -44,6 +44,7 @@ import {
   getInitial,
 } from "@/lib/format";
 import { parseApiError } from "@/lib/errorHandler";
+import { buildWhatsAppShareMessage } from "@/lib/shareHelper";
 import type {
   AttendanceStatus,
   GuestBookEntry,
@@ -72,7 +73,7 @@ const iconButtonClass =
  */
 export default function PanelBukuTamuPage() {
   const { id = "" } = useParams();
-  const { invitation } = useInvitationDetail(id);
+  const { invitation, rawInvitation } = useInvitationDetail(id);
   const { canManageGuests } = useCurrentInvitationRole(id);
   const {
     entries,
@@ -212,10 +213,25 @@ export default function PanelBukuTamuPage() {
     setActiveGuestActionId(entry.id);
     try {
       const shareData = await getGuestShareData(entry.id);
-      const targetUrl =
-        shareData.whatsappShareUrl || shareData.whatsappUniversalShareUrl;
-      if (targetUrl) {
-        window.open(targetUrl, "_blank", "noreferrer");
+      const personalUrl =
+        shareData.invitationUrl ||
+        `${window.location.origin}/undangan/${invitation.slug}?to=${encodeURIComponent(entry.name)}`;
+
+      const { whatsappUrl } = buildWhatsAppShareMessage({
+        guestName: entry.name,
+        phone: entry.phone,
+        eventCategory: rawInvitation?.eventCategory,
+        title: invitation.title,
+        subjectName: invitation.coupleName,
+        eventDate: invitation.eventDate,
+        eventTime: invitation.eventTime,
+        venue: invitation.venue,
+        address: invitation.address,
+        invitationUrl: personalUrl,
+      });
+
+      if (whatsappUrl) {
+        window.open(whatsappUrl, "_blank", "noreferrer");
       } else {
         setPopupState({
           isOpen: true,
