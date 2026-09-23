@@ -15,6 +15,8 @@ export type AuthContextType = {
   isLoading: boolean
   /** Fungsi untuk proses masuk (Sign In), mengembalikan data AuthUser */
   login: (input: LoginInput) => Promise<AuthUser>
+  /** Fungsi untuk masuk atau daftar dengan Google OAuth */
+  loginWithGoogle: (idToken: string) => Promise<AuthUser>
   /** Fungsi untuk proses pendaftaran akun (Sign Up) */
   register: (input: RegisterInput) => Promise<void>
   /** Fungsi untuk keluar (Sign Out) */

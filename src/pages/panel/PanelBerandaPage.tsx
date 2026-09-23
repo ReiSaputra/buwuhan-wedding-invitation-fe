@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { Breadcrumb } from '@/components/dashboard/Breadcrumb'
 import { StatCard } from '@/components/dashboard/StatCard'
@@ -6,7 +7,14 @@ import { ScanQrCta } from '@/components/panel/ScanQrCta'
 import { ActivityLogList } from '@/components/panel/ActivityLogList'
 import { QuickActionCard } from '@/components/panel/QuickActionCard'
 import { useInvitationDetail } from '@/hooks/useInvitationDetail'
-import { formatNumber, formatRupiah } from '@/lib/format'
+import { useBuwuhan } from '@/hooks/useBuwuhan'
+import { useMembers } from '@/hooks/useMembers'
+import { useGiftAccounts } from '@/hooks/useGiftAccounts'
+import { useGuestBook } from '@/hooks/useGuestBook'
+import { useRsvpGuests } from '@/hooks/useRsvpGuests'
+import { calculateBuwuhStats } from '@/lib/buwuhHelper'
+import { formatDateCompact, formatNumber, formatRupiah } from '@/lib/format'
+import type { ActivityLog } from '@/types/dashboard'
 import {
   BookUser,
   ClipboardCheck,
@@ -26,7 +34,13 @@ import {
  */
 export default function PanelBerandaPage() {
   const { id = '' } = useParams()
-  const { invitation, activities, rawInvitation } = useInvitationDetail(id)
+  const { invitation, rawInvitation } = useInvitationDetail(id)
+  const { records: buwuhanRecords = [], summary: buwuhanSummary } = useBuwuhan(id)
+  const { data: members = [] } = useMembers(id)
+  const { accounts: giftAccounts = [] } = useGiftAccounts(id)
+  const { entries: guestEntries = [] } = useGuestBook(id)
+  const { guests: rsvpGuests = [] } = useRsvpGuests(id)
+
   const base = `/dashboard/undangan/${id}`
 
   const rsvpPercent =
@@ -34,15 +48,109 @@ export default function PanelBerandaPage() {
       ? Math.round((invitation.confirmedCount / invitation.guestCount) * 100)
       : 0
 
-  const quickActions = [
-    { label: 'Buku Tamu', to: `${base}/buku-tamu`, icon: <BookUser size={16} />, value: `${formatNumber(invitation.guestCount)} Tamu` },
-    { label: 'Konfirmasi Kehadiran', to: `${base}/rsvp`, icon: <ClipboardCheck size={16} />, value: `${rsvpPercent}% Hadir` },
-    { label: 'Amplop & Hadiah', to: `${base}/hadiah`, icon: <Gift size={16} />, value: 'Aktif' },
+  const buwuhStats = useMemo(() => calculateBuwuhStats(buwuhanRecords), [buwuhanRecords])
+  const totalBuwuh = useMemo(() => {
+    if (buwuhStats.totalMoney > 0) return buwuhStats.totalMoney
+    if (buwuhanSummary?.totalEstimatedValue && buwuhanSummary.totalEstimatedValue > 0) {
+      return buwuhanSummary.totalEstimatedValue
+    }
+    return buwuhStats.totalEstimatedValue || invitation.buwuhTotal || 0
+  }, [buwuhStats, buwuhanSummary, invitation.buwuhTotal])
 
-    { label: 'Petugas Penerima', to: `${base}/petugas`, icon: <Users size={16} />, value: 'Belum diatur' },
-    { label: 'Desain Template', to: `${base}/template`, icon: <LayoutTemplate size={16} />, value: rawInvitation?.template?.name ?? 'Belum dipilih' },
-    { label: 'Catatan Buwuh', to: `${base}/catatan-buwuh`, icon: <Wallet size={16} />, value: formatRupiah(invitation.buwuhTotal) },
+  const quickActions = [
+    {
+      label: 'Buku Tamu',
+      to: `${base}/buku-tamu`,
+      icon: <BookUser size={16} />,
+      value: `${formatNumber(invitation.guestCount)} Tamu`,
+    },
+    {
+      label: 'Konfirmasi Kehadiran',
+      to: `${base}/rsvp`,
+      icon: <ClipboardCheck size={16} />,
+      value: `${rsvpPercent}% Hadir`,
+    },
+    {
+      label: 'Amplop & Hadiah',
+      to: `${base}/hadiah`,
+      icon: <Gift size={16} />,
+      value:
+        giftAccounts.length > 0
+          ? `${giftAccounts.length} Rekening Aktif`
+          : rawInvitation?.giftAddress
+          ? 'Alamat Kado Aktif'
+          : 'Belum diatur',
+    },
+    {
+      label: 'Petugas Penerima',
+      to: `${base}/petugas`,
+      icon: <Users size={16} />,
+      value: members.length > 0 ? `${members.length} Petugas` : 'Belum diatur',
+    },
+    {
+      label: 'Desain Template',
+      to: `${base}/template`,
+      icon: <LayoutTemplate size={16} />,
+      value: rawInvitation?.template?.name ?? 'Belum dipilih',
+    },
+    {
+      label: 'Catatan Buwuh',
+      to: `${base}/catatan-buwuh`,
+      icon: <Wallet size={16} />,
+      value: formatRupiah(totalBuwuh),
+    },
   ]
+
+  // Linimasa aktivitas riil gabungan dari RSVP, Catatan Buwuh, dan Check-in Tamu
+  const activities: ActivityLog[] = useMemo(() => {
+    const list: Array<ActivityLog & { timestamp: number }> = []
+
+    // 1. Log dari RSVP tamu
+    for (const rsvp of rsvpGuests) {
+      if (rsvp.status !== 'BELUM_KONFIRMASI') {
+        list.push({
+          id: `rsvp-${rsvp.id}`,
+          message: `${rsvp.name} mengonfirmasi ${rsvp.status === 'HADIR' ? 'Hadir' : 'Tidak Hadir'}`,
+          category: 'rsvp',
+          detail: rsvp.headcount ? `Jumlah tamu: ${rsvp.headcount} orang` : undefined,
+          createdAt: 'Terkonfirmasi',
+          timestamp: 2,
+        })
+      }
+    }
+
+    // 2. Log dari Catatan Buwuh
+    for (const record of buwuhanRecords) {
+      const itemsDesc = record.items.map((i) => `${i.itemName} (${i.quantity} ${i.unit})`).join(', ')
+      list.push({
+        id: `buwuh-${record.id}`,
+        message: `${record.giverName} mencatat buwuh: ${itemsDesc}`,
+        category: 'hadiah',
+        detail: record.note || undefined,
+        createdAt: record.receivedAt ? formatDateCompact(record.receivedAt) : 'Tercatat',
+        timestamp: record.receivedAt ? new Date(record.receivedAt).getTime() : 3,
+      })
+    }
+
+    // 3. Log dari check-in tamu
+    for (const guest of guestEntries) {
+      if (guest.status === 'HADIR') {
+        list.push({
+          id: `checkin-${guest.id}`,
+          message: `${guest.name} telah hadir (Check-in QR)`,
+          category: 'rsvp',
+          detail: guest.message || undefined,
+          createdAt: guest.recordedAt ? formatDateCompact(guest.recordedAt) : 'Tercatat',
+          timestamp: guest.recordedAt ? new Date(guest.recordedAt).getTime() : 1,
+        })
+      }
+    }
+
+    return list
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 10)
+      .map(({ timestamp: _, ...log }) => log)
+  }, [rsvpGuests, buwuhanRecords, guestEntries])
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -160,8 +268,12 @@ export default function PanelBerandaPage() {
           <StatCard
             variant="gradient"
             label="Total Bantuan Buwuh Masuk"
-            value={formatRupiah(invitation.buwuhTotal)}
-            hint="Tercatat dari QRIS & Transfer"
+            value={formatRupiah(totalBuwuh)}
+            hint={
+              buwuhanRecords.length > 0
+                ? `${buwuhanRecords.length} transaksi buwuhan tercatat`
+                : 'Belum ada transaksi buwuh'
+            }
           />
         </aside>
       </div>

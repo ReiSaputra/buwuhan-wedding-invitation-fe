@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import { Eye, EyeOff, Loader2, AlertCircle, AlertTriangle } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { parseApiError, type ParsedApiError } from '@/lib/errorHandler'
@@ -10,11 +11,12 @@ import { parseApiError, type ParsedApiError } from '@/lib/errorHandler'
  * - Ruas input Nama lengkap, Email, dan Password dengan tombol toggle lihat sandi.
  * - Container pesan error interaktif tepat di bawah masing-masing input sesuai format respon validasi backend (Zod/Valibot).
  * - Tombol utama 'Daftar' ungu dengan status loading.
+ * - Integrasi resmi pendaftaran cepat via Google OAuth.
  * - Tautan kembali 'Sudah punya akun? Masuk di sini'.
  * - Penanganan error ramah pengguna (termasuk deteksi HTTP 429 rate limit 5x/jam).
  */
 export default function RegisterPage() {
-  const { register } = useAuth()
+  const { register, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
 
   const [fullName, setFullName] = useState('')
@@ -97,6 +99,43 @@ export default function RegisterPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  /**
+   * Menangani respon sukses pendaftaran/login via Google OAuth.
+   */
+  async function handleGoogleSuccess(credentialResponse: CredentialResponse) {
+    if (!credentialResponse.credential) {
+      setGeneralError('Kredensial token Google tidak ditemukan. Silakan coba lagi.')
+      return
+    }
+
+    setFieldErrors({})
+    setGeneralError(null)
+    setIsRateLimited(false)
+    setIsLoading(true)
+
+    try {
+      const loggedUser = await loginWithGoogle(credentialResponse.credential)
+      if (loggedUser.role === 'ADMIN') {
+        navigate('/admin/dashboard', { replace: true })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
+    } catch (err: unknown) {
+      const parsed: ParsedApiError = parseApiError(err)
+      setIsRateLimited(parsed.isRateLimited)
+      setGeneralError(parsed.generalMessage || 'Gagal mendaftar menggunakan akun Google.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  /**
+   * Menangani galat/pembatalan popup Google Sign-In.
+   */
+  function handleGoogleError() {
+    setGeneralError('Autentikasi Google gagal atau ditutup. Silakan coba kembali.')
   }
 
   return (
@@ -269,6 +308,32 @@ export default function RegisterPage() {
           </Link>
         </p>
       </form>
+
+      {/* Pembatas ATAU */}
+      <div className="relative my-4 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-200" />
+        </div>
+        <span className="relative bg-white px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          ATAU
+        </span>
+      </div>
+
+      {/* Tombol Google Sign Up */}
+      <div className="space-y-2.5">
+        <div className="flex justify-center w-full min-h-[44px]">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            useOneTap={false}
+            theme="outline"
+            size="large"
+            shape="rectangular"
+            text="signup_with"
+            width="320"
+          />
+        </div>
+      </div>
     </div>
   )
 }

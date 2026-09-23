@@ -268,12 +268,8 @@ export default function PanelCatatanBuwuhPage() {
                             {record.giverName}
                           </span>
 
-                          <span className="block break-words text-[11px] leading-snug text-slate-500">
-                            {record.giverAddress || '-'}
-                          </span>
-
                           {record.note && (
-                            <span className="block break-words text-[11px] leading-snug text-slate-400">
+                            <span className="block break-words text-[11px] italic leading-snug text-slate-500 mt-0.5">
                               "{record.note}"
                             </span>
                           )}

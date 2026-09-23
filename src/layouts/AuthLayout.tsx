@@ -17,7 +17,15 @@ export default function AuthLayout() {
 
       {/* Konten Halaman Terpusat */}
       <div className="relative z-10 w-full max-w-md sm:max-w-lg">
-
+        {/* Brand Header Logo */}
+        <div className="mb-5 flex justify-center">
+          <div className="flex items-center gap-2.5 rounded-2xl bg-white/90 px-4 py-2 shadow-2xs backdrop-blur-md border border-slate-200/70">
+            <img src="/favicon.png" alt="Buwuhan Logo" className="h-7 w-7 object-contain" />
+            <span className="font-display text-base font-bold text-slate-900 tracking-tight">
+              Buwuh.com
+            </span>
+          </div>
+        </div>
 
         {/* Kartu Autentikasi */}
         <div className="rounded-3xl border border-slate-200/80 bg-white/95 p-6 sm:p-10 shadow-xl backdrop-blur-md">

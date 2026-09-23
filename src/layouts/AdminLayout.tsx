@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { ShieldCheck, Menu, X, LogOut, Clock } from 'lucide-react'
+import { Menu, X, LogOut, Clock } from 'lucide-react'
 import { adminNav, adminNavFooter } from '@/config/navigation'
 import { NavItem } from '@/components/dashboard/NavItem'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -26,8 +26,8 @@ export default function AdminLayout() {
         {/* Brand Header Admin */}
         <div className="p-5 pb-4 border-b border-slate-800/80">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30">
-              <ShieldCheck size={24} />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/95 p-1.5 shadow-lg shadow-indigo-500/20">
+              <img src="/favicon.png" alt="Buwuhan Logo" className="h-full w-full object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
@@ -110,7 +110,9 @@ export default function AdminLayout() {
           <div className="relative z-10 flex h-full w-70 flex-col bg-slate-900 text-white shadow-2xl animate-in slide-in-from-left duration-200">
             <div className="flex items-center justify-between p-5 border-b border-slate-800">
               <div className="flex items-center gap-2.5">
-                <ShieldCheck size={22} className="text-indigo-400" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/95 p-1 shadow-xs">
+                  <img src="/favicon.png" alt="Buwuhan Logo" className="h-full w-full object-contain" />
+                </div>
                 <span className="font-display font-bold text-white">Buwuhan Admin</span>
               </div>
               <button

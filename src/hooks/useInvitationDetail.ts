@@ -5,6 +5,7 @@ import { useMembers } from "@/hooks/useMembers";
 import { instantAuthStorage } from "@/lib/instantAuthStorage";
 import type {
   ApiInvitation,
+  ApiBuwuhanSummary,
   GuestStatsApiData,
   RsvpStatsApiData,
 } from "@/types/invitation-api";
@@ -56,10 +57,11 @@ const EMPTY_DETAIL: InvitationDetail = {
  * Custom React Hook untuk mengambil data detail sebuah undangan spesifik
  * beserta statistik tamu dan RSVP dari backend.
  *
- * Menggabungkan 3 endpoint yang dipanggil paralel:
+ * Menggabungkan 4 endpoint yang dipanggil paralel:
  * - GET /invitations/:id
  * - GET /invitations/:id/guests/stats
  * - GET /invitations/:id/rsvps/stats
+ * - GET /invitations/:id/buwuhans/summary
  *
  * @param id - Identifier unik undangan (cuid dari backend)
  */
@@ -84,6 +86,19 @@ export function useInvitationDetail(id: string) {
     queryKey: ['invitation', id, 'rsvp-stats'],
     queryFn: () =>
       fetchData<RsvpStatsApiData>(`/invitations/${id}/rsvps/stats`),
+    enabled: enabled && !isInstant,
+  })
+
+  const buwuhanSummaryQuery = useQuery({
+    queryKey: ['invitation', id, 'buwuhan-summary'],
+    queryFn: async () => {
+      try {
+        const data = await fetchData<ApiBuwuhanSummary>(`/invitations/${id}/buwuhans/summary`)
+        return data ?? null
+      } catch {
+        return null
+      }
+    },
     enabled: enabled && !isInstant,
   })
 
@@ -118,7 +133,7 @@ export function useInvitationDetail(id: string) {
         guestCount: guestStatsQuery.data?.totalGuests ?? 0,
         confirmedCount: rsvpStatsQuery.data?.totalConfirmed ?? 0,
         checkedInCount: guestStatsQuery.data?.totalAttended ?? 0,
-        buwuhTotal: 0,
+        buwuhTotal: buwuhanSummaryQuery.data?.totalEstimatedValue ?? 0,
       }
     : { ...EMPTY_DETAIL, ...instantFallback, id }
 
@@ -134,7 +149,8 @@ export function useInvitationDetail(id: string) {
       !isInstant &&
       (invitationQuery.isLoading ||
         guestStatsQuery.isLoading ||
-        rsvpStatsQuery.isLoading),
+        rsvpStatsQuery.isLoading ||
+        buwuhanSummaryQuery.isLoading),
     isError: isInstant ? false : invitationQuery.isError,
     error: isInstant ? null : invitationQuery.error,
   }

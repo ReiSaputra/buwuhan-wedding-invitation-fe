@@ -1,4 +1,4 @@
-import { Gem, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { NavItem } from './NavItem'
 import { NavGroup } from './NavGroup'
@@ -65,8 +65,8 @@ export function Sidebar({ subtitle, items, footer, onClose }: SidebarProps) {
           onClick={onClose}
           className="group flex items-center gap-3 focus:outline-none"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-xs text-white shadow-inner transition-transform duration-200 group-hover:scale-105">
-            <Gem size={22} className="text-white drop-shadow-sm" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/95 p-1.5 shadow-sm transition-transform duration-200 group-hover:scale-105">
+            <img src="/favicon.png" alt="Buwuh Logo" className="h-full w-full object-contain" />
           </div>
           <div>
             <span className="font-display text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
