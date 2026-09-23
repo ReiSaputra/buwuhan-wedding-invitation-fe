@@ -253,7 +253,7 @@ export default function PanelRsvpPage() {
 
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 flex">
           <div
-            className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-500"
+            className="h-full bg-emerald-500 transition-all duration-500"
             style={{ width: toWidth(stats.hadir) }}
             title={`Hadir: ${stats.hadir}`}
           />

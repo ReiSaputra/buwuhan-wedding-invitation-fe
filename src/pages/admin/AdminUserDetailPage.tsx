@@ -275,7 +275,7 @@ export default function AdminUserDetailPage() {
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 {/* User Info Left */}
                 <div className="flex items-start sm:items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 text-white font-bold text-2xl flex items-center justify-center shadow-md flex-shrink-0">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-900 text-white font-bold text-2xl flex items-center justify-center shadow-md flex-shrink-0">
                     {getInitial(userDetail.fullName)}
                   </div>
                   <div>

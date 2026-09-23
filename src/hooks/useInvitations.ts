@@ -21,10 +21,13 @@ export function useInvitations() {
   const rawData: ApiInvitation[] = query.data ?? []
 
   const invitations: InvitationSummary[] = rawData.map((item: ApiInvitation) => {
-    // Ambil foto pertama dari galeri foto, atau dari preview template, atau dari additionalInfo cover
+    // Ambil foto pertama dari galeri foto, coverImageUrl, atau dari thumbnail/preview template
     const coverUrl =
       item.galleryPhotos?.[0]?.imageUrl ||
-      (item.additionalInfo as Record<string, unknown> | null)?.coverImageUrl as string | undefined ||
+      ((item.additionalInfo as Record<string, unknown> | null)?.coverImageUrl as string | undefined) ||
+      ((item as unknown as { templateThumbnail?: string | null })?.templateThumbnail ?? undefined) ||
+      ((item.template as unknown as { previewImageUrl?: string; thumbnailUrl?: string } | null)?.previewImageUrl) ||
+      ((item.template as unknown as { previewImageUrl?: string; thumbnailUrl?: string } | null)?.thumbnailUrl) ||
       null
 
     return {

@@ -38,7 +38,7 @@ export function PlanCard({ plan, isCurrent, isYearly = false, onSelect }: PlanCa
     >
       {/* Most Popular Ribbon Badge */}
       {isPopular && (
-        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-1 text-[11px] font-bold tracking-wider text-white shadow-md flex items-center gap-1.5 uppercase">
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-4 py-1 text-[11px] font-bold tracking-wider text-white shadow-md flex items-center gap-1.5 uppercase">
           <Sparkles size={13} className="text-amber-300" />
             Paling Populer
         </div>

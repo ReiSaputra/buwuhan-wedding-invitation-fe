@@ -115,7 +115,7 @@ export default function LanggananPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-10 pt-2 pb-12 animate-in fade-in duration-300">
       {/* 1. Header & Status Paket Pengguna Saat Ini */}
-      <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-950 p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 -mt-8 -mr-8 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">

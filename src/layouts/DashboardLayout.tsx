@@ -63,8 +63,8 @@ export default function DashboardLayout() {
 
       {/* Konten Utama Aplikasi */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
-        {/* Aksen Gradasi Garis Atas */}
-        <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 shrink-0" />
+        {/* Aksen Garis Atas */}
+        <div className="h-1 w-full bg-indigo-600 shrink-0" />
         
         {/* Topbar Navigasi */}
         <Topbar user={user} onMenuToggle={() => setIsMobileSidebarOpen(true)} />

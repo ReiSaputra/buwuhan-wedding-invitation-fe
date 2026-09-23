@@ -50,10 +50,7 @@ export function StatCard({
     return (
       <div
         className={cn(
-          'card-hover-effect relative overflow-hidden rounded-2xl p-5 shadow-sm text-white',
-          isGradient
-            ? 'bg-gradient-to-br from-indigo-600 to-purple-700'
-            : 'bg-primary border border-indigo-600/30',
+          'card-hover-effect relative overflow-hidden rounded-2xl p-5 shadow-sm text-white bg-indigo-600 border border-indigo-500/30',
         )}
       >
         {/* Ornamen dekoratif blur */}

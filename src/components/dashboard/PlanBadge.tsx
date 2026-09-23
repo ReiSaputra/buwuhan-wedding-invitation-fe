@@ -12,8 +12,8 @@ export type PlanBadgeProps = {
 
 const planStyle: Record<PlanCode, string> = {
   FREE: 'bg-white text-slate-700 border-slate-200 hover:border-indigo-200 shadow-2xs',
-  PRO: 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-transparent shadow-xs shadow-indigo-500/20 hover:from-indigo-600 hover:to-purple-700',
-  MAX: 'bg-gradient-to-r from-purple-700 via-indigo-700 to-amber-500 text-white border-transparent shadow-xs shadow-purple-600/25 hover:opacity-95',
+  PRO: 'bg-indigo-600 text-white border-transparent shadow-xs shadow-indigo-500/20 hover:bg-indigo-700',
+  MAX: 'bg-purple-700 text-white border-transparent shadow-xs shadow-purple-600/25 hover:bg-purple-800',
 }
 
 const planIcons: Record<PlanCode, typeof Gem> = {

@@ -8,8 +8,8 @@ import { BackButton } from '@/components/ui/BackButton'
 export default function PlainLayout() {
   return (
     <div className="min-h-screen bg-surface">
-      {/* Aksen Garis Gradasi Atas */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400" />
+      {/* Aksen Garis Atas */}
+      <div className="h-1.5 w-full bg-indigo-600" />
 
       {/* Header Tombol Kembali */}
       <header className="mx-auto max-w-6xl px-4 sm:px-6 pt-6">

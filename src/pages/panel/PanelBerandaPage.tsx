@@ -242,7 +242,7 @@ export default function PanelBerandaPage() {
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-500"
+                  className="h-full rounded-full bg-indigo-600 transition-all duration-500"
                   style={{ width: `${rsvpPercent}%` }}
                 />
               </div>
@@ -266,7 +266,7 @@ export default function PanelBerandaPage() {
             hint={`${rsvpPercent}% tamu menyatakan siap hadir`}
           />
           <StatCard
-            variant="gradient"
+            variant="filled"
             label="Total Bantuan Buwuh Masuk"
             value={formatRupiah(totalBuwuh)}
             hint={

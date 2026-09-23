@@ -91,7 +91,7 @@ export default function PanelPlaceholderPage({ title }: PanelPlaceholderPageProp
             <div className="relative mx-auto flex h-64 w-64 items-center justify-center rounded-2xl border-2 border-dashed border-indigo-400/60 bg-slate-800/60 overflow-hidden">
               <Camera size={48} className="text-slate-600 animate-pulse" />
               {/* Animasi Garis Laser Scanner */}
-              <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-pink-500 to-indigo-500 animate-bounce shadow-lg shadow-indigo-500/50" />
+              <div className="absolute left-0 right-0 h-1 bg-indigo-500 animate-bounce shadow-lg shadow-indigo-500/50" />
             </div>
 
             <p className="text-xs text-slate-300">
@@ -230,7 +230,7 @@ export default function PanelPlaceholderPage({ title }: PanelPlaceholderPageProp
             { name: 'Luxury Burgundy Velvet', tag: 'Max Plan', isCurrent: false, color: '#be123c' },
           ].map((theme, i) => (
             <div key={i} className={`rounded-3xl border p-5 bg-white shadow-xs space-y-4 ${theme.isCurrent ? 'border-2 border-primary ring-2 ring-primary/20' : 'border-border'}`}>
-              <div className="h-40 rounded-2xl bg-gradient-to-tr from-slate-100 to-indigo-50 border border-slate-200 flex items-center justify-center text-slate-400 font-display text-lg font-bold">
+              <div className="h-40 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 font-display text-lg font-bold">
                 Preview {theme.name}
               </div>
               <div className="flex items-center justify-between">

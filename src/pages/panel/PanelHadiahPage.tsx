@@ -458,7 +458,7 @@ export default function PanelHadiahPage() {
               label="Total Donasi (Uang)"
               value={formatRupiah(stats.totalAmount)}
               icon={<CreditCard size={18} />}
-              variant="gradient"
+              variant="filled"
               hint="Total dana masuk via transfer & amplop"
             />
             <StatCard

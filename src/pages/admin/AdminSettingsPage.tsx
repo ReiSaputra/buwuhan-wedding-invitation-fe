@@ -214,7 +214,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Hero Banner Kartu Identitas Administrator */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-6 sm:p-8 text-white shadow-xl border border-slate-800">
+      <div className="relative overflow-hidden rounded-3xl bg-slate-900 p-6 sm:p-8 text-white shadow-xl border border-slate-800">
         {/* Dekorasi Aksen Lingkaran Cahaya */}
         <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-purple-500/20 blur-3xl pointer-events-none" />
@@ -223,7 +223,7 @@ export default function AdminSettingsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
             {/* Avatar Superadmin */}
             <div className="relative shrink-0">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-indigo-600 text-white font-display text-3xl font-extrabold shadow-xl shadow-indigo-500/30 border-2 border-indigo-400/40">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-indigo-600 text-white font-display text-3xl font-extrabold shadow-xl shadow-indigo-500/30 border-2 border-indigo-400/40">
                 {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'A'}
               </div>
               <div

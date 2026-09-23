@@ -67,7 +67,7 @@ export default function PanelLayout() {
 
       {/* Konten Utama Panel */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
-        <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 shrink-0" />
+        <div className="h-1 w-full bg-indigo-600 shrink-0" />
         <Topbar user={user} onMenuToggle={() => setIsMobileSidebarOpen(true)} />
         <main className="flex-1 overflow-y-auto px-4 sm:px-8 pb-12 pt-6">
           <div className="mx-auto max-w-7xl">

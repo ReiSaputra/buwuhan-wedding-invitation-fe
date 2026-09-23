@@ -397,7 +397,7 @@ export default function AdminTemplatesPage() {
                       loading="lazy"
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950 text-white p-4 text-center">
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white p-4 text-center">
                       <Palette className="w-8 h-8 text-slate-400 mb-2" />
                       <span className="text-sm font-bold tracking-tight">{template.name}</span>
                       <span className="text-[11px] font-mono text-slate-400 mt-0.5">/{template.slug}</span>

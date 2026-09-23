@@ -170,7 +170,7 @@ export function InvitationCard({
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-300"
+            className="h-full rounded-full bg-indigo-600 transition-all duration-300"
             style={{ width: `${Math.min(checkInPercent, 100)}%` }}
           />
         </div>

@@ -15,7 +15,7 @@ export function ScanQrCta({ to }: ScanQrCtaProps) {
   return (
     <Link
       to={to}
-      className="card-hover-effect group relative flex items-center justify-between overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 p-6 text-white shadow-lg transition-all duration-300"
+      className="card-hover-effect group relative flex items-center justify-between overflow-hidden rounded-3xl bg-indigo-600 p-6 text-white shadow-lg transition-all duration-300"
     >
       {/* Ornamen dekoratif blur */}
       <span className="pointer-events-none absolute -right-6 -bottom-10 h-32 w-32 rounded-full bg-white/15 blur-sm" />

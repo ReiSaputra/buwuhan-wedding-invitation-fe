@@ -206,7 +206,7 @@ export function Topbar({ user, onMenuToggle }: TopbarProps) {
             {user.avatarUrl ? (
               <img src={user.avatarUrl} alt="" className="h-8 w-8 rounded-lg object-cover" />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-600 text-xs font-bold text-white shadow-xs">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-xs font-bold text-white shadow-xs">
                 {user.fullName.charAt(0)}
               </div>
             )}

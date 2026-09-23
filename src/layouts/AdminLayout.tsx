@@ -164,8 +164,8 @@ export default function AdminLayout() {
 
       {/* Konten Utama Area Admin */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
-        {/* Garis Aksen Gradasi Superadmin (Deep Indigo to Purple) */}
-        <div className="h-1 w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 shrink-0" />
+        {/* Garis Aksen Superadmin (Deep Indigo) */}
+        <div className="h-1 w-full bg-indigo-600 shrink-0" />
 
         {/* Topbar Admin */}
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-8 py-3.5 bg-white/80 backdrop-blur-md shadow-2xs border-b border-slate-200/80">
@@ -189,7 +189,7 @@ export default function AdminLayout() {
 
             {/* Profil Admin */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-xs">
+              <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-xs">
                 {user.fullName.charAt(0)}
               </div>
               <div className="hidden xl:block text-left leading-tight">
