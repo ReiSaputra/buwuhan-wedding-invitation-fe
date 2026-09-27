@@ -29,6 +29,22 @@ export type LoginInput = {
 };
 
 /**
+ * Data payload saat proses masuk/daftar via Google OAuth.
+ */
+export type GoogleAuthInput = {
+  idToken?: string;
+  code?: string;
+};
+
+/**
+ * Data payload saat proses masuk/daftar via Facebook OAuth.
+ */
+export type FacebookAuthInput = {
+  accessToken?: string;
+  code?: string;
+};
+
+/**
  * Payload data di dalam envelope response login.
  */
 export type LoginResponseData = {

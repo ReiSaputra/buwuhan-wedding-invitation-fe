@@ -231,21 +231,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /**
    * Menangani proses login/register pengguna via Google OAuth ke endpoint POST /auth/google.
    * 
-   * @param idToken - ID Token JWT yang diperoleh dari Google Sign-In SDK
+   * @param payload - ID Token JWT string atau objek { idToken, code }
    * @returns Objek AuthUser yang berhasil login
    */
   const loginWithGoogle = useCallback(
-    async (idToken: string) => {
+    async (payload: string | { idToken?: string; code?: string }) => {
       // Bersihkan sesi instan jika ada sebelum login dengan akun reguler
       instantAuthStorage.clearSession()
 
-      const res = await api.post<BackendSuccessEnvelope<LoginResponseData>>('/auth/google', {
-        idToken,
-      })
+      const body = typeof payload === 'string' ? { idToken: payload } : payload
+
+      const res = await api.post<BackendSuccessEnvelope<LoginResponseData>>('/auth/google', body)
 
       const data = res.data?.data
       if (!data?.accessToken) {
         throw new Error('Respon login Google tidak memuat accessToken')
+      }
+
+      updateAccessToken(data.accessToken)
+      const claims = parseJwtClaims(data.accessToken)
+
+      // Ambil profil lengkap dari endpoint /users/me
+      const profile = await fetchCurrentUser()
+
+      const userObj: AuthUser = {
+        id: profile?.id || data.id,
+        fullName: profile?.fullName || data.fullName,
+        email: profile?.email || data.email,
+        role: profile?.role || claims?.role || (data as { role?: string }).role || 'USER',
+        plan: (profile?.plan || claims?.planTier || (data as { planTier?: string }).planTier || 'FREE') as AuthUser['plan'],
+      }
+      setUser(userObj)
+      return userObj
+    },
+    [updateAccessToken],
+  )
+
+  /**
+   * Menangani proses login/register pengguna via Facebook OAuth ke endpoint POST /auth/facebook.
+   * 
+   * @param payload - Objek yang memuat accessToken atau code Facebook
+   * @returns Objek AuthUser yang berhasil login
+   */
+  const loginWithFacebook = useCallback(
+    async (payload: { accessToken?: string; code?: string }) => {
+      // Bersihkan sesi instan jika ada sebelum login dengan akun reguler
+      instantAuthStorage.clearSession()
+
+      const res = await api.post<BackendSuccessEnvelope<LoginResponseData>>('/auth/facebook', payload)
+
+      const data = res.data?.data
+      if (!data?.accessToken) {
+        throw new Error('Respon login Facebook tidak memuat accessToken')
       }
 
       updateAccessToken(data.accessToken)
@@ -323,6 +360,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         loginWithGoogle,
+        loginWithFacebook,
         register,
         logout,
         refreshSession,

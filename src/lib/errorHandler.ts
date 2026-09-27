@@ -35,8 +35,12 @@ export function parseApiError(error: unknown): ParsedApiError {
     isRateLimited: false,
   };
   if (!isAxiosError(error)) {
-    result.generalMessage =
-      "Terjadi kendala koneksi ke server. Pastikan backend aktif.";
+    if (error instanceof Error && error.message) {
+      result.generalMessage = error.message;
+    } else {
+      result.generalMessage =
+        "Terjadi kesalahan. Pastikan koneksi dan layanan aktif.";
+    }
     result.allMessages.push(result.generalMessage);
     return result;
   }

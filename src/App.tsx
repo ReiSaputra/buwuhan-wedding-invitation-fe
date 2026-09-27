@@ -31,6 +31,9 @@ const ForgotPasswordPage = lazy(
 );
 const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage"));
 const VerifyEmailPage = lazy(() => import("@/pages/auth/VerifyEmailPage"));
+const FacebookCallbackPage = lazy(
+  () => import("@/pages/auth/FacebookCallbackPage"),
+);
 const BerandaPage = lazy(() => import("@/pages/dashboard/BerandaPage"));
 const UndanganPage = lazy(() => import("@/pages/dashboard/UndanganPage"));
 const LanggananPage = lazy(() => import("@/pages/dashboard/LanggananPage"));
@@ -134,6 +137,7 @@ export const router = createBrowserRouter(  createRoutesFromElements(
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/auth/facebook/callback" element={<FacebookCallbackPage />} />
         </Route>
       </Route>
 
