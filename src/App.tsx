@@ -13,9 +13,6 @@ import { PageLoader } from "@/components/common/PageLoader";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { GuestRoute } from "@/components/auth/GuestRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
-import { useAuth } from "@/hooks/useAuth";
-import { instantAuthStorage } from "@/lib/instantAuthStorage";
-
 // Layout tetap dimuat langsung karena ukurannya kecil dan selalu dipakai
 import AuthLayout from "@/layouts/AuthLayout";
 import DashboardLayout from "@/layouts/DashboardLayout";
@@ -59,6 +56,7 @@ const JoinInvitationPage = lazy(
 const InstantAccessPage = lazy(
   () => import("@/pages/panel/InstantAccessPage"),
 );
+const LandingPage = lazy(() => import("@/pages/LandingPage"));
 
 // Halaman Admin Platform Buwuhan
 const AdminDashboardPage = lazy(
@@ -95,39 +93,13 @@ function RootLayout() {
   );
 }
 
-/**
- * Pengalihan cerdas rute akar (/) berdasarkan peran pengguna.
- * Jika pengguna memiliki peran ADMIN, diarahkan langsung ke Portal Superadmin.
- */
-function RootRedirect() {
-  const { user, isAuthenticated } = useAuth();
-  const isInstant = instantAuthStorage.isInstantAccess();
-
-  if (isInstant) {
-    const access = instantAuthStorage.getAccess();
-    if (access?.invitationId) {
-      return (
-        <Navigate
-          to={`/dashboard/undangan/${access.invitationId}/catatan-buwuh`}
-          replace
-        />
-      );
-    }
-  }
-
-  if (isAuthenticated && user?.role === 'ADMIN') {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-  return <Navigate to="/dashboard" replace />;
-}
-
 // Router sengaja diekspor dari file ini agar bisa dipakai pada pengujian.
 // Aturan Fast Refresh dimatikan karena file ini memang berisi definisi rute
 // sekaligus komponen App — memisahkannya justru memicu error yang lebih banyak.
 // eslint-disable-next-line react-refresh/only-export-components
 export const router = createBrowserRouter(  createRoutesFromElements(
     <Route element={<RootLayout />}>
-      <Route path="/" element={<RootRedirect />} />
+      <Route path="/" element={<LandingPage />} />
 
       {/* Rute Khusus Tamu / Belum Login (Sign In, Sign Up, Lupa Password, Reset, Verifikasi) */}
       <Route element={<GuestRoute />}>

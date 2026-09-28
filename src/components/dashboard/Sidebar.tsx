@@ -6,6 +6,7 @@ import type { NavEntry } from '@/config/navigation'
 import type { CurrentUser } from '@/types/dashboard'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { instantAuthStorage } from '@/lib/instantAuthStorage'
+import { BrandLogo } from '@/components/common/BrandLogo'
 
 export type SidebarProps = {
   /** Subtitle atau nama konteks panel aktif (misal nama undangan) */
@@ -63,21 +64,14 @@ export function Sidebar({ subtitle, items, footer, onClose }: SidebarProps) {
         <Link
           to={brandTo}
           onClick={onClose}
-          className="group flex items-center gap-3 focus:outline-none"
+          className="group focus:outline-none hover:opacity-90 transition-opacity"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/95 p-1.5 shadow-sm transition-transform duration-200 group-hover:scale-105">
-            <img src="/favicon.png" alt="Buwuh Logo" className="h-full w-full object-contain" />
-          </div>
-          <div>
-            <span className="font-display text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
-              Buwuh Panel
+          <BrandLogo variant="light" size="sm" showTagline={false} />
+          {subtitle && (
+            <span className="block text-[11px] font-normal text-white/70 truncate max-w-[170px] mt-1 pl-9">
+              {subtitle}
             </span>
-            {subtitle && (
-              <span className="block text-[11px] font-normal text-white/70 truncate max-w-[150px]">
-                {subtitle}
-              </span>
-            )}
-          </div>
+          )}
         </Link>
 
         {/* Tombol tutup khusus mobile */}

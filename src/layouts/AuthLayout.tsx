@@ -1,42 +1,48 @@
-import { Outlet } from 'react-router-dom'
+import { Link, Outlet } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
+import { BrandLogo } from '@/components/common/BrandLogo'
 
 /**
  * Layout Khusus Halaman Autentikasi (Sign In & Sign Up).
- * Menyediakan latar belakang estetik dengan aksen ambient luxury wedding
- * dan wadah terpusat yang responsif di semua ukuran layar.
+ * Menyediakan latar belakang polos bersih, minimalis, dan wadah terpusat
+ * yang rapi dan responsif di semua ukuran layar.
  */
 export default function AuthLayout() {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center bg-slate-50/70 px-4 py-8 sm:px-6 lg:px-8 selection:bg-primary/20 selection:text-primary">
-      {/* Ornamen Ambient Background */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-indigo-200/40 blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-purple-200/30 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-amber-100/20 blur-3xl" />
-      </div>
-
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-8 sm:px-6 lg:px-8 selection:bg-primary/20 selection:text-primary">
       {/* Konten Halaman Terpusat */}
       <div className="relative z-10 w-full max-w-md sm:max-w-lg">
-        {/* Brand Header Logo */}
-        <div className="mb-5 flex justify-center">
-          <div className="flex items-center gap-2.5 rounded-2xl bg-white/90 px-4 py-2 shadow-2xs backdrop-blur-md border border-slate-200/70">
-            <img src="/favicon.png" alt="Buwuhan Logo" className="h-7 w-7 object-contain" />
-            <span className="font-display text-base font-bold text-slate-900 tracking-tight">
-              Buwuh.com
-            </span>
-          </div>
+        {/* Tombol Navigasi Kembali ke Beranda */}
+        <div className="mb-4 flex items-center">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 px-3.5 py-1.5 rounded-full border border-slate-200 shadow-2xs transition-all"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Kembali ke Beranda</span>
+          </Link>
         </div>
 
-        {/* Kartu Autentikasi */}
-        <div className="rounded-3xl border border-slate-200/80 bg-white/95 p-6 sm:p-10 shadow-xl backdrop-blur-md">
+        {/* Kartu Autentikasi Putih Bersih */}
+        <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 shadow-xl shadow-slate-200/50">
+          {/* Logo Brand Resmi di Dalam Card */}
+          <div className="mb-6 flex justify-center">
+            <Link to="/" className="inline-block hover:opacity-90 transition-opacity">
+              <BrandLogo size="lg" showTagline={true} />
+            </Link>
+          </div>
+
           <Outlet />
         </div>
 
         {/* Footer Hak Cipta Singkat */}
         <p className="mt-6 text-center text-[11px] text-slate-400">
-          &copy; {new Date().getFullYear()} Buwuhan Digital Wedding. Hak Cipta Dilindungi.
+          &copy; {new Date().getFullYear()} buwuh.com. Hak Cipta Dilindungi.
         </p>
       </div>
     </div>
   )
 }
+
+
+
