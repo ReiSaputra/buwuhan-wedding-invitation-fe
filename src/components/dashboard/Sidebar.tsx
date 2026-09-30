@@ -66,7 +66,7 @@ export function Sidebar({ subtitle, items, footer, onClose }: SidebarProps) {
           onClick={onClose}
           className="group focus:outline-none hover:opacity-90 transition-opacity"
         >
-          <BrandLogo variant="light" size="sm" showTagline={false} />
+          <BrandLogo useFullLogo={true} size="sm" />
           {subtitle && (
             <span className="block text-[11px] font-normal text-white/70 truncate max-w-[170px] mt-1 pl-9">
               {subtitle}
