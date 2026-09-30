@@ -5,18 +5,29 @@ interface BrandLogoProps {
   size?: "sm" | "md" | "lg" | "xl";
   variant?: "default" | "light" | "dark";
   showTagline?: boolean;
+  /** Jika true, tampilkan gambar logo lengkap (logo.png) langsung sebagai <img> */
+  useFullLogo?: boolean;
 }
 
 /**
  * Komponen BrandLogo resmi Buwuh.com
  * Menampilkan ikon amplop kado dan tipografi buwuh.com dengan tagline 'Klik • Sebar • Catat'
+ * Gunakan prop `useFullLogo` untuk menampilkan logo PNG lengkap.
  */
 export function BrandLogo({
   className,
   size = "md",
   variant = "default",
   showTagline = true,
+  useFullLogo = false,
 }: BrandLogoProps) {
+  const fullLogoHeights = {
+    sm: "h-8",
+    md: "h-10",
+    lg: "h-14",
+    xl: "h-18",
+  };
+
   const iconSizes = {
     sm: "h-7 w-7",
     md: "h-9 w-9",
@@ -39,6 +50,17 @@ export function BrandLogo({
   };
 
   const isLight = variant === "light";
+
+  // Mode logo lengkap: tampilkan gambar PNG resmi buwuh.com
+  if (useFullLogo) {
+    return (
+      <img
+        src="/images/logo.png"
+        alt="buwuh.com – Klik • Sebar • Catat"
+        className={cn("object-contain w-auto select-none", fullLogoHeights[size], className)}
+      />
+    );
+  }
 
   return (
     <div className={cn("inline-flex items-center gap-2.5 select-none", className)}>

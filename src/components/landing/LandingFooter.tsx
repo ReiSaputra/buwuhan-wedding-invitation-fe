@@ -17,7 +17,7 @@ export function LandingFooter() {
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-3">
             <Link to="/" className="inline-block hover:opacity-90 transition-opacity">
-              <BrandLogo variant="light" size="md" showTagline={true} />
+              <BrandLogo useFullLogo={true} size="lg" />
             </Link>
 
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
